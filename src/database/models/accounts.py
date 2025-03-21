@@ -9,7 +9,16 @@ from database.models.base import Base
 
 
 if TYPE_CHECKING:
-    from database.models.tokens import RefreshTokenModel
+    from database.models.tokens import (
+        ActivationTokenModel,
+        PasswordResetTokenModel,
+        RefreshTokenModel,
+    )
+
+
+class GenderEnum(enum.Enum):
+    MAN = "man"
+    WOMAN = "woman"
 
 
 class UserGroupEnum(str, enum.Enum):
@@ -63,17 +72,17 @@ class UserModel(Base):
         cascade="all, delete-orphan",
     )
 
-    activation_token: Mapped["ActivationTokenModel | None"] = relationship(
+    activation_token: Mapped[ActivationTokenModel | None] = relationship(
         "ActivationTokenModel",
         back_populates="user",
         cascade="all, delete-orphan"
     )
-    password_reset_token: Mapped["PasswordResetTokenModel | None"] = relationship(
+    password_reset_token: Mapped[PasswordResetTokenModel | None] = relationship(
         "PasswordResetTokenModel",
         back_populates="user",
         cascade="all, delete-orphan",
     )
-    refresh_tokens: Mapped[list["RefreshTokenModel"]] = relationship(
+    refresh_tokens: Mapped[list[RefreshTokenModel]] = relationship(
         "RefreshTokenModel",
         back_populates="user",
         cascade="all, delete-orphan",
@@ -86,6 +95,7 @@ class ProfileModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     first_name: Mapped[str | None] = mapped_column()
     last_name: Mapped[str | None] = mapped_column()
+    gender: Mapped[GenderEnum | None] = mapped_column(Enum(GenderEnum))
     avatar: Mapped[str | None] = mapped_column()
     date_of_birth: Mapped[date | None] = mapped_column()
     info: Mapped[str | None] = mapped_column()
