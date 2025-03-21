@@ -1,10 +1,15 @@
 import enum
+from typing import TYPE_CHECKING
 from datetime import datetime, date
 
-from sqlalchemy import Enum, func, ForeignKey, UniqueConstraint
+from sqlalchemy import Enum, func, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.models.base import Base
+
+
+if TYPE_CHECKING:
+    from database.models.tokens import RefreshTokenModel
 
 
 class UserGroupEnum(str, enum.Enum):
@@ -43,18 +48,33 @@ class UserModel(Base):
         onupdate=func.now(),
         nullable=False,
     )
-
     group_id: Mapped[int] = mapped_column(
         ForeignKey("user_groups.id", ondelete="CASCADE"),
         nullable=False,
     )
+
     group: Mapped["UserGroupModel"] = relationship(
         "UserGroupModel",
         back_populates="users",
     )
-
     profile: Mapped["ProfileModel | None"] = relationship(
-        "UserProfileModel",
+        "ProfileModel",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    activation_token: Mapped["ActivationTokenModel | None"] = relationship(
+        "ActivationTokenModel",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    password_reset_token: Mapped["PasswordResetTokenModel | None"] = relationship(
+        "PasswordResetTokenModel",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    refresh_tokens: Mapped[list["RefreshTokenModel"]] = relationship(
+        "RefreshTokenModel",
         back_populates="user",
         cascade="all, delete-orphan",
     )
@@ -64,11 +84,11 @@ class ProfileModel(Base):
     __tablename__ = "profiles"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    first_name: Mapped[str | None]
-    last_name: Mapped[str | None]
-    avatar: Mapped[str | None]
-    date_of_birth: Mapped[date | None]
-    info: Mapped[str | None]
+    first_name: Mapped[str | None] = mapped_column()
+    last_name: Mapped[str | None] = mapped_column()
+    avatar: Mapped[str | None] = mapped_column()
+    date_of_birth: Mapped[date | None] = mapped_column()
+    info: Mapped[str | None] = mapped_column()
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
@@ -79,5 +99,3 @@ class ProfileModel(Base):
         "UserModel",
         back_populates="profile",
     )
-
-    __table_args__ = (UniqueConstraint("user_id"),)
