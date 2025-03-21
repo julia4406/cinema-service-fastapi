@@ -26,3 +26,17 @@ class ActivationTokenModel(TokenBaseModel):
     user: Mapped[UserModel] = relationship("UserModel", back_populates="activation_token")
 
     __table_args__ = (UniqueConstraint("user_id"),)
+
+
+class PasswordResetTokenModel(TokenBaseModel):
+    __tablename__ = "password_reset_tokens"
+
+    user: Mapped[UserModel] = relationship("UserModel", back_populates="password_reset_token")
+
+    __table_args__ = (UniqueConstraint("user_id"),)
+
+
+class RefreshTokenModel(TokenBaseModel):
+    __tablename__ = "refresh_tokens"
+
+    user: Mapped[UserModel] = relationship("UserModel", back_populates="refresh_token")
