@@ -98,7 +98,7 @@ class MovieModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     uuid: Mapped[UUID] = mapped_column(UUID, unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    year: Mapped[int] = mapped_column(Integer,nullable=False)
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
     time: Mapped[int] = mapped_column(Integer, nullable=False)
     imdb: Mapped[float] = mapped_column(Float, nullable=False)
     votes: Mapped[int] = mapped_column(Integer, nullable=False)
