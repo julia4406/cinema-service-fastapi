@@ -9,7 +9,7 @@ from database.models.base import Base
 
 
 MoviesGenresModel = Table(
-    "movies_genres",
+    "movie_genres",
     Base.metadata,
     Column(
         "movie_id",
@@ -21,7 +21,7 @@ MoviesGenresModel = Table(
 
 
 MoviesDirectorsModel = Table(
-    "movies_directors",
+    "movie_directors",
     Base.metadata,
     Column(
         "movie_id",
@@ -33,7 +33,7 @@ MoviesDirectorsModel = Table(
 
 
 MoviesStarsModel = Table(
-    "movies_stars",
+    "movie_stars",
     Base.metadata,
     Column(
         "movie_id",
