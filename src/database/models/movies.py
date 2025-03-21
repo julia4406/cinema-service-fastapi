@@ -20,6 +20,18 @@ MoviesGenresModel = Table(
 )
 
 
+MoviesDirectorsModel = Table(
+    "movies_directors",
+    Base.metadata,
+    Column(
+        "movie_id",
+        ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True, nullable=False),
+    Column(
+        "director_id",
+        ForeignKey("directors.id", ondelete="CASCADE"), primary_key=True, nullable=False),
+)
+
+
 class StarModel(Base):
     __tablename__ = "stars"
 
@@ -45,6 +57,12 @@ class DirectorModel(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+
+    movies: Mapped[list["MovieModel"]] = relationship(
+        "MovieModel",
+        secondary=MoviesDirectorsModel,
+        back_populates="genres"
+    )
 
 
 class CertificationModel(Base):
@@ -81,5 +99,11 @@ class MovieModel(Base):
     genres: Mapped[list["GenreModel"]] = relationship(
         "GenreModel",
         secondary=MoviesGenresModel,
+        back_populates="movies"
+    )
+
+    directors: Mapped[list["DirectorModel"]] = relationship(
+        "DirectorModel",
+        secondary=MoviesDirectorsModel,
         back_populates="movies"
     )
