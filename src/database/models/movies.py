@@ -35,3 +35,28 @@ class CertificationModel(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+
+    movies: Mapped[List["MovieModel"]] = relationship("MovieModel", back_populates="certifications")
+
+
+class MovieModel(Base):
+    __tablename__ = "movies"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    uuid: Mapped[UUID] = mapped_column(UUID, unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    year: Mapped[int] = mapped_column(Integer,nullable=False)
+    time: Mapped[int] = mapped_column(Integer, nullable=False)
+    imdb: Mapped[float] = mapped_column(Float, nullable=False)
+    votes: Mapped[int] = mapped_column(Integer, nullable=False)
+    meta_score: Mapped[float] = mapped_column(Float)
+    gross: Mapped[float] = mapped_column(Float)
+    description: Mapped[Text] = mapped_column(Text)
+    price: Mapped[float] = mapped_column(DECIMAL(10, 2))
+
+    certification_id: Mapped[int] = mapped_column(ForeignKey("certifications.id"))
+    certification: Mapped[CertificationModel] = relationship(CertificationModel, back_populates="movies")
+
+    __table_args__ = (
+        UniqueConstraint("name", "year", "time"),
+    )
