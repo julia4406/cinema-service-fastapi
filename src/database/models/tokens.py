@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import ForeignKey, UniqueConstraint
 
+from database.models.accounts import UserModel
 from database.models.base import Base
 
 
@@ -17,3 +18,11 @@ class TokenBaseModel(Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
+
+
+class ActivationTokenModel(TokenBaseModel):
+    __tablename__ = "activation_tokens"
+
+    user: Mapped[UserModel] = relationship("UserModel", back_populates="activation_token")
+
+    __table_args__ = (UniqueConstraint("user_id"),)
