@@ -10,3 +10,5 @@ app.include_router(profiles_router, prefix=f"{api_version_prefix}/profiles", tag
 app.include_router(movie_router, prefix=f"{api_version_prefix}/theater", tags=["theater"])
 app.include_router(order_router, prefix=f"{api_version_prefix}/theater/order",
                    tags=["order"])
+app.include_router(cart_router, prefix=f"{api_version_prefix}/theater/cart",
+                   tags=["cart"])
