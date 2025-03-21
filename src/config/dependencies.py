@@ -4,7 +4,6 @@ from fastapi import Depends
 
 from config.settings import TestingSettings, Settings, BaseAppSettings
 
-
 def get_settings() -> BaseAppSettings:
     """
     Retrieve the application settings based on the current environment.
@@ -20,4 +19,3 @@ def get_settings() -> BaseAppSettings:
     if environment == "testing":
         return TestingSettings()
     return Settings()
-
