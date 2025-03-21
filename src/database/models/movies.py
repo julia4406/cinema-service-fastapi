@@ -1,5 +1,4 @@
 import datetime
-from enum import Enum
 from typing import Optional, List
 
 from sqlalchemy import String, Float, Text, DECIMAL, UniqueConstraint, Date, ForeignKey, Table, Column, Integer, UUID
@@ -7,6 +6,18 @@ from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy import Enum as SQLAlchemyEnum
 
 from database.models.base import Base
+
+
+MoviesGenresModel = Table(
+    "movies_genres",
+    Base.metadata,
+    Column(
+        "movie_id",
+        ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True, nullable=False),
+    Column(
+        "genre_id",
+        ForeignKey("genres.id", ondelete="CASCADE"), primary_key=True, nullable=False),
+)
 
 
 class StarModel(Base):
@@ -21,6 +32,12 @@ class GenreModel(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+
+    movies: Mapped[list["MovieModel"]] = relationship(
+        "MovieModel",
+        secondary=MoviesGenresModel,
+        back_populates="genres"
+    )
 
 
 class DirectorModel(Base):
@@ -59,4 +76,10 @@ class MovieModel(Base):
 
     __table_args__ = (
         UniqueConstraint("name", "year", "time"),
+    )
+
+    genres: Mapped[list["GenreModel"]] = relationship(
+        "GenreModel",
+        secondary=MoviesGenresModel,
+        back_populates="movies"
     )
