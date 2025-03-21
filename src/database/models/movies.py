@@ -50,10 +50,10 @@ class StarModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
-    movies: Mapped[List[MoviesGenresModel]] = relationship(
+    movies: Mapped[List["MovieModel"]] = relationship(
         "MovieModel",
         secondary=MoviesStarsModel,
-        backref="stars",
+        back_populates="stars",
     )
 
 
@@ -79,7 +79,7 @@ class DirectorModel(Base):
     movies: Mapped[list["MovieModel"]] = relationship(
         "MovieModel",
         secondary=MoviesDirectorsModel,
-        back_populates="genres"
+        back_populates="directors"
     )
 
 
@@ -115,19 +115,19 @@ class MovieModel(Base):
     )
 
     genres: Mapped[list["GenreModel"]] = relationship(
-        GenreModel,
+        "GenreModel",
         secondary=MoviesGenresModel,
         back_populates="movies"
     )
 
     directors: Mapped[list["DirectorModel"]] = relationship(
-        DirectorModel,
+        "DirectorModel",
         secondary=MoviesDirectorsModel,
         back_populates="movies"
     )
 
     stars: Mapped[list["StarModel"]] = relationship(
-        StarModel,
+        "StarModel",
         secondary=MoviesStarsModel,
         back_populates="movies"
     )
