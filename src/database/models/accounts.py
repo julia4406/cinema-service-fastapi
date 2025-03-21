@@ -1,7 +1,7 @@
 import enum
-from datetime import datetime
+from datetime import datetime, date
 
-from sqlalchemy import Enum, func, ForeignKey
+from sqlalchemy import Enum, func, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.models.base import Base
@@ -53,3 +53,23 @@ class UserModel(Base):
        back_populates="user",
        cascade="all, delete-orphan"
    )
+
+
+class ProfileModel(Base):
+   __tablename__ = "profiles"
+
+   id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+   first_name: Mapped[str | None]
+   last_name: Mapped[str | None]
+   avatar: Mapped[str | None]
+   date_of_birth: Mapped[date | None]
+   info: Mapped[str | None]
+
+   user_id: Mapped[int] = mapped_column(
+       ForeignKey("users.id", ondelete="CASCADE"),
+       nullable=False,
+       unique=True
+   )
+   user: Mapped[UserModel] = relationship("UserModel", back_populates="profile")
+
+   __table_args__ = (UniqueConstraint("user_id"),)
