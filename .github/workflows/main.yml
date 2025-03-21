@@ -26,4 +26,5 @@ jobs:
         poetry install
 
     - name: Run flake8
-      run: poetry flake8 src
+      run: |
+        poetry flake8 src
