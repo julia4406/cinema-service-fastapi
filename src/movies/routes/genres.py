@@ -50,3 +50,8 @@ async def update_genre(
         db: AsyncSession = Depends(get_db),
 ):
     return await GenresService(db).update_genre(genre_id, new_genre)
+
+
+@router.delete("/genres/{genre_id}/", status_code=204)
+async def delete_genre(genre_id: int, db: AsyncSession = Depends(get_db)):
+    return await GenresService(db).delete_genre(genre_id)

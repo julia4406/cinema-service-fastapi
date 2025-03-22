@@ -48,3 +48,15 @@ class GenresRepository:
 
         await self.db.commit()
         await self.db.refresh(genre)
+
+    async def delete_genre(self, genre_id: int):
+        genre = await self.db.get(GenreModel, genre_id)
+
+        if not genre:
+            raise HTTPException(
+                status_code=404,
+                detail="Genre with the given ID was not found.",
+            )
+
+        await self.db.delete(genre)
+        await self.db.commit()

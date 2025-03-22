@@ -76,3 +76,7 @@ class GenresService:
     async def update_genre(self, genre_id: int, genre: GenreCreateSchema):
         await self.repository.update_genre(genre_id, genre)
         return {"detail": "Genre updated successfully."}
+
+    async def delete_genre(self, genre_id: int):
+        await self.repository.delete_genre(genre_id)
+        return
