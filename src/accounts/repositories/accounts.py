@@ -1,3 +1,4 @@
+from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -8,7 +9,7 @@ class UserRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def is_email_exists(self, email: str) -> bool:
+    async def is_email_exists(self, email: EmailStr) -> bool:
         result = await self.db.execute(select(UserModel).filter_by(email=email))
         return result.scalar_one_or_none() is not None
 
