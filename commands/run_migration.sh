@@ -1,9 +1,5 @@
 #!/bin/sh
 
-# Delay to ensure DB is fully initialized and ready
-echo "Waiting for the database to be ready..."
-sleep 20
-
 # SQLAlchemy migrate
 ALEMBIC_CONFIG="/usr/src/alembic/alembic.ini"
 MIGRATIONS_DIR="/usr/src/fastapi/database/migrations/versions"
