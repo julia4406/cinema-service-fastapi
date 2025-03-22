@@ -27,3 +27,9 @@ class GenresRepository:
         result = await self.db.execute(query)
         genre = result.scalar_one_or_none()
         return genre
+
+    async def add_genre(self, genre: GenreModel):
+        self.db.add(genre)
+        await self.db.commit()
+        await self.db.refresh(genre)
+        return genre

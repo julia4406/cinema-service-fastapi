@@ -45,3 +45,30 @@ class GenresService:
             raise HTTPException(status_code=404, detail="No genre found.")
 
         return genre
+
+    async def create_genre(self, genre: GenreCreateSchema):
+        existing_stmt = select(GenreModel).where(
+            (GenreModel.name == genre.name)
+        )
+
+        existing_result = await self.db.execute(existing_stmt)
+        existing_genre = existing_result.scalars().first()
+
+        if existing_genre:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"A genre with the name '{genre.name}' already exists."
+                ),
+            )
+        try:
+            new_genre = GenreModel(
+                name=genre.name,
+            )
+            created_genre = await self.repository.add_genre(new_genre)
+
+            return GenreSchema.model_validate(created_genre)
+
+        except IntegrityError:
+            await self.db.rollback()
+            raise HTTPException(status_code=400, detail="Invalid input data.")

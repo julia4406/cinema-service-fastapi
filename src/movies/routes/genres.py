@@ -26,3 +26,15 @@ async def get_genres_list(
 )
 async def get_genre(genre_id: int, db: AsyncSession = Depends(get_db)):
     return await GenresService(db).get_one_genre(genre_id)
+
+
+@router.post(
+    "/genres/",
+    status_code=201,
+    response_model=GenreSchema,
+)
+async def create_genre(
+        genre_data: GenreCreateSchema,
+        db: AsyncSession = Depends(get_db)
+):
+    return await GenresService(db).create_genre(genre_data)
