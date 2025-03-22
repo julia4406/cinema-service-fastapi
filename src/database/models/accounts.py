@@ -1,5 +1,5 @@
 import enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from datetime import datetime, date
 
 from sqlalchemy import Enum, func, ForeignKey
@@ -85,7 +85,8 @@ class UserModel(Base):
         back_populates="user",
         cascade="all, delete-orphan"
     )
-    password_reset_token: Mapped[Optional["PasswordResetTokenModel"]] = relationship(
+    password_reset_token: Mapped[
+        Optional["PasswordResetTokenModel"]] = relationship(
         "PasswordResetTokenModel",
         back_populates="user",
         cascade="all, delete-orphan",
@@ -94,6 +95,18 @@ class UserModel(Base):
         "RefreshTokenModel",
         back_populates="user",
         cascade="all, delete-orphan",
+    )
+
+    shopping_cart: Mapped[Optional["ShoppingCartModel"]] = relationship(
+        "ShoppingCartModel",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+    purchases: Mapped[List["PurchasedModel"]] = relationship(
+        "PurchasedModel",
+        back_populates="user",
+        cascade="all, delete-orphan"
     )
 
 
