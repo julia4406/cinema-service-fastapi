@@ -72,3 +72,7 @@ class GenresService:
         except IntegrityError:
             await self.db.rollback()
             raise HTTPException(status_code=400, detail="Invalid input data.")
+
+    async def update_genre(self, genre_id: int, genre: GenreCreateSchema):
+        await self.repository.update_genre(genre_id, genre)
+        return {"detail": "Genre updated successfully."}

@@ -33,3 +33,18 @@ class GenresRepository:
         await self.db.commit()
         await self.db.refresh(genre)
         return genre
+
+    async def update_genre(self, genre_id: int, new_genre: GenreCreateSchema):
+        genre = await self.db.get(GenreModel, genre_id)
+
+        if not genre:
+            raise HTTPException(
+                status_code=404, detail="Genre with the given ID was not found."
+            )
+
+        update_data = new_genre.model_dump(exclude_unset=True, exclude_none=True)
+        for key, value in update_data.items():
+            setattr(genre, key, value)
+
+        await self.db.commit()
+        await self.db.refresh(genre)

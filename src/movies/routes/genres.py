@@ -38,3 +38,15 @@ async def create_genre(
         db: AsyncSession = Depends(get_db)
 ):
     return await GenresService(db).create_genre(genre_data)
+
+
+@router.put(
+    "/genres/{genre_id}/",
+    status_code=200,
+)
+async def update_genre(
+        genre_id: int,
+        new_genre: GenreCreateSchema,
+        db: AsyncSession = Depends(get_db),
+):
+    return await GenresService(db).update_genre(genre_id, new_genre)
