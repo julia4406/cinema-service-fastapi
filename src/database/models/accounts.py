@@ -29,7 +29,6 @@ class UserGroupEnum(str, enum.Enum):
 
 class UserGroupModel(Base):
     __tablename__ = "user_groups"
-    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[UserGroupEnum] = mapped_column(
@@ -44,7 +43,6 @@ class UserGroupModel(Base):
 
 class UserModel(Base):
     __tablename__ = "users"
-    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     email: Mapped[str] = mapped_column(unique=True, nullable=False, index=True)
@@ -101,7 +99,6 @@ class UserModel(Base):
 
 class ProfileModel(Base):
     __tablename__ = "profiles"
-    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     first_name: Mapped[str | None] = mapped_column()

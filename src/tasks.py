@@ -1,6 +1,7 @@
 from celery import shared_task
 from sqlalchemy import delete
 from src.database.session_postgresql import get_postgresql_db
+from src.database.models.accounts import UserModel
 from src.database.models.tokens import ActivationTokenModel
 from datetime import datetime, timezone
 
