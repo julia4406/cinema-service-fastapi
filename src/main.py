@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from payments.routes.payments import router as payment_router
+from src.payments.routes.payments import router as payment_router
 
 app = FastAPI(
     title="Online Cinema Service"
