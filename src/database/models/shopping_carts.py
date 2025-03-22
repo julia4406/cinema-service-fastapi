@@ -40,6 +40,27 @@ UserCartsModel = Table(
     ),
 )
 
+UserPurchasesModel = Table(
+    "user_purchases",
+    Base.metadata,
+    Column(
+        "user_id",
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    ),
+    Column(
+        "movie_id",
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        nullable=False
+    ),
+    Column(
+        "purchased_at",
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+)
+
 
 class ShoppingCartModel(Base):
     __tablename__ = "carts"
@@ -106,3 +127,46 @@ class CartItemModel(Base):
     #     validate_movie_not_in_purchases(self, movie_id)
     #     validate_movie_not_in_cart(self, movie_id)
     #     return movie_id
+
+
+class PurchasedModel(Base):
+    __tablename__ = "purchased"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    movie_id: Mapped[int] = mapped_column(
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    purchased_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+
+    user: Mapped["UserModel"] = relationship(
+        "UserModel",
+        back_populates="purchases"
+    )
+    movie: Mapped["MovieModel"] = relationship(
+        "MovieModel",
+        back_populates="purchases"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "movie_id",
+            name="unique_user_movie_purchase"
+        ),
+    )
+
+    # @validates("movie_id")
+    # def validate_movie_not_already_purchased(self, key, movie_id):
+    #     return validate_movie_not_already_purchased(self, movie_id)
+
+    def __repr__(self):
+        return f"<PurchasedModel(id={self.id}, user_id={self.user_id}, movie_id={self.movie_id})>"
