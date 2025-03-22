@@ -13,12 +13,12 @@ celery_app = Celery(
 )
 
 celery_app.conf.update(
-    result_expires=10,
+    result_expires=3600,
     timezone="UTC",
     beat_schedule={
         "delete-expired-tokens-every-hour": {
             "task": "src.tasks.delete_expired_activation_tokens",
-            "schedule": 10.0,
+            "schedule": 3600.0,
         },
     },
 )
