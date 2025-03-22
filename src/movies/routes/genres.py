@@ -1,0 +1,20 @@
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from database.session_postgresql import get_postgresql_db as get_db
+from movies.schemas.genres import GenreSchema, GenresResponseSchema, GenreCreateSchema
+from movies.service.genres import GenresService
+
+router = APIRouter()
+
+
+@router.get(
+    "/genres/",
+    response_model=GenresResponseSchema,
+)
+async def get_genres_list(
+        db: AsyncSession = Depends(get_db),
+        page: int = Query(1, ge=1),
+        per_page: int = Query(10, ge=1, le=100)
+):
+    return await GenresService(db).get_genres(page, per_page)
