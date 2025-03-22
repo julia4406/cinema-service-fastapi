@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.session_postgresql import get_postgresql_db as get_db
-from movies.schemas.stars import StarsResponseSchema, StarSchema
+from movies.schemas.stars import StarsResponseSchema, StarSchema, StarCreateSchema
 from movies.service.stars import StarsService
 
 router = APIRouter()
@@ -26,4 +26,17 @@ async def get_stars_list(
 )
 async def get_star(star_id: int, db: AsyncSession = Depends(get_db)):
     return await StarsService(db).get_one_star(star_id)
+
+
+@router.post(
+    "/stars/",
+    status_code=201,
+    response_model=StarSchema,
+)
+async def create_star(
+        star_data: StarCreateSchema,
+        db: AsyncSession = Depends(get_db)
+):
+    return await StarsService(db).create_star(star_data)
+
 

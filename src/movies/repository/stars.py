@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from database.models.movies import StarModel
+from movies.schemas.stars import StarCreateSchema
 
 
 class StarsRepository:
@@ -26,3 +27,8 @@ class StarsRepository:
         result = await self.db.execute(query)
         star = result.scalar_one_or_none()
         return star
+
+    async def add_star(self, star: StarCreateSchema):
+        self.db.add(star)
+        await self.db.commit()
+        await self.db.refresh(star)

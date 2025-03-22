@@ -1,7 +1,11 @@
 from fastapi import HTTPException
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from database.models.movies import StarModel
 from movies.repository.stars import StarsRepository
+from movies.schemas.stars import StarCreateSchema, StarSchema
 
 
 class StarsService:
@@ -41,3 +45,30 @@ class StarsService:
             raise HTTPException(status_code=404, detail="No star found.")
 
         return star
+
+    async def create_star(self, star: StarCreateSchema):
+        existing_stmt = select(StarModel).where(
+            (StarModel.name == star.name)
+        )
+
+        existing_result = await self.db.execute(existing_stmt)
+        existing_movie = existing_result.scalars().first()
+
+        if existing_movie:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"A star with the name '{star.name}' already exists."
+                ),
+            )
+        try:
+            new_star = StarModel(
+                name=star.name,
+            )
+            await self.repository.add_star(star)
+
+            return StarSchema.model_validate(new_star)
+
+        except IntegrityError:
+            await self.db.rollback()
+            raise HTTPException(status_code=400, detail="Invalid input data.")
