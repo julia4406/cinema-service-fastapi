@@ -1,8 +1,5 @@
-from database.models.purchased import PurchasedModel
-
-
 def validate_movie_not_already_purchased(
-        purchase: PurchasedModel,
+        purchase,
         movie_id: int
 ) -> int:
     if purchase.user:
