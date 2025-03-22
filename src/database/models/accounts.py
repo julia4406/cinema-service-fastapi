@@ -1,5 +1,5 @@
 import enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from datetime import datetime, date
 
 from sqlalchemy import Enum, func, ForeignKey
@@ -93,6 +93,12 @@ class UserModel(Base):
         "ShoppingCartModel",
         back_populates="user",
         uselist=False,
+        cascade="all, delete-orphan"
+    )
+
+    purchases: Mapped[List["PurchasedModel"]] = relationship(
+        "PurchasedModel",
+        back_populates="user",
         cascade="all, delete-orphan"
     )
 
