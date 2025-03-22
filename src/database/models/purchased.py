@@ -1,12 +1,41 @@
 import datetime
 
-from sqlalchemy import ForeignKey, DateTime, func, UniqueConstraint
+from sqlalchemy import (
+    ForeignKey,
+    DateTime,
+    func,
+    UniqueConstraint,
+    Table,
+    Column
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
-from database.models import UserModel
 from database.models.base import Base
-from database.models.movies import MovieModel
-from database.validators.purchased import validate_movie_not_already_purchased
+
+# from database.validators.purchased import validate_movie_not_already_purchased
+
+UserPurchasesModel = Table(
+    "user_purchases",
+    Base.metadata,
+    Column("id", primary_key=True, autoincrement=True),
+    Column(
+        "user_id",
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    ),
+    Column(
+        "movie_id",
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        nullable=False
+    ),
+    Column(
+        "purchased_at",
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    ),
+    UniqueConstraint("user_id", "movie_id", name="unique_user_movie_purchase")
+)
 
 
 class PurchasedModel(Base):
@@ -44,9 +73,9 @@ class PurchasedModel(Base):
         ),
     )
 
-    @validates("movie_id")
-    def validate_movie_not_already_purchased(self, key, movie_id):
-        return validate_movie_not_already_purchased(self, movie_id)
+    # @validates("movie_id")
+    # def validate_movie_not_already_purchased(self, key, movie_id):
+    #     return validate_movie_not_already_purchased(self, movie_id)
 
     def __repr__(self):
         return f"<PurchasedModel(id={self.id}, user_id={self.user_id}, movie_id={self.movie_id})>"
