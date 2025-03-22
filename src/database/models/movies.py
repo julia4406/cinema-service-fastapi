@@ -131,10 +131,6 @@ class MovieModel(Base):
 
     comments: Mapped[List["CommentModel"]] = relationship(CommentModel, back_populates="comments")
 
-    __table_args__ = (
-        UniqueConstraint("name", "year", "time"),
-    )
-
     genres: Mapped[list["GenreModel"]] = relationship(
         "GenreModel",
         secondary=MoviesGenresModel,
@@ -151,6 +147,10 @@ class MovieModel(Base):
         "StarModel",
         secondary=MoviesStarsModel,
         back_populates="movies"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("name", "year", "time"),
     )
 
 
