@@ -6,7 +6,7 @@ from sqlalchemy import Enum, func, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.models.base import Base
-
+from typing import Optional
 
 if TYPE_CHECKING:
     from database.models.tokens import (
@@ -72,17 +72,17 @@ class UserModel(Base):
         cascade="all, delete-orphan",
     )
 
-    activation_token: Mapped[ActivationTokenModel | None] = relationship(
+    activation_token: Mapped[Optional["ActivationTokenModel"]] = relationship(
         "ActivationTokenModel",
         back_populates="user",
         cascade="all, delete-orphan"
     )
-    password_reset_token: Mapped[PasswordResetTokenModel | None] = relationship(
+    password_reset_token: Mapped[Optional["PasswordResetTokenModel"]] = relationship(
         "PasswordResetTokenModel",
         back_populates="user",
         cascade="all, delete-orphan",
     )
-    refresh_tokens: Mapped[list[RefreshTokenModel]] = relationship(
+    refresh_tokens: Mapped[list["RefreshTokenModel"]] = relationship(
         "RefreshTokenModel",
         back_populates="user",
         cascade="all, delete-orphan",
