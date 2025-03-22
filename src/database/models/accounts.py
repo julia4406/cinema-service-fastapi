@@ -8,9 +8,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database.models.base import Base
 from typing import Optional
 
-from database.models.purchased import PurchasedModel
-from database.models.shopping_carts import ShoppingCartModel
-
 if TYPE_CHECKING:
     from database.models.tokens import (
         ActivationTokenModel,
@@ -90,19 +87,6 @@ class UserModel(Base):
         "RefreshTokenModel",
         back_populates="user",
         cascade="all, delete-orphan",
-    )
-
-    shopping_cart: Mapped[Optional["ShoppingCartModel"]] = relationship(
-        "ShoppingCartModel",
-        back_populates="user",
-        uselist=False,
-        cascade="all, delete-orphan"
-    )
-
-    purchases: Mapped[List["PurchasedModel"]] = relationship(
-        "PurchasedModel",
-        back_populates="user",
-        cascade="all, delete-orphan"
     )
 
 

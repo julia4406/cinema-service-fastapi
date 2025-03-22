@@ -5,15 +5,40 @@ from sqlalchemy import (
     ForeignKey,
     UniqueConstraint,
     DateTime,
-    func
+    func, Table, Column
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
-from database.models import UserModel
+from database.models.accounts import UserModel
 from database.models.base import Base
-from database.validators.shopping_carts import (
-    validate_movie_not_in_purchases,
-    validate_movie_not_in_cart
+
+# from database.validators.shopping_carts import (
+#     validate_movie_not_in_purchases,
+#     validate_movie_not_in_cart
+# )
+
+UserCartsModel = Table(
+    "user_carts",
+    Base.metadata,
+    Column(
+        "user_id",
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False
+    ),
+    Column(
+        "cart_id",
+        ForeignKey("carts.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False
+    ),
+    Column(
+        "created_at",
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    ),
+    UniqueConstraint("user_id", "cart_id", name="unique_user_cart")
 )
 
 
@@ -62,7 +87,7 @@ class CartItemModel(Base):
     )
 
     cart: Mapped["ShoppingCartModel"] = relationship("ShoppingCartModel")
-    movie = relationship("MovieModel")
+    movie: Mapped["MovieModel"] = relationship()
 
     __table_args__ = (
         UniqueConstraint(
@@ -77,8 +102,8 @@ class CartItemModel(Base):
                 f" cart_id={self.cart_id},"
                 f" movie_id={self.movie_id})>")
 
-    @validates("movie_id")
-    def validate_movie(self, key, movie_id):
-        validate_movie_not_in_purchases(self, movie_id)
-        validate_movie_not_in_cart(self, movie_id)
-        return movie_id
+    # @validates("movie_id")
+    # def validate_movie(self, key, movie_id):
+    #     validate_movie_not_in_purchases(self, movie_id)
+    #     validate_movie_not_in_cart(self, movie_id)
+    #     return movie_id
