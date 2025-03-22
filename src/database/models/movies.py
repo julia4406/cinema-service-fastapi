@@ -170,7 +170,7 @@ class UserFavoriteModel(Base):
     )
 
 
-class ReactionModel(Base):
+class UserReactionModel(Base):
     __tablename__ = "reactions"
 
     id = Column(Integer, primary_key=True, index=True)
