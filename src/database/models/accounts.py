@@ -8,6 +8,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database.models.base import Base
 from typing import Optional
 
+from database.models.purchased import PurchasedModel
+from database.models.shopping_carts import ShoppingCartModel
+
 if TYPE_CHECKING:
     from database.models.tokens import (
         ActivationTokenModel,
