@@ -21,3 +21,9 @@ class GenresRepository:
 
         genres = await self.db.execute(select(GenreModel).offset(offset).limit(limit))
         return genres.scalars().all(), total_items
+
+    async def get_genre(self, genre_id: int):
+        query = select(GenreModel).where(GenreModel.id == genre_id)
+        result = await self.db.execute(query)
+        genre = result.scalar_one_or_none()
+        return genre

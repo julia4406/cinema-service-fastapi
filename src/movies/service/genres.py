@@ -38,3 +38,10 @@ class GenresService:
             "total_items": total_items
         }
         return response_data
+
+    async def get_one_genre(self, genre_id: int):
+        genre = await self.repository.get_genre(genre_id)
+        if not genre:
+            raise HTTPException(status_code=404, detail="No genre found.")
+
+        return genre
