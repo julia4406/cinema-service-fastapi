@@ -1,13 +1,13 @@
 import datetime
 import enum
-from typing import Optional, List
+from typing import List
 
-from sqlalchemy import String, Float, Text, DECIMAL, UniqueConstraint, Date, ForeignKey, Table, Column, Integer, UUID, \
-    DateTime, func, Enum
+from sqlalchemy import (
+    String, Float, Text, DECIMAL, UniqueConstraint,
+    ForeignKey, Table, Column, Integer, UUID,
+    DateTime, func, Enum)
 from sqlalchemy.orm import mapped_column, Mapped, relationship
-from sqlalchemy import Enum as SQLAlchemyEnum
 
-from database.models import UserModel
 from database.models.base import Base
 
 
