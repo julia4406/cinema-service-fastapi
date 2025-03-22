@@ -4,6 +4,9 @@ from typing import Any
 
 from pydantic_settings import BaseSettings
 
+from dotenv import load_dotenv
+load_dotenv()
+
 
 class BaseAppSettings(BaseSettings):
     BASE_DIR: Path = Path(__file__).parent.parent
@@ -22,6 +25,17 @@ class Settings(BaseAppSettings):
     SECRET_KEY_ACCESS: str = os.getenv("SECRET_KEY_ACCESS", os.urandom(32))
     SECRET_KEY_REFRESH: str = os.getenv("SECRET_KEY_REFRESH", os.urandom(32))
     JWT_SIGNING_ALGORITHM: str = os.getenv("JWT_SIGNING_ALGORITHM", "HS256")
+
+    MAIL_USERNAME: str = os.getenv("MAIL_USERNAME") #"your_email@example.com"
+    MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD") #"your_password"
+    MAIL_FROM: str = os.getenv("MAIL_FROM") #"your_email@example.com"
+    MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME") #"Your Service Name"
+    MAIL_PORT: int = int(os.getenv("MAIL_PORT", "587")) #587
+    MAIL_SERVER: str = os.getenv("MAIL_SERVER") #"smtp.example.com"
+    MAIL_STARTTLS: bool = os.getenv("MAIL_STARTTLS", "True") == "True" #True
+    MAIL_SSL_TLS: bool = os.getenv("MAIL_SSL_TLS", "False") == "True" #False
+
+    SERVICE_URL: str = os.getenv("SERVICE_URL")
 
 
 class TestingSettings(BaseAppSettings):
