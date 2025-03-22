@@ -51,3 +51,7 @@ async def update_star(
 ):
     return await StarsService(db).update_star(star_id, new_star)
 
+
+@router.delete("/stars/{star_id}/", status_code=204)
+async def delete_movie(movie_id: int, db: AsyncSession = Depends(get_db)):
+    return await StarsService(db).delete_star(movie_id)

@@ -47,3 +47,15 @@ class StarsRepository:
 
         await self.db.commit()
         await self.db.refresh(star)
+
+    async def delete_star(self, star_id: int):
+        star = await self.db.get(StarModel, star_id)
+
+        if not star:
+            raise HTTPException(
+                status_code=404,
+                detail="Star with the given ID was not found.",
+            )
+
+        await self.db.delete(star)
+        await self.db.commit()

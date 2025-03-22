@@ -76,3 +76,7 @@ class StarsService:
     async def update_star(self, star_id: int, star: StarCreateSchema):
         await self.repository.update_star(star_id, star)
         return {"detail": "Star updated successfully."}
+
+    async def delete_star(self, star_id: int):
+        await self.repository.delete_star(star_id)
+        return
