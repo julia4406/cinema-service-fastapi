@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from accounts.repositories.accounts import UserRepository
 from accounts.repositories.tokens import ActivationTokensRepository
 from accounts.services.email_service import EmailService
@@ -27,3 +29,19 @@ class AccountsService:
             created_at=new_user.created_at,
             message="Activation link has been sent to your email",
         )
+
+    async def activate_user(self, token: str) -> dict:
+        activation_token = await self.activation_token_repo.get_activation_token(token)
+        if not activation_token or activation_token.expires_at < datetime.now(timezone.utc):
+            raise ValueError("Invalid activation token")
+
+        user_id = activation_token.user_id
+
+        if await self.user_repo.is_user_active(user_id=user_id):
+            await self.activation_token_repo.delete_activation_token(token)
+            raise ValueError("This user is already active")
+
+        await self.user_repo.set_user_active(user_id=user_id)
+        await self.activation_token_repo.delete_activation_token(token)
+
+        return {"message": "Account has been activated"}
