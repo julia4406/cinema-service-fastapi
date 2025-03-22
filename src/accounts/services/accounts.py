@@ -1,13 +1,18 @@
 from datetime import datetime, timezone
 
+from pydantic import EmailStr
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
 from accounts.repositories.accounts import UserRepository
 from accounts.repositories.tokens import ActivationTokensRepository
 from accounts.services.email_service import EmailService
+from src.database.models import UserModel
 from src.accounts.schemas import UserCreateResponseSchema, UserCreateRequestSchema
 
 
 class AccountsService:
-    def __init__(self, db):
+    def __init__(self, db: AsyncSession):
         self.db = db
         self.user_repo = UserRepository(db)
         self.activation_token_repo = ActivationTokensRepository(db)
@@ -45,3 +50,21 @@ class AccountsService:
         await self.activation_token_repo.delete_activation_token(token)
 
         return {"message": "Account has been activated"}
+
+    async def resend_activation(self, email: EmailStr) -> dict:
+        user_result = await self.db.execute(select(UserModel).filter_by(email=email))
+        user = user_result.scalar_one_or_none()
+        if not user:
+            raise ValueError("User not found")
+
+        if await self.user_repo.is_user_active(user.id):
+            raise ValueError("This user is already active")
+
+        old_token = await self.activation_token_repo.get_activation_token_by_user_id(user.id)
+
+        if old_token:
+            await self.activation_token_repo.delete_activation_token(old_token.token)
+
+        new_token = await self.activation_token_repo.create_activation_token(user.id)
+        await self.email_service.send_activation_email(email, new_token.token)
+        return {"message": "New activation token has been sent"}
