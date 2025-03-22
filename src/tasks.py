@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 @shared_task
 def delete_expired_activation_tokens():
     async def async_task():
-        async with get_postgresql_db as db:
+        async for db in get_postgresql_db():
             stmt = delete(ActivationTokenModel).where(
                 ActivationTokenModel.expires_at < datetime.now(timezone.utc).replace(tzinfo=None)
             )
@@ -15,4 +15,5 @@ def delete_expired_activation_tokens():
             await db.commit()
 
     import asyncio
-    asyncio.run(async_task())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(async_task())

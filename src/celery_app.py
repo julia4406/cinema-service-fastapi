@@ -11,3 +11,14 @@ celery_app = Celery(
     backend=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_BACKEND_DB}",
     include=["src.tasks"]
 )
+
+celery_app.conf.update(
+    result_expires=10,
+    timezone="UTC",
+    beat_schedule={
+        "delete-expired-tokens-every-hour": {
+            "task": "src.tasks.delete_expired_activation_tokens",
+            "schedule": 10.0,
+        },
+    },
+)
