@@ -21,7 +21,7 @@ class EmailService:
         self.fm = FastMail(self.conf)
 
     async def send_activation_email(self, recipient_email: EmailStr, token: str) -> None:
-        activation_url = f"{settings.SERVICE_URL}/activate/{token}"
+        activation_url = f"{settings.SERVICE_URL}auth/activate/{token}"
         subject = "Activation email"
 
         body = (
