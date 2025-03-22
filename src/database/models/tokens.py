@@ -4,6 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, UniqueConstraint
 
 from database.models.base import Base
+from database.models.accounts import UserModel
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from database.models.accounts import UserModel
