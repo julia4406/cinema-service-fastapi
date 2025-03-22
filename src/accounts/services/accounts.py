@@ -9,6 +9,7 @@ from accounts.repositories.tokens import ActivationTokensRepository
 from accounts.services.email_service import EmailService
 from src.database.models.accounts import UserModel
 from src.accounts.schemas import UserCreateResponseSchema, UserCreateRequestSchema
+from src.accounts.utils import hash_password
 
 
 class AccountsService:
@@ -21,6 +22,10 @@ class AccountsService:
     async def register_user(self, user: UserCreateRequestSchema) -> UserCreateResponseSchema:
         if await self.user_repo.is_email_exists(user.email):
             raise ValueError("This email is already registered")
+
+        hashed_password = hash_password(user.password)
+
+        user = UserCreateRequestSchema(email=user.email, password=hashed_password)
 
         new_user = await self.user_repo.create_user(user)
         activation_token = await self.activation_token_repo.create_activation_token(user_id=new_user.id)
