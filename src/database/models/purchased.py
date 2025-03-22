@@ -4,6 +4,7 @@ from sqlalchemy import ForeignKey, DateTime, func, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from database.models.base import Base
+from database.validators.purchased import validate_movie_not_already_purchased
 
 
 class PurchasedModel(Base):
@@ -43,13 +44,7 @@ class PurchasedModel(Base):
 
     @validates("movie_id")
     def validate_movie_not_already_purchased(self, key, movie_id):
-        if self.user:
-            for purchase in self.user.purchases:
-                if purchase.movie_id == movie_id and purchase is not self:
-                    raise ValueError(
-                        f"Movie with id {movie_id} is already purchased by user {self.user_id}"
-                    )
-        return movie_id
+        return validate_movie_not_already_purchased(self, movie_id)
 
     def __repr__(self):
         return f"<PurchasedModel(id={self.id}, user_id={self.user_id}, movie_id={self.movie_id})>"
