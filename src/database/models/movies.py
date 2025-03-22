@@ -1,13 +1,19 @@
 import datetime
+import enum
 from typing import Optional, List
 
 from sqlalchemy import String, Float, Text, DECIMAL, UniqueConstraint, Date, ForeignKey, Table, Column, Integer, UUID, \
-    DateTime, func
+    DateTime, func, Enum
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy import Enum as SQLAlchemyEnum
 
 from database.models import UserModel
 from database.models.base import Base
+
+
+class ReactionType(str, enum.Enum):
+    LIKE = "like"
+    DISLIKE = "dislike"
 
 
 MoviesGenresModel = Table(
@@ -158,6 +164,24 @@ class UserFavoriteModel(Base):
 
     user = relationship("User", back_populates="favorites")
     movie = relationship("Movie", back_populates="favorites")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "movie_id"),
+    )
+
+
+class ReactionModel(Base):
+    __tablename__ = "reactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
+    reaction_type = Column(Enum(ReactionType), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+    user = relationship("User", back_populates="reactions")
+    movie = relationship("Movie", back_populates="reactions")
 
     __table_args__ = (
         UniqueConstraint("user_id", "movie_id"),
