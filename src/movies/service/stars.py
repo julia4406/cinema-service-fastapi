@@ -26,7 +26,7 @@ class StarsService:
 
         total_pages = (total_items + per_page - 1) // per_page
 
-        base_url = "/theater/movies/"
+        base_url = "/theater/stars/"
         prev_page_url = f"{base_url}?page={page - 1}&per_page={per_page}" if page > 1 else None
         next_page_url = f"{base_url}?page={page + 1}&per_page={per_page}" if page < total_pages else None
 
@@ -52,9 +52,9 @@ class StarsService:
         )
 
         existing_result = await self.db.execute(existing_stmt)
-        existing_movie = existing_result.scalars().first()
+        existing_star = existing_result.scalars().first()
 
-        if existing_movie:
+        if existing_star:
             raise HTTPException(
                 status_code=409,
                 detail=(
