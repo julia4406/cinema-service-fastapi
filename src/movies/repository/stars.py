@@ -20,3 +20,9 @@ class StarsRepository:
 
         stars = await self.db.execute(select(StarModel).offset(offset).limit(limit))
         return stars.scalars().all(), total_items
+
+    async def get_star(self, star_id: int):
+        query = select(StarModel).where(StarModel.id == star_id)
+        result = await self.db.execute(query)
+        star = result.scalar_one_or_none()
+        return star

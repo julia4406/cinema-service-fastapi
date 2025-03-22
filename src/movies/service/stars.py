@@ -34,3 +34,10 @@ class StarsService:
             "total_items": total_items
         }
         return response_data
+
+    async def get_one_star(self, star_id: int):
+        star = await self.repository.get_star(star_id)
+        if not star:
+            raise HTTPException(status_code=404, detail="No star found.")
+
+        return star
