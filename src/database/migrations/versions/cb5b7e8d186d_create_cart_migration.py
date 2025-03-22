@@ -1,8 +1,8 @@
 """temp_migration
 
-Revision ID: 6467ac324734
+Revision ID: cb5b7e8d186d
 Revises: b840367ab81c
-Create Date: 2025-03-22 14:52:22.218284
+Create Date: 2025-03-22 15:11:18.943290
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '6467ac324734'
+revision: str = 'cb5b7e8d186d'
 down_revision: Union[str, None] = 'b840367ab81c'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,8 +27,7 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['cart_id'], ['carts.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('user_id', 'cart_id'),
-    sa.UniqueConstraint('user_id', 'cart_id', name='unique_user_cart')
+    sa.PrimaryKeyConstraint('user_id', 'cart_id')
     )
     op.add_column('cart_items', sa.Column('movie_id', sa.Integer(), nullable=False))
     op.create_unique_constraint('unique_cart_movie_constraint', 'cart_items', ['cart_id', 'movie_id'])

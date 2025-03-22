@@ -38,7 +38,6 @@ UserCartsModel = Table(
         server_default=func.now(),
         nullable=False
     ),
-    UniqueConstraint("user_id", "cart_id", name="unique_user_cart")
 )
 
 
