@@ -2,7 +2,8 @@ from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from src.database.models.accounts import UserModel, UserGroupModel, UserGroupEnum
+from src.database.models import UserModel, UserGroupModel
+from src.database.models.accounts import UserGroupEnum
 from src.accounts.schemas import UserCreateRequestSchema
 
 

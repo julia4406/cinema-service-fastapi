@@ -8,7 +8,7 @@ from sqlalchemy import (
     DateTime, func, Enum)
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
-from database.models.base import Base
+from database.models import Base
 
 
 class ReactionType(str, enum.Enum):
@@ -127,9 +127,9 @@ class MovieModel(Base):
     price: Mapped[float] = mapped_column(DECIMAL(10, 2))
 
     certification_id: Mapped[int] = mapped_column(ForeignKey("certifications.id"))
-    certification: Mapped[CertificationModel] = relationship(CertificationModel, back_populates="movies")
+    certifications: Mapped[CertificationModel] = relationship(CertificationModel, back_populates="movies")
 
-    comments: Mapped[List["CommentModel"]] = relationship(CommentModel, back_populates="comments")
+    comments: Mapped[List["CommentModel"]] = relationship(CommentModel, back_populates="movie")
 
     genres: Mapped[list["GenreModel"]] = relationship(
         "GenreModel",
@@ -149,6 +149,12 @@ class MovieModel(Base):
         back_populates="movies"
     )
 
+    favorites: Mapped[List["UserFavoriteModel"]] = relationship("UserFavoriteModel", back_populates="movie")
+    reactions: Mapped[List["UserReactionModel"]] = relationship("UserReactionModel", back_populates="movie")
+
+    purchases: Mapped[List["PurchasedModel"]] = relationship("PurchasedModel", back_populates="movie")
+    cart_items: Mapped[List["CartItemModel"]] = relationship("CartItemModel", back_populates="movie")
+
     __table_args__ = (
         UniqueConstraint("name", "year", "time"),
     )
@@ -162,8 +168,8 @@ class UserFavoriteModel(Base):
     movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
     added_at = Column(DateTime(timezone=True), default=func.now())
 
-    user = relationship("User", back_populates="favorites")
-    movie = relationship("Movie", back_populates="favorites")
+    user = relationship("UserModel", back_populates="favorites")
+    movie = relationship("MovieModel", back_populates="favorites")
 
     __table_args__ = (
         UniqueConstraint("user_id", "movie_id"),
@@ -180,8 +186,8 @@ class UserReactionModel(Base):
     created_at = Column(DateTime(timezone=True), default=func.now())
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
 
-    user = relationship("User", back_populates="reactions")
-    movie = relationship("Movie", back_populates="reactions")
+    user = relationship("UserModel", back_populates="reactions")
+    movie = relationship("MovieModel", back_populates="reactions")
 
     __table_args__ = (
         UniqueConstraint("user_id", "movie_id"),

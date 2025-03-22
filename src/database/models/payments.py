@@ -4,10 +4,10 @@ from typing import Optional
 from sqlalchemy import ForeignKey, DateTime, DECIMAL, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Enum as SQLAlchemyEnum
-from database.models.base import Base
+from database.models import Base
 from enum import Enum
 
-from database.models.orders import OrderItemModel
+from database.models import OrderItemModel
 
 
 class PaymentStatus(Enum):
