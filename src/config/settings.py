@@ -22,18 +22,23 @@ class Settings(BaseAppSettings):
     POSTGRES_DB_PORT: int = int(os.getenv("POSTGRES_DB_PORT", 5432))
     POSTGRES_DB: str = os.getenv("POSTGRES_DB", "test_db")
 
+    REDIS_HOST: str = os.getenv("REDIS_HOST")
+    REDIS_PORT: int = os.getenv("REDIS_PORT")
+    REDIS_BROKER_DB: int = os.getenv("REDIS_BROKER_DB")
+    REDIS_BACKEND_DB: int = os.getenv("REDIS_BACKEND_DB")
+
     SECRET_KEY_ACCESS: str = os.getenv("SECRET_KEY_ACCESS", os.urandom(32))
     SECRET_KEY_REFRESH: str = os.getenv("SECRET_KEY_REFRESH", os.urandom(32))
     JWT_SIGNING_ALGORITHM: str = os.getenv("JWT_SIGNING_ALGORITHM", "HS256")
 
-    MAIL_USERNAME: str = os.getenv("MAIL_USERNAME") #"your_email@example.com"
-    MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD") #"your_password"
-    MAIL_FROM: str = os.getenv("MAIL_FROM") #"your_email@example.com"
-    MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME") #"Your Service Name"
-    MAIL_PORT: int = int(os.getenv("MAIL_PORT", "587")) #587
-    MAIL_SERVER: str = os.getenv("MAIL_SERVER") #"smtp.example.com"
-    MAIL_STARTTLS: bool = os.getenv("MAIL_STARTTLS", "True") == "True" #True
-    MAIL_SSL_TLS: bool = os.getenv("MAIL_SSL_TLS", "False") == "True" #False
+    MAIL_USERNAME: str = os.getenv("MAIL_USERNAME")
+    MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD")
+    MAIL_FROM: str = os.getenv("MAIL_FROM")
+    MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME")
+    MAIL_PORT: int = int(os.getenv("MAIL_PORT", "587"))
+    MAIL_SERVER: str = os.getenv("MAIL_SERVER")
+    MAIL_STARTTLS: bool = os.getenv("MAIL_STARTTLS", "True") == "True"
+    MAIL_SSL_TLS: bool = os.getenv("MAIL_SSL_TLS", "False") == "True"
 
     SERVICE_URL: str = os.getenv("SERVICE_URL")
 
