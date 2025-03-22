@@ -1,10 +1,12 @@
 import datetime
 from typing import Optional, List
 
-from sqlalchemy import String, Float, Text, DECIMAL, UniqueConstraint, Date, ForeignKey, Table, Column, Integer, UUID
+from sqlalchemy import String, Float, Text, DECIMAL, UniqueConstraint, Date, ForeignKey, Table, Column, Integer, UUID, \
+    DateTime, func
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy import Enum as SQLAlchemyEnum
 
+from database.models import UserModel
 from database.models.base import Base
 
 
@@ -143,4 +145,20 @@ class MovieModel(Base):
         "StarModel",
         secondary=MoviesStarsModel,
         back_populates="movies"
+    )
+
+
+class UserFavoriteModel(Base):
+    __tablename__ = "user_favorites"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
+    added_at = Column(DateTime(timezone=True), default=func.now())
+
+    user = relationship("User", back_populates="favorites")
+    movie = relationship("Movie", back_populates="favorites")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "movie_id"),
     )
