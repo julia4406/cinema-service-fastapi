@@ -1,11 +1,19 @@
 import datetime
-from typing import Optional, List
+import enum
+from typing import List
 
-from sqlalchemy import String, Float, Text, DECIMAL, UniqueConstraint, Date, ForeignKey, Table, Column, Integer, UUID
+from sqlalchemy import (
+    String, Float, Text, DECIMAL, UniqueConstraint,
+    ForeignKey, Table, Column, Integer, UUID,
+    DateTime, func, Enum)
 from sqlalchemy.orm import mapped_column, Mapped, relationship
-from sqlalchemy import Enum as SQLAlchemyEnum
 
 from database.models.base import Base
+
+
+class ReactionType(str, enum.Enum):
+    LIKE = "like"
+    DISLIKE = "dislike"
 
 
 MoviesGenresModel = Table(
@@ -123,10 +131,6 @@ class MovieModel(Base):
 
     comments: Mapped[List["CommentModel"]] = relationship(CommentModel, back_populates="comments")
 
-    __table_args__ = (
-        UniqueConstraint("name", "year", "time"),
-    )
-
     genres: Mapped[list["GenreModel"]] = relationship(
         "GenreModel",
         secondary=MoviesGenresModel,
@@ -143,4 +147,42 @@ class MovieModel(Base):
         "StarModel",
         secondary=MoviesStarsModel,
         back_populates="movies"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("name", "year", "time"),
+    )
+
+
+class UserFavoriteModel(Base):
+    __tablename__ = "user_favorites"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
+    added_at = Column(DateTime(timezone=True), default=func.now())
+
+    user = relationship("User", back_populates="favorites")
+    movie = relationship("Movie", back_populates="favorites")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "movie_id"),
+    )
+
+
+class UserReactionModel(Base):
+    __tablename__ = "reactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
+    reaction_type = Column(Enum(ReactionType), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+    user = relationship("User", back_populates="reactions")
+    movie = relationship("Movie", back_populates="reactions")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "movie_id"),
     )
