@@ -3,7 +3,9 @@ import datetime
 from sqlalchemy import ForeignKey, DateTime, func, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
+from database.models import UserModel
 from database.models.base import Base
+from database.models.movies import MovieModel
 from database.validators.purchased import validate_movie_not_already_purchased
 
 

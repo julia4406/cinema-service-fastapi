@@ -9,6 +9,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
+from database.models import UserModel
 from database.models.base import Base
 from database.validators.shopping_carts import (
     validate_movie_not_in_purchases,
