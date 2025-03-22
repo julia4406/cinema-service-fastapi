@@ -1,7 +1,9 @@
 from fastapi import FastAPI
+from accounts.routes.routes import router
 
 
 app = FastAPI()
+app.include_router(router)
 
 # api_version_prefix = "/api/v1"
 #

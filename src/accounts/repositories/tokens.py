@@ -14,9 +14,11 @@ class ActivationTokensRepository:
     async def create_activation_token(self, user_id: int) -> ActivationTokenModel:
         token = secrets.token_urlsafe(32)
         expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+        expires_at_naive = expires_at.replace(tzinfo=None)
+
         activation_token = ActivationTokenModel(
             token=token,
-            expires_at=expires_at,
+            expires_at=expires_at_naive,
             user_id=user_id
         )
         self.db.add(activation_token)
@@ -39,6 +41,6 @@ class ActivationTokensRepository:
     async def delete_expired_token(self) -> None:
         await self.db.execute(
             delete(ActivationTokenModel)
-            .where(ActivationTokenModel.expires_at < datetime.now(timezone.utc))
+            .where(ActivationTokenModel.expires_at < datetime.now(timezone.utc).replace(tzinfo=None))
         )
         await self.db.commit()

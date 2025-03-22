@@ -62,6 +62,14 @@ class UserModel(Base):
         nullable=False,
     )
 
+    @property
+    def password(self):
+        raise AttributeError("Password is not a readable attribute")
+
+    @password.setter
+    def password(self, password: str):
+        self._hashed_password = password
+
     group: Mapped["UserGroupModel"] = relationship(
         "UserGroupModel",
         back_populates="users",

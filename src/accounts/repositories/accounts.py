@@ -2,7 +2,7 @@ from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from src.database.models.accounts import UserModel
+from src.database.models.accounts import UserModel, UserGroupModel, UserGroupEnum
 from src.accounts.schemas import UserCreateRequestSchema
 
 
@@ -28,7 +28,14 @@ class UserRepository:
         await self.db.refresh(user)
 
     async def create_user(self, user: UserCreateRequestSchema) -> UserModel:
-        db_user = UserModel(**user.model_dump())
+        group_result = await self.db.execute(
+            select(UserGroupModel).filter_by(name=UserGroupEnum.USER)
+        )
+        group = group_result.scalar_one_or_none()
+        if not group:
+            raise ValueError("Default user group not found in database")
+
+        db_user = UserModel(**user.model_dump(), group_id=group.id)
         self.db.add(db_user)
         await self.db.commit()
         await self.db.refresh(db_user)

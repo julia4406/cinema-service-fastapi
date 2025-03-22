@@ -7,7 +7,7 @@ from sqlalchemy import select
 from accounts.repositories.accounts import UserRepository
 from accounts.repositories.tokens import ActivationTokensRepository
 from accounts.services.email_service import EmailService
-from src.database.models import UserModel
+from src.database.models.accounts import UserModel
 from src.accounts.schemas import UserCreateResponseSchema, UserCreateRequestSchema
 
 
@@ -37,7 +37,7 @@ class AccountsService:
 
     async def activate_user(self, token: str) -> dict:
         activation_token = await self.activation_token_repo.get_activation_token(token)
-        if not activation_token or activation_token.expires_at < datetime.now(timezone.utc):
+        if not activation_token or activation_token.expires_at < datetime.now(timezone.utc).replace(tzinfo=None):
             raise ValueError("Invalid activation token")
 
         user_id = activation_token.user_id
