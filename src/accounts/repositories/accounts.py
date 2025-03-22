@@ -5,6 +5,7 @@ from sqlalchemy import select
 from src.database.models.accounts import UserModel
 from src.accounts.schemas import UserCreateRequestSchema
 
+
 class UserRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
