@@ -40,3 +40,14 @@ async def create_star(
     return await StarsService(db).create_star(star_data)
 
 
+@router.put(
+    "/stars/{star_id}/",
+    status_code=200,
+)
+async def update_star(
+        star_id: int,
+        new_star: StarCreateSchema,
+        db: AsyncSession = Depends(get_db),
+):
+    return await StarsService(db).update_star(star_id, new_star)
+

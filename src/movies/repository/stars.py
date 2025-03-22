@@ -32,3 +32,18 @@ class StarsRepository:
         self.db.add(star)
         await self.db.commit()
         await self.db.refresh(star)
+
+    async def update_star(self, star_id: int, new_star: StarCreateSchema):
+        star = await self.db.get(StarModel, star_id)
+
+        if not star:
+            raise HTTPException(
+                status_code=404, detail="Star with the given ID was not found."
+            )
+
+        update_data = new_star.model_dump(exclude_unset=True, exclude_none=True)
+        for key, value in update_data.items():
+            setattr(star, key, value)
+
+        await self.db.commit()
+        await self.db.refresh(star)
