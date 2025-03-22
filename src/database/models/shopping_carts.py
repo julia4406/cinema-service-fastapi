@@ -11,11 +11,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from database.models.accounts import UserModel
 from database.models.base import Base
-
-# from database.validators.shopping_carts import (
-#     validate_movie_not_in_purchases,
-#     validate_movie_not_in_cart
-# )
+from database.validators.purchased import validate_movie_not_already_purchased
+from database.validators.shopping_carts import (
+    validate_movie_not_in_cart,
+    validate_movie_not_in_purchases
+)
 
 UserCartsModel = Table(
     "user_carts",
@@ -122,11 +122,11 @@ class CartItemModel(Base):
                 f" cart_id={self.cart_id},"
                 f" movie_id={self.movie_id})>")
 
-    # @validates("movie_id")
-    # def validate_movie(self, key, movie_id):
-    #     validate_movie_not_in_purchases(self, movie_id)
-    #     validate_movie_not_in_cart(self, movie_id)
-    #     return movie_id
+    @validates("movie_id")
+    def validate_movie(self, key, movie_id):
+        validate_movie_not_in_purchases(self, movie_id)
+        validate_movie_not_in_cart(self, movie_id)
+        return movie_id
 
 
 class PurchasedModel(Base):
@@ -164,9 +164,9 @@ class PurchasedModel(Base):
         ),
     )
 
-    # @validates("movie_id")
-    # def validate_movie_not_already_purchased(self, key, movie_id):
-    #     return validate_movie_not_already_purchased(self, movie_id)
+    @validates("movie_id")
+    def validate_movie_not_already_purchased(self, key, movie_id):
+        return validate_movie_not_already_purchased(self, movie_id)
 
     def __repr__(self):
         return f"<PurchasedModel(id={self.id}, user_id={self.user_id}, movie_id={self.movie_id})>"

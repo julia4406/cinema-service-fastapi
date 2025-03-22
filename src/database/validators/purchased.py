@@ -1,7 +1,4 @@
-def validate_movie_not_already_purchased(
-        purchase,
-        movie_id: int
-) -> int:
+def validate_movie_not_already_purchased(purchase, movie_id: int) -> int:
     if purchase.user:
         for existing_purchase in purchase.user.purchases:
             if existing_purchase.movie_id == movie_id and existing_purchase is not purchase:
