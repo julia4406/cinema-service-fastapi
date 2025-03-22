@@ -92,6 +92,17 @@ class CertificationModel(Base):
     movies: Mapped[List["MovieModel"]] = relationship("MovieModel", back_populates="certifications")
 
 
+class CommentModel(Base):
+    __tablename__ = "comments"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    text: Mapped[Text] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.utcnow)
+
+    movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
+    movie: Mapped["MovieModel"] = relationship("MovieModel", back_populates="comments")
+
+
 class MovieModel(Base):
     __tablename__ = "movies"
 
@@ -109,6 +120,8 @@ class MovieModel(Base):
 
     certification_id: Mapped[int] = mapped_column(ForeignKey("certifications.id"))
     certification: Mapped[CertificationModel] = relationship(CertificationModel, back_populates="movies")
+
+    comments: Mapped[List["CommentModel"]] = relationship(CommentModel, back_populates="comments")
 
     __table_args__ = (
         UniqueConstraint("name", "year", "time"),
