@@ -41,7 +41,7 @@ class JWTAuthManager:
 
     async def create_refresh_token(self, user: UserModel, db: AsyncSession):
 
-        expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=self.refresh_expire_days)
+        expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=self.refresh_expire_days)
 
         payload = {
             "sub": user.email,
@@ -49,6 +49,7 @@ class JWTAuthManager:
             "group": user.group_id,
             "exp": expires_at
         }
+
         token = jwt.encode(payload, self.private_key, algorithm=self.algorithm)
         db_token = RefreshTokenModel(
             token=token,

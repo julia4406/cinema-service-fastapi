@@ -4,10 +4,16 @@ from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from accounts.repositories.accounts import UserRepository
-from accounts.repositories.tokens import ActivationTokensRepository
+from accounts.repositories.tokens import ActivationTokensRepository, RefreshTokensRepository
 from accounts.services.email_service import EmailService
 from accounts.security.jwt import JWTAuthManager
-from src.accounts.schemas import UserCreateResponseSchema, UserCreateRequestSchema, JWTTokenResponse
+from src.accounts.schemas import (
+    UserCreateResponseSchema,
+    UserCreateRequestSchema,
+    JWTTokenResponse,
+    UserLoginRequestSchema,
+    RefreshTokenRequest
+)
 
 
 class AccountsService:
@@ -70,14 +76,30 @@ class AccountsService:
         await self.email_service.send_activation_email(email, new_token.token)
         return {"message": "New activation token has been sent"}
 
-    async def login_user(self, user: UserCreateRequestSchema) -> JWTTokenResponse:
+    async def login_user(self, user: UserLoginRequestSchema) -> JWTTokenResponse:
         db_user = await self.user_repo.get_by_email(user.email)
         if not db_user or not db_user.verify_password(user.password):
             raise ValueError("Invalid credentials")
+
+        await RefreshTokensRepository(self.db).delete_all_by_user_id(db_user.id)
+
         access_token = self.jwt_service.create_access_token(db_user)
         refresh_token = await self.jwt_service.create_refresh_token(db_user, self.db)
 
         return JWTTokenResponse(
             access_token=access_token,
             refresh_token=refresh_token
+        )
+
+    async def refresh_access_token(self, refresh_token: RefreshTokenRequest) -> JWTTokenResponse:
+        refresh_token = refresh_token.refresh_token
+        user = await self.jwt_service.verify_refresh_token(refresh_token, db=self.db)
+        await RefreshTokensRepository(self.db).delete_all_by_user_id(user.id)
+
+        new_access_token = self.jwt_service.create_access_token(user)
+        new_refresh_token = await self.jwt_service.create_refresh_token(user, self.db)
+
+        return JWTTokenResponse(
+            access_token=new_access_token,
+            refresh_token=new_refresh_token,
         )
