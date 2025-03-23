@@ -1,7 +1,7 @@
 from datetime import date
 import re
 
-from database.models import GenderEnum
+from src.database.models import GenderEnum
 
 
 def validate_password_strength(password: str) -> None:
@@ -50,9 +50,4 @@ def validate_date_of_birth(value: date) -> date:
 def validate_info(value: str) -> str:
     if len(value) > 200:
         raise ValueError("Info cannot exceed 200 characters")
-    return value
-
-def validate_avatar(value: str) -> str:
-    if not re.match(r'^https?://', value):
-        raise ValueError("Avatar must be a valid URL")
     return value
