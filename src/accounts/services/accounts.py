@@ -8,7 +8,6 @@ from accounts.repositories.tokens import ActivationTokensRepository
 from accounts.services.email_service import EmailService
 from accounts.security.jwt import JWTAuthManager
 from src.accounts.schemas import UserCreateResponseSchema, UserCreateRequestSchema, JWTTokenResponse
-from src.accounts.utils import hash_password, check_password
 
 
 class AccountsService:
@@ -23,9 +22,7 @@ class AccountsService:
         if await self.user_repo.is_email_exists(user.email):
             raise ValueError("This email is already registered")
 
-        hashed_password = hash_password(user.password)
-
-        user = UserCreateRequestSchema(email=user.email, password=hashed_password)
+        user = UserCreateRequestSchema(email=user.email, password=user.password)
 
         new_user = await self.user_repo.create_user(user)
         activation_token = await self.activation_token_repo.create_activation_token(user_id=new_user.id)
@@ -75,7 +72,7 @@ class AccountsService:
 
     async def login_user(self, user: UserCreateRequestSchema) -> JWTTokenResponse:
         db_user = await self.user_repo.get_by_email(user.email)
-        if not user or check_password(user.password, db_user.password):
+        if not db_user or db_user.verify_password(user.password):
             raise ValueError("Invalid credentials")
         access_token = await self.jwt_service.create_access_token(db_user)
         refresh_token = await self.jwt_service.create_refresh_token(db_user, self.db)

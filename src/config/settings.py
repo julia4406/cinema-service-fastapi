@@ -9,10 +9,18 @@ load_dotenv()
 
 
 class BaseAppSettings(BaseSettings):
+    ROOT_DIR: Path = Path(__file__).parent.parent.parent
     BASE_DIR: Path = Path(__file__).parent.parent
     PATH_TO_DB: str = str(BASE_DIR / "database" / "source" / "theater.db")
     PATH_TO_MOVIES_CSV: str = str(BASE_DIR / "database" / "seed_data" / "imdb_movies.csv")
     LOGIN_TIME_DAYS: int = 7
+
+    PRIVATE_KEY_PATH: Path = os.getenv("PRIVATE_KEY_PATH", (ROOT_DIR / "private_key.pem"))
+    PUBLIC_KEY_PATH: Path = os.getenv("PUBLIC_KEY_PATH", (ROOT_DIR / "public_key.pem"))
+    JWT_ALGORITHM: str = "RS256"
+
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
 
 class Settings(BaseAppSettings):
@@ -26,13 +34,6 @@ class Settings(BaseAppSettings):
     REDIS_PORT: int = os.getenv("REDIS_PORT")
     REDIS_BROKER_DB: int = os.getenv("REDIS_BROKER_DB")
     REDIS_BACKEND_DB: int = os.getenv("REDIS_BACKEND_DB")
-
-    PRIVATE_KEY_PATH = os.getenv("PRIVATE_KEY_PATH", "private_key.pem")
-    PUBLIC_KEY_PATH = os.getenv("PUBLIC_KEY_PATH", "public_key.pem")
-    JWT_ALGORITHM = "RS256"
-
-    ACCESS_TOKEN_EXPIRE_MINUTES = 60
-    REFRESH_TOKEN_EXPIRE_DAYS = 7
 
     MAIL_USERNAME: str = os.getenv("MAIL_USERNAME")
     MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD")
