@@ -1,15 +1,17 @@
+import os
+
 import stripe
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.settings import Settings
-from src.database.models.orders import OrderModel, StatusEnum
-from src.database.models.payments import PaymentModel, PaymentStatus
-from src.database.session_postgresql import get_postgresql_db
+from database.models.orders import OrderModel, StatusEnum
+from database.models.payments import PaymentModel, PaymentStatus
+from database.session_postgresql import get_postgresql_db
+from payments.schemas.payments import OrderSchema
 
-stripe.api_key = Settings.STRIPE_SECRET_KEY
+STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY")
 
 
 router = APIRouter()
@@ -158,3 +160,10 @@ async def get_payments_list():
 @router.get("/{payment_id}")
 async def get_payment_detail():
     return {"message": "Payments endpoint works!"}
+
+@router.get("/orders/{order_id}", response_model=OrderSchema)
+async def test(order_id: int, db: AsyncSession = Depends(get_postgresql_db)) -> OrderSchema:
+    order_res = await db.execute(select(OrderModel).filter_by(id=order_id))
+    order = order_res.scalars().first()
+    return OrderSchema.model_validate(order)
+
