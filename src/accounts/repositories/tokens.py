@@ -77,6 +77,10 @@ class PasswordResetTokenRepository:
         await self.db.refresh(reset_token)
         return reset_token
 
+    async def get_reset_token_by_user_id(self, user_id: int) -> PasswordResetTokenModel | None:
+        result = await self.db.execute(select(PasswordResetTokenModel).filter_by(user_id=user_id))
+        return result.scalar_one_or_none()
+
     async def get_reset_token(self, token: str) -> PasswordResetTokenModel | None:
         result = await self.db.execute(select(PasswordResetTokenModel).filter_by(token=token))
         return result.scalar_one_or_none()
@@ -84,3 +88,9 @@ class PasswordResetTokenRepository:
     async def delete_reset_token(self, token: str) -> None:
         await self.db.execute(delete(PasswordResetTokenModel).filter_by(token=token))
         await self.db.commit()
+
+    async def verify_reset_token(self, token: str) -> PasswordResetTokenModel:
+        reset_token = await self.get_reset_token(token)
+        if not reset_token or reset_token.expires_at < datetime.now(timezone.utc).replace(tzinfo=None):
+            raise ValueError("Token is invalid")
+        return reset_token
