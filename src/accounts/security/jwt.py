@@ -3,9 +3,12 @@ from datetime import datetime, timedelta, timezone
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.settings import Settings
 from src.database.models import UserModel
+from src.accounts.repositories.accounts import UserRepository
+from src.accounts.repositories.tokens import RefreshTokensRepository
 
 settings = Settings()
 
@@ -27,7 +30,7 @@ class JWTAuthManager:
         self.access_expire_minutes = settings.ACCESS_TOKEN_EXPIRE_MINUTES
         self.refresh_expire_days = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
-    async def create_access_token(self, user: UserModel):
+    def create_access_token(self, user: UserModel):
         payload = {
             "sub": user.email,
             "type": "access",
@@ -36,7 +39,7 @@ class JWTAuthManager:
         }
         return jwt.encode(payload, self.private_key, algorithm=self.algorithm)
 
-    async def create_refresh_token(self, user: UserModel):
+    def create_refresh_token(self, user: UserModel):
         payload = {
             "sub": user.email,
             "type": "refresh",
@@ -53,3 +56,25 @@ class JWTAuthManager:
             raise ValueError("Token is expired")
         except jwt.InvalidTokenError:
             raise ValueError("Invalid token")
+
+    async def verify_access_token(self, token: str, db: AsyncSession):
+        payload = self.decode_token(token)
+        if payload.get("type") != "access":
+            raise ValueError("Token is not valid")
+        email = payload.get("sub")
+        user = await UserRepository(db).get_by_email(email=email)
+        if not user:
+            raise ValueError("User not found")
+
+    async def verify_refresh_token(self, token: str, db: AsyncSession):
+        payload = self.decode_token(token)
+        if payload.get("type") != "refresh":
+            raise ValueError("Token is not valid")
+        email = payload.get("sub")
+        user = await UserRepository(db).get_by_email(email=email)
+        if not user:
+            raise ValueError("User not found")
+
+        refresh_token = await RefreshTokensRepository(db).get_refresh_token(user_id=user.id, token=token)
+        if not refresh_token or refresh_token.expires_at < datetime.now(timezone.utc):
+            raise ValueError("Refresh token is not valid")
