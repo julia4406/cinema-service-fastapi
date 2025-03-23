@@ -6,7 +6,7 @@ from cryptography.hazmat.backends import default_backend
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.settings import Settings
-from src.database.models import UserModel
+from src.database.models import UserModel, RefreshTokenModel
 from src.accounts.repositories.accounts import UserRepository
 from src.accounts.repositories.tokens import RefreshTokensRepository
 
@@ -39,14 +39,28 @@ class JWTAuthManager:
         }
         return jwt.encode(payload, self.private_key, algorithm=self.algorithm)
 
-    def create_refresh_token(self, user: UserModel):
+    async def create_refresh_token(self, user: UserModel, db: AsyncSession):
+
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=self.refresh_expire_days)
+
         payload = {
             "sub": user.email,
             "type": "refresh",
             "group": user.group_id,
-            "exp": datetime.now(timezone.utc) + timedelta(days=self.refresh_expire_days)
+            "exp": expires_at
         }
-        return jwt.encode(payload, self.private_key, algorithm=self.algorithm)
+        token = jwt.encode(payload, self.private_key, algorithm=self.algorithm)
+        db_token = RefreshTokenModel(
+            token=token,
+            user_id=user.id,
+            expires_at=expires_at
+        )
+
+        db.add(db_token)
+        await db.commit()
+        await db.refresh(db_token)
+
+        return token
 
     def decode_token(self, token: str):
         try:

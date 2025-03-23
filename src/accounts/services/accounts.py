@@ -2,14 +2,13 @@ from datetime import datetime, timezone
 
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from accounts.repositories.accounts import UserRepository
 from accounts.repositories.tokens import ActivationTokensRepository
 from accounts.services.email_service import EmailService
-from src.database.models.accounts import UserModel
-from src.accounts.schemas import UserCreateResponseSchema, UserCreateRequestSchema
-from src.accounts.utils import hash_password
+from accounts.security.jwt import JWTAuthManager
+from src.accounts.schemas import UserCreateResponseSchema, UserCreateRequestSchema, JWTTokenResponse
+from src.accounts.utils import hash_password, check_password
 
 
 class AccountsService:
@@ -18,6 +17,7 @@ class AccountsService:
         self.user_repo = UserRepository(db)
         self.activation_token_repo = ActivationTokensRepository(db)
         self.email_service = EmailService()
+        self.jwt_service = JWTAuthManager()
 
     async def register_user(self, user: UserCreateRequestSchema) -> UserCreateResponseSchema:
         if await self.user_repo.is_email_exists(user.email):
@@ -57,8 +57,7 @@ class AccountsService:
         return {"message": "Account has been activated"}
 
     async def resend_activation(self, email: EmailStr) -> dict:
-        user_result = await self.db.execute(select(UserModel).filter_by(email=email))
-        user = user_result.scalar_one_or_none()
+        user = await self.user_repo.get_by_email(email)
         if not user:
             raise ValueError("User not found")
 
@@ -73,3 +72,15 @@ class AccountsService:
         new_token = await self.activation_token_repo.create_activation_token(user.id)
         await self.email_service.send_activation_email(email, new_token.token)
         return {"message": "New activation token has been sent"}
+
+    async def login_user(self, user: UserCreateRequestSchema) -> JWTTokenResponse:
+        db_user = await self.user_repo.get_by_email(user.email)
+        if not user or check_password(user.password, db_user.password):
+            raise ValueError("Invalid credentials")
+        access_token = await self.jwt_service.create_access_token(db_user)
+        refresh_token = await self.jwt_service.create_refresh_token(db_user, self.db)
+
+        return JWTTokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token
+        )
