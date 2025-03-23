@@ -158,3 +158,8 @@ class ProfileService:
         if not profile:
             raise ValueError("Profile is not found")
         return profile
+
+    async def update_profile(self, current_user: UserModel, profile_data) -> ProfileModel:
+        profile = await self.get_profile(current_user)
+        updated_profile = await self.profile_repo.update(profile, profile_data.model_dump(exclude_unset=True))
+        return updated_profile
