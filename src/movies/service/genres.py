@@ -85,5 +85,12 @@ class GenresService:
             )
 
     async def delete_genre(self, genre_id: int):
-        await self.repository.delete_genre(genre_id)
-        return
+        result = await self.repository.delete_genre(genre_id)
+
+        if result:
+            return
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail="Genre with the given ID was not found.",
+            )
