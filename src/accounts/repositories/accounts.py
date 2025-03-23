@@ -46,8 +46,14 @@ class UserRepository:
 
         db_user = UserModel(**user.model_dump(), group_id=group.id)
         self.db.add(db_user)
+        await self.db.flush()
+
+        db_profile = ProfileModel(user_id=db_user.id)
+        self.db.add(db_profile)
+
         await self.db.commit()
         await self.db.refresh(db_user)
+        await self.db.refresh(db_profile)
         return db_user
 
 
