@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from pydantic_settings import BaseSettings
 
@@ -43,6 +43,11 @@ class Settings(BaseAppSettings):
     MAIL_SERVER: str = os.getenv("MAIL_SERVER")
     MAIL_STARTTLS: bool = os.getenv("MAIL_STARTTLS", "True") == "True"
     MAIL_SSL_TLS: bool = os.getenv("MAIL_SSL_TLS", "False") == "True"
+
+    AWS_ACCESS_KEY: str
+    AWS_SECRET_KEY: str
+    S3_BUCKET: str
+    AWS_REGION: Optional[str] = "us-east-1"
 
     SERVICE_URL: str = os.getenv("SERVICE_URL")
 
