@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from pydantic import EmailStr
 
-from src.database.models.tokens import ActivationTokenModel, RefreshTokenModel
+from src.database.models.tokens import ActivationTokenModel, RefreshTokenModel, PasswordResetTokenModel
 
 
 class ActivationTokensRepository:
@@ -57,4 +57,30 @@ class RefreshTokensRepository:
 
     async def delete_all_by_user_id(self, user_id: EmailStr) -> RefreshTokenModel | None:
         await self.db.execute(delete(RefreshTokenModel).filter_by(user_id=user_id))
+        await self.db.commit()
+
+
+class PasswordResetTokenRepository:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def create_reset_token(self, user_id: int) -> PasswordResetTokenModel:
+        token = secrets.token_urlsafe(32)
+        expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1)
+        reset_token = PasswordResetTokenModel(
+            token=token,
+            expires_at=expires_at,
+            user_id=user_id
+        )
+        self.db.add(reset_token)
+        await self.db.commit()
+        await self.db.refresh(reset_token)
+        return reset_token
+
+    async def get_reset_token(self, token: str) -> PasswordResetTokenModel | None:
+        result = await self.db.execute(select(PasswordResetTokenModel).filter_by(token=token))
+        return result.scalar_one_or_none()
+
+    async def delete_reset_token(self, token: str) -> None:
+        await self.db.execute(delete(PasswordResetTokenModel).filter_by(token=token))
         await self.db.commit()
