@@ -44,3 +44,12 @@ class JWTAuthManager:
             "exp": datetime.now(timezone.utc) + timedelta(days=self.refresh_expire_days)
         }
         return jwt.encode(payload, self.private_key, algorithm=self.algorithm)
+
+    def decode_token(self, token: str):
+        try:
+            payload = jwt.decode(token, self.public_key, algorithms=[self.algorithm])
+            return payload
+        except jwt.ExpiredSignatureError:
+            raise ValueError("Token is expired")
+        except jwt.InvalidTokenError:
+            raise ValueError("Invalid token")
