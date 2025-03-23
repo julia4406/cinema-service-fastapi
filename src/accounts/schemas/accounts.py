@@ -8,7 +8,6 @@ from src.database.models import GenderEnum
 from src.accounts.validators import (
     validate_password_strength,
     validate_info,
-    validate_avatar,
     validate_gender,
     validate_last_name,
     validate_first_name,
@@ -69,7 +68,6 @@ class ProfileUpdateRequest(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     gender: Optional[GenderEnum] = None
-    avatar: Optional[str] = None
     date_of_birth: Optional[date] = None
     info: Optional[str] = None
 
@@ -88,13 +86,7 @@ class ProfileUpdateRequest(BaseModel):
     @field_validator("gender")
     def check_gender(cls, value: Optional[GenderEnum]):
         if value is not None:
-            return validate_gender(value)
-        return value
-
-    @field_validator("avatar")
-    def check_avatar(cls, value: Optional[str]):
-        if value is not None:
-            return validate_avatar(value)
+            return validate_gender(value.value)
         return value
 
     @field_validator("date_of_birth")
