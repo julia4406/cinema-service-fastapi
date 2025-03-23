@@ -12,15 +12,8 @@ class StarsRepository:
         self.db = db
 
     async def get_stars(self, limit: int = 10, offset: int = 0):
-        count_query = select(func.count(StarModel.id))
-        result = await self.db.execute(count_query)
-        total_items = result.scalar() or 0
-
-        if total_items == 0:
-            raise HTTPException(status_code=404, detail="No stars found.")
-
         stars = await self.db.execute(select(StarModel).offset(offset).limit(limit))
-        return stars.scalars().all(), total_items
+        return stars.scalars().all()
 
     async def get_star(self, star_id: int):
         query = select(StarModel).where(StarModel.id == star_id)

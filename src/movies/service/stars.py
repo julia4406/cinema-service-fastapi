@@ -19,7 +19,9 @@ class StarsService:
             per_page: int = 10
     ):
         offset = (page - 1) * per_page
-        stars, total_items = await self.repository.get_stars(limit=per_page, offset=offset)
+        stars = await self.repository.get_stars(limit=per_page, offset=offset)
+
+        total_items = len(stars) or 0
 
         if not stars and total_items == 0:
             raise HTTPException(status_code=404, detail="No stars found.")
