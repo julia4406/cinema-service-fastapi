@@ -39,3 +39,23 @@ class EmailService:
         )
 
         await self.fm.send_message(message)
+
+    async def send_reset_email(self, recipient_email: EmailStr, token: str) -> None:
+        reset_url = f"{settings.SERVICE_URL}auth/reset-password?token={token}"
+        subject = "Password Reset Request"
+
+        body = (
+            f"Hello!\n\n"
+            f"We received a request to reset your password. To proceed, "
+            f"please follow this link: {reset_url}\n\n"
+            f"The link is valid for 1 hour. If you did not request a password reset, please ignore this email."
+        )
+
+        message = MessageSchema(
+            subject=subject,
+            recipients=[recipient_email],
+            body=body,
+            subtype=MessageType.plain
+        )
+
+        await self.fm.send_message(message)

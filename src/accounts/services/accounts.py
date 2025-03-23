@@ -4,10 +4,16 @@ from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from accounts.repositories.accounts import UserRepository
-from accounts.repositories.tokens import ActivationTokensRepository, RefreshTokensRepository
+from accounts.repositories.tokens import (
+    ActivationTokensRepository,
+    RefreshTokensRepository,
+    PasswordResetTokenRepository
+)
 from accounts.services.email_service import EmailService
 from accounts.security.jwt import JWTAuthManager
-from src.accounts.schemas import (
+from src.database.models import UserModel
+from accounts.validators.accounts import validate_password_strength
+from accounts.schemas import (
     UserCreateResponseSchema,
     UserCreateRequestSchema,
     JWTTokenResponse,
@@ -23,6 +29,7 @@ class AccountsService:
         self.activation_token_repo = ActivationTokensRepository(db)
         self.email_service = EmailService()
         self.jwt_service = JWTAuthManager()
+        self.reset_token_repo = PasswordResetTokenRepository(db)
 
     async def register_user(self, user: UserCreateRequestSchema) -> UserCreateResponseSchema:
         if await self.user_repo.is_email_exists(user.email):
@@ -103,3 +110,31 @@ class AccountsService:
             access_token=new_access_token,
             refresh_token=new_refresh_token,
         )
+
+    async def change_password(self, current_user: UserModel, old_password: str, new_password: str) -> dict:
+        if not current_user.verify_password(old_password):
+            raise ValueError("The old password is incorrect")
+        validate_password_strength(new_password)
+        current_user.password = new_password
+        await self.db.commit()
+        await self.db.refresh(current_user)
+        return {"message": "Password has been changed successfully"}
+
+    async def forgot_password(self, email: EmailStr) -> dict:
+        user = await self.user_repo.get_by_email(email)
+        if not user:
+            raise ValueError("The user does not exist")
+        reset_token = await self.reset_token_repo.create_reset_token(user.id)
+        await self.email_service.send_reset_email(email, reset_token.token)
+        return {"message": "The letter for resetting password has been sent to your email"}
+
+    async def reset_password(self, token: str, new_password: str) -> dict:
+        reset_token = await self.reset_token_repo.get_reset_token(token)
+        if not reset_token or reset_token.expires_at < datetime.now(timezone.utc).replace(tzinfo=None):
+            raise ValueError("Token is invalid")
+        user = await self.user_repo.get_by_email(await self.jwt_service.decode_token(token).get("sub"))
+        validate_password_strength(new_password)
+        user.password = new_password
+        await self.db.commit()
+        await self.reset_token_repo.delete_reset_token(token)
+        return {"message": "Password has been changed successfully"}
