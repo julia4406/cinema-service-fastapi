@@ -80,7 +80,7 @@ async def refresh_token(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/change-password")
+@router.post("/change-password/")
 async def change_password(
     request: ChangePasswordRequest,
     current_user: UserModel = Depends(get_current_user),
@@ -93,7 +93,7 @@ async def change_password(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/forgot-password")
+@router.post("/forgot-password/")
 async def forgot_password(
     request: ForgotPasswordRequest,
     db: AsyncSession = Depends(get_postgresql_db)
@@ -105,13 +105,14 @@ async def forgot_password(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/reset-password")
+@router.post("/reset-password/{token}")
 async def reset_password(
+    token: str,
     request: ResetPasswordRequest,
     db: AsyncSession = Depends(get_postgresql_db)
 ):
     service = AccountsService(db)
     try:
-        return await service.reset_password(request.token, request.new_password)
+        return await service.reset_password(token, request.new_password)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
