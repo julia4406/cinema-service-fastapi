@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 
-from src.database.models.tokens import ActivationTokenModel
+from src.database.models.tokens import ActivationTokenModel, RefreshTokenModel
 
 
 class ActivationTokensRepository:
@@ -44,3 +44,12 @@ class ActivationTokensRepository:
             .where(ActivationTokenModel.expires_at < datetime.now(timezone.utc).replace(tzinfo=None))
         )
         await self.db.commit()
+
+
+class RefreshTokensRepository:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def get_refresh_token(self, token: str, user_id: int) -> RefreshTokenModel | None:
+        result = await self.db.execute(select(RefreshTokenModel).filter_by(user_id=user_id, token=token))
+        return result.scalar_one_or_none()
