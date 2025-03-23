@@ -26,6 +26,10 @@ class CartRepositoryInterface(ABC):
         pass
 
     @abstractmethod
+    async def clear_cart(self, cart_id: int) -> None:
+        pass
+
+    @abstractmethod
     async def create_purchase(self, user_id: int, movie_id: int) -> Purchase:
         pass
 

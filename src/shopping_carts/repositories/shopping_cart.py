@@ -77,6 +77,20 @@ class CartRepository(CartRepositoryInterface):
             await self._session.rollback()
             raise CartItemError(f"Failed to remove item from cart: {str(e)}")
 
+    async def clear_cart(self, cart_id: int) -> None:
+        try:
+            async with self._session.begin():
+                result = await self._session.execute(
+                    select(CartItemModel).filter_by(cart_id=cart_id)
+                )
+                items = result.scalars().all()
+                for item in items:
+                    await self._session.delete(item)
+                await self._session.flush()
+        except SQLAlchemyError as e:
+            await self._session.rollback()
+            raise CartItemError(f"Failed to clear cart: {str(e)}")
+
     async def create_purchase(self, user_id: int, movie_id: int) -> Purchase:
         try:
             async with self._session.begin():
