@@ -1,5 +1,3 @@
-from fastapi import HTTPException
-from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -21,34 +19,42 @@ class StarsRepository:
         star = result.scalar_one_or_none()
         return star
 
-    async def add_star(self, star: StarCreateSchema):
+    async def add_star(self, star: StarModel):
+        existing_stmt = select(StarModel).where(
+            (StarModel.name == star.name)
+        )
+
+        existing_result = await self.db.execute(existing_stmt)
+        existing_star = existing_result.scalars().first()
+
+        if existing_star:
+            return False
+
         self.db.add(star)
         await self.db.commit()
         await self.db.refresh(star)
+        return star
 
     async def update_star(self, star_id: int, new_star: StarCreateSchema):
         star = await self.db.get(StarModel, star_id)
 
-        if not star:
-            raise HTTPException(
-                status_code=404, detail="Star with the given ID was not found."
-            )
+        if star:
+            update_data = new_star.model_dump(exclude_unset=True, exclude_none=True)
+            for key, value in update_data.items():
+                setattr(star, key, value)
 
-        update_data = new_star.model_dump(exclude_unset=True, exclude_none=True)
-        for key, value in update_data.items():
-            setattr(star, key, value)
+            await self.db.commit()
+            await self.db.refresh(star)
+            return star
 
-        await self.db.commit()
-        await self.db.refresh(star)
+        return None
 
     async def delete_star(self, star_id: int):
         star = await self.db.get(StarModel, star_id)
 
-        if not star:
-            raise HTTPException(
-                status_code=404,
-                detail="Star with the given ID was not found.",
-            )
+        if star:
+            await self.db.delete(star)
+            await self.db.commit()
+            return True
 
-        await self.db.delete(star)
-        await self.db.commit()
+        return False
