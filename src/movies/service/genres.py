@@ -76,8 +76,13 @@ class GenresService:
             raise HTTPException(status_code=400, detail="Invalid input data.")
 
     async def update_genre(self, genre_id: int, genre: GenreCreateSchema):
-        await self.repository.update_genre(genre_id, genre)
-        return {"detail": "Genre updated successfully."}
+        result = await self.repository.update_genre(genre_id, genre)
+        if result:
+            return {"detail": "Genre updated successfully."}
+        else:
+            raise HTTPException(
+                status_code=404, detail="Genre with the given ID was not found."
+            )
 
     async def delete_genre(self, genre_id: int):
         await self.repository.delete_genre(genre_id)
