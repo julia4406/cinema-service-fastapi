@@ -31,10 +31,9 @@ class ForgotPasswordRequest(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-    token: str
     new_password: str
 
     @field_validator("new_password")
-    def check_password(cls, password: str):
+    def check_password_strength(cls, password: str):
         validate_password_strength(password)
         return password
