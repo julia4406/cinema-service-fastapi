@@ -124,17 +124,25 @@ class AccountsService:
         user = await self.user_repo.get_by_email(email)
         if not user:
             raise ValueError("The user does not exist")
+
+        existing_token = await self.reset_token_repo.get_reset_token_by_user_id(user.id)
+        if existing_token:
+            await self.reset_token_repo.delete_reset_token(existing_token.token)
+
         reset_token = await self.reset_token_repo.create_reset_token(user.id)
         await self.email_service.send_reset_email(email, reset_token.token)
         return {"message": "The letter for resetting password has been sent to your email"}
 
     async def reset_password(self, token: str, new_password: str) -> dict:
-        reset_token = await self.reset_token_repo.get_reset_token(token)
-        if not reset_token or reset_token.expires_at < datetime.now(timezone.utc).replace(tzinfo=None):
-            raise ValueError("Token is invalid")
-        user = await self.user_repo.get_by_email(await self.jwt_service.decode_token(token).get("sub"))
+        reset_token = await self.reset_token_repo.verify_reset_token(token)
+
+        user = await self.user_repo.get_by_id(reset_token.user_id)
+        if not user:
+            raise ValueError("The user does not exist")
+
         validate_password_strength(new_password)
         user.password = new_password
+
         await self.db.commit()
         await self.reset_token_repo.delete_reset_token(token)
         return {"message": "Password has been changed successfully"}
