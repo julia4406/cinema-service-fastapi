@@ -2,7 +2,7 @@ from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from src.database.models import UserModel, UserGroupModel
+from src.database.models import UserModel, ProfileModel, UserGroupModel
 from src.database.models.accounts import UserGroupEnum
 from src.accounts.schemas import UserCreateRequestSchema
 
@@ -49,3 +49,19 @@ class UserRepository:
         await self.db.commit()
         await self.db.refresh(db_user)
         return db_user
+
+
+class ProfileRepository:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def get_by_user_id(self, user_id: int) -> ProfileModel | None:
+        result = await self.db.execute(select(ProfileModel).filter_by(user_id=user_id))
+        return result.scalar_one_or_none()
+
+    async def create(self, user_id: int) -> ProfileModel:
+        profile = ProfileModel(user_id=user_id)
+        self.db.add(profile)
+        await self.db.commit()
+        await self.db.refresh(profile)
+        return profile
