@@ -7,9 +7,13 @@ from src.accounts.schemas import (
     UserCreateRequestSchema,
     UserCreateResponseSchema,
     UserLoginRequestSchema,
-    RefreshTokenRequest
+    RefreshTokenRequest,
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
 )
-
+from src.database.models import UserModel
+from src.accounts.dependencies import get_current_user
 from src.accounts.services.accounts import AccountsService
 
 
@@ -53,7 +57,10 @@ async def resend_activation(
 
 
 @router.post("/login/")
-async def login(request: UserLoginRequestSchema, db: AsyncSession = Depends(get_postgresql_db)):
+async def login(
+        request: UserLoginRequestSchema,
+        db: AsyncSession = Depends(get_postgresql_db)
+):
     service = AccountsService(db)
     try:
         return await service.login_user(request)
@@ -69,5 +76,42 @@ async def refresh_token(
     service = AccountsService(db)
     try:
         return await service.refresh_access_token(refresh_token)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/change-password")
+async def change_password(
+    request: ChangePasswordRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_postgresql_db)
+):
+    service = AccountsService(db)
+    try:
+        return await service.change_password(current_user, request.old_password, request.new_password)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/forgot-password")
+async def forgot_password(
+    request: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_postgresql_db)
+):
+    service = AccountsService(db)
+    try:
+        return await service.forgot_password(request.email)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/reset-password")
+async def reset_password(
+    request: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_postgresql_db)
+):
+    service = AccountsService(db)
+    try:
+        return await service.reset_password(request.token, request.new_password)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
