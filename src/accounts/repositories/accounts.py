@@ -1,10 +1,21 @@
+import boto3
 from pydantic import EmailStr
+from fastapi import UploadFile, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from src.database.models import UserModel, ProfileModel, UserGroupModel
 from src.database.models.accounts import UserGroupEnum
 from src.accounts.schemas import UserCreateRequestSchema
+from src.config.settings import Settings
+
+
+settings = Settings()
+s3_client = boto3.client(
+    "s3",
+    aws_access_key_id=settings.AWS_ACCESS_KEY,
+    aws_secret_access_key=settings.AWS_SECRET_KEY
+)
 
 
 class UserRepository:
@@ -83,3 +94,31 @@ class ProfileRepository:
     async def delete(self, profile: ProfileModel) -> None:
         await self.db.delete(profile)
         await self.db.commit()
+
+    async def update_avatar(self, profile: ProfileModel, avatar_file: UploadFile, user_id: int) -> ProfileModel:
+        allowed_types = {"image/jpeg", "image/png"}
+        max_size_mb = 8
+        max_size_bytes = max_size_mb * 1024 * 1024
+
+        if avatar_file.content_type not in allowed_types:
+            raise ValueError("Avatar must be a JPEG or PNG image")
+
+        file_size = avatar_file.size
+        if file_size > max_size_bytes:
+            raise ValueError(f"Avatar size must not exceed {max_size_mb} MB")
+
+        file_extension = avatar_file.filename.split(".")[-1]
+        file_key = f"avatars/{user_id}/{user_id}_avatar.{file_extension}"
+
+        try:
+            s3_client.upload_fileobj(avatar_file.file, settings.S3_BUCKET, file_key)
+        except Exception as e:
+            raise ValueError(f"Failed to upload avatar to S3: {str(e)}")
+        finally:
+            await avatar_file.close()
+
+        avatar_url = f"https://{settings.S3_BUCKET}.s3.amazonaws.com/{file_key}"
+        profile.avatar = avatar_url
+        await self.db.commit()
+        await self.db.refresh(profile)
+        return profile

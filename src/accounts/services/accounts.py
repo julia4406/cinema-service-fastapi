@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from fastapi import UploadFile
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -163,3 +164,7 @@ class ProfileService:
         profile = await self.get_profile(current_user)
         updated_profile = await self.profile_repo.update(profile, profile_data.model_dump(exclude_unset=True))
         return updated_profile
+
+    async def upload_avatar(self, current_user: UserModel, avatar_file: UploadFile) -> ProfileModel:
+        profile = await self.get_profile(current_user)
+        return await self.profile_repo.update_avatar(profile, avatar_file, current_user.id)
