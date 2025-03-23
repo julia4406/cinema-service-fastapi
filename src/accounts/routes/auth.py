@@ -68,6 +68,17 @@ async def login(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.post("/logout/")
+async def logout(
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_postgresql_db)
+):
+    service = AccountsService(db)
+    try:
+        return await service.logout_user(current_user)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Logout failed")
+
 @router.post("/refresh/")
 async def refresh_token(
         refresh_token: RefreshTokenRequest,
