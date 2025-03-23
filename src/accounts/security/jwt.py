@@ -35,13 +35,13 @@ class JWTAuthManager:
             "sub": user.email,
             "type": "access",
             "group": user.group_id,
-            "exp": datetime.now(timezone.utc) + timedelta(minutes=self.access_expire_minutes)
+            "exp": datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=self.access_expire_minutes)
         }
         return jwt.encode(payload, self.private_key, algorithm=self.algorithm)
 
     async def create_refresh_token(self, user: UserModel, db: AsyncSession):
 
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=self.refresh_expire_days)
+        expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=self.refresh_expire_days)
 
         payload = {
             "sub": user.email,
@@ -79,6 +79,7 @@ class JWTAuthManager:
         user = await UserRepository(db).get_by_email(email=email)
         if not user:
             raise ValueError("User not found")
+        return user
 
     async def verify_refresh_token(self, token: str, db: AsyncSession):
         payload = self.decode_token(token)
@@ -90,5 +91,6 @@ class JWTAuthManager:
             raise ValueError("User not found")
 
         refresh_token = await RefreshTokensRepository(db).get_refresh_token(user_id=user.id, token=token)
-        if not refresh_token or refresh_token.expires_at < datetime.now(timezone.utc):
+        if not refresh_token or refresh_token.expires_at < datetime.now(timezone.utc).replace(tzinfo=None):
             raise ValueError("Refresh token is not valid")
+        return user

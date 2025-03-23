@@ -72,9 +72,9 @@ class AccountsService:
 
     async def login_user(self, user: UserCreateRequestSchema) -> JWTTokenResponse:
         db_user = await self.user_repo.get_by_email(user.email)
-        if not db_user or db_user.verify_password(user.password):
+        if not db_user or not db_user.verify_password(user.password):
             raise ValueError("Invalid credentials")
-        access_token = await self.jwt_service.create_access_token(db_user)
+        access_token = self.jwt_service.create_access_token(db_user)
         refresh_token = await self.jwt_service.create_refresh_token(db_user, self.db)
 
         return JWTTokenResponse(
