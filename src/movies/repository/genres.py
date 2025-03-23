@@ -22,6 +22,15 @@ class GenresRepository:
         return genre
 
     async def add_genre(self, genre: GenreModel):
+        existing_stmt = select(GenreModel).where(
+            (GenreModel.name == genre.name)
+        )
+
+        existing_result = await self.db.execute(existing_stmt)
+        existing_genre = existing_result.scalars().first()
+        if existing_genre:
+            return False
+
         self.db.add(genre)
         await self.db.commit()
         await self.db.refresh(genre)

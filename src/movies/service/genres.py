@@ -49,14 +49,13 @@ class GenresService:
         return genre
 
     async def create_genre(self, genre: GenreCreateSchema):
-        existing_stmt = select(GenreModel).where(
-            (GenreModel.name == genre.name)
+        new_genre = GenreModel(
+            name=genre.name,
         )
 
-        existing_result = await self.db.execute(existing_stmt)
-        existing_genre = existing_result.scalars().first()
+        created_genre = await self.repository.add_genre(new_genre)
 
-        if existing_genre:
+        if created_genre is False:
             raise HTTPException(
                 status_code=409,
                 detail=(
@@ -64,11 +63,6 @@ class GenresService:
                 ),
             )
         try:
-            new_genre = GenreModel(
-                name=genre.name,
-            )
-            created_genre = await self.repository.add_genre(new_genre)
-
             return GenreSchema.model_validate(created_genre)
 
         except IntegrityError:
