@@ -86,7 +86,10 @@ class ProfileRepository:
     async def update(self, profile: ProfileModel, data: dict) -> ProfileModel:
         for key, value in data.items():
             if value is not None:
-                setattr(profile, key, value)
+                if key == "gender" and isinstance(value, str):
+                    setattr(profile, key, value.upper())
+                else:
+                    setattr(profile, key, value)
         await self.db.commit()
         await self.db.refresh(profile)
         return profile
@@ -111,7 +114,11 @@ class ProfileRepository:
         file_key = f"avatars/{user_id}/{user_id}_avatar.{file_extension}"
 
         try:
-            s3_client.upload_fileobj(avatar_file.file, settings.S3_BUCKET, file_key)
+            s3_client.upload_fileobj(
+                avatar_file.file,
+                settings.S3_BUCKET,
+                file_key
+            )
         except Exception as e:
             raise ValueError(f"Failed to upload avatar to S3: {str(e)}")
         finally:
