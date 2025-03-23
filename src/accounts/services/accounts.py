@@ -99,6 +99,9 @@ class AccountsService:
             refresh_token=refresh_token
         )
 
+    async def logout_user(self, user: UserModel):
+        await RefreshTokensRepository(self.db).delete_all_by_user_id(user.id)
+
     async def refresh_access_token(self, refresh_token: RefreshTokenRequest) -> JWTTokenResponse:
         refresh_token = refresh_token.refresh_token
         user = await self.jwt_service.verify_refresh_token(refresh_token, db=self.db)
