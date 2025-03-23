@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from accounts.repositories.accounts import UserRepository
+from accounts.repositories.accounts import UserRepository, ProfileRepository
 from accounts.repositories.tokens import (
     ActivationTokensRepository,
     RefreshTokensRepository,
@@ -11,7 +11,7 @@ from accounts.repositories.tokens import (
 )
 from accounts.services.email_service import EmailService
 from accounts.security.jwt import JWTAuthManager
-from src.database.models import UserModel
+from src.database.models import UserModel, ProfileModel
 from accounts.validators.accounts import validate_password_strength
 from accounts.schemas import (
     UserCreateResponseSchema,
@@ -146,3 +146,15 @@ class AccountsService:
         await self.db.commit()
         await self.reset_token_repo.delete_reset_token(token)
         return {"message": "Password has been changed successfully"}
+
+
+class ProfileService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+        self.profile_repo = ProfileRepository(db)
+
+    async def get_profile(self, current_user: UserModel) -> ProfileModel:
+        profile = await self.profile_repo.get_by_user_id(current_user.id)
+        if not profile:
+            raise ValueError("Profile is not found")
+        return profile
