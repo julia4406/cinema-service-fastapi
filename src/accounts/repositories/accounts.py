@@ -11,6 +11,10 @@ class UserRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def get_by_email(self, email: EmailStr) -> UserModel | None:
+        result = await self.db.execute(select(UserModel).filter_by(email=email))
+        return result.scalar_one_or_none()
+
     async def is_email_exists(self, email: EmailStr) -> bool:
         result = await self.db.execute(select(UserModel).filter_by(email=email))
         return result.scalar_one_or_none() is not None
