@@ -19,7 +19,9 @@ class GenresService:
             per_page: int = 10
     ):
         offset = (page - 1) * per_page
-        genres, total_items = await self.repository.get_genres(limit=per_page, offset=offset)
+        genres = await self.repository.get_genres(limit=per_page, offset=offset)
+
+        total_items = len(genres) or 0
 
         if not genres and total_items == 0:
             raise HTTPException(status_code=404, detail="No genres found.")

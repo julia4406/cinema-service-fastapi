@@ -12,15 +12,8 @@ class GenresRepository:
         self.db = db
 
     async def get_genres(self, limit: int = 10, offset: int = 0):
-        count_query = select(func.count(GenreModel.id))
-        result = await self.db.execute(count_query)
-        total_items = result.scalar() or 0
-
-        if total_items == 0:
-            raise HTTPException(status_code=404, detail="No genres found.")
-
         genres = await self.db.execute(select(GenreModel).offset(offset).limit(limit))
-        return genres.scalars().all(), total_items
+        return genres.scalars().all()
 
     async def get_genre(self, genre_id: int):
         query = select(GenreModel).where(GenreModel.id == genre_id)
