@@ -27,9 +27,12 @@ class Settings(BaseAppSettings):
     REDIS_BROKER_DB: int = os.getenv("REDIS_BROKER_DB")
     REDIS_BACKEND_DB: int = os.getenv("REDIS_BACKEND_DB")
 
-    SECRET_KEY_ACCESS: str = os.getenv("SECRET_KEY_ACCESS", os.urandom(32))
-    SECRET_KEY_REFRESH: str = os.getenv("SECRET_KEY_REFRESH", os.urandom(32))
-    JWT_SIGNING_ALGORITHM: str = os.getenv("JWT_SIGNING_ALGORITHM", "HS256")
+    PRIVATE_KEY_PATH = os.getenv("PRIVATE_KEY_PATH", "private_key.pem")
+    PUBLIC_KEY_PATH = os.getenv("PUBLIC_KEY_PATH", "public_key.pem")
+    JWT_ALGORITHM = "RS256"
+
+    ACCESS_TOKEN_EXPIRE_MINUTES = 60
+    REFRESH_TOKEN_EXPIRE_DAYS = 7
 
     MAIL_USERNAME: str = os.getenv("MAIL_USERNAME")
     MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD")
