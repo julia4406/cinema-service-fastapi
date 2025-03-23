@@ -1,5 +1,4 @@
 from fastapi import HTTPException
-from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,7 +10,6 @@ from movies.schemas.genres import GenreSchema, GenreCreateSchema
 class GenresService:
     def __init__(self, db: AsyncSession):
         self.repository = GenresRepository(db)
-        self.db = db
 
     async def get_genres(
             self,
@@ -66,7 +64,6 @@ class GenresService:
             return GenreSchema.model_validate(created_genre)
 
         except IntegrityError:
-            await self.db.rollback()
             raise HTTPException(status_code=400, detail="Invalid input data.")
 
     async def update_genre(self, genre_id: int, genre: GenreCreateSchema):
