@@ -29,7 +29,7 @@ class GenresRepository:
         return genre
 
     async def add_genre(self, genre: GenreModel):
-        if self.is_genre_by_name(genre.name):
+        if await self.is_genre_by_name(genre.name):
             return False
 
         self.db.add(genre)
