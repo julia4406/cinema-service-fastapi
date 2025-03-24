@@ -1,5 +1,3 @@
-from fastapi import HTTPException
-from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -10,6 +8,15 @@ from movies.schemas.genres import GenreCreateSchema
 class GenresRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
+
+    async def is_genre_by_name(self, name: str):
+        existing_stmt = select(GenreModel).where(
+            (GenreModel.name == name)
+        )
+
+        existing_result = await self.db.execute(existing_stmt)
+        existing_genre = existing_result.scalars().first()
+        return existing_genre if existing_genre else None
 
     async def get_genres(self, limit: int = 10, offset: int = 0):
         genres = await self.db.execute(select(GenreModel).offset(offset).limit(limit))
@@ -22,13 +29,7 @@ class GenresRepository:
         return genre
 
     async def add_genre(self, genre: GenreModel):
-        existing_stmt = select(GenreModel).where(
-            (GenreModel.name == genre.name)
-        )
-
-        existing_result = await self.db.execute(existing_stmt)
-        existing_genre = existing_result.scalars().first()
-        if existing_genre:
+        if self.is_genre_by_name(genre.name):
             return False
 
         self.db.add(genre)
