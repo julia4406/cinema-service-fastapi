@@ -16,7 +16,7 @@ class GenresRepository:
 
         existing_result = await self.db.execute(existing_stmt)
         existing_genre = existing_result.scalars().first()
-        return existing_genre if existing_genre else None
+        return True if existing_genre else False
 
     async def get_genres(self, limit: int = 10, offset: int = 0):
         genres = await self.db.execute(select(GenreModel).offset(offset).limit(limit))
