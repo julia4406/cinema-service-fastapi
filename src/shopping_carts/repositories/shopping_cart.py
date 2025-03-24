@@ -42,8 +42,10 @@ class CartRepository(CartRepositoryInterface):
             await self._session.rollback()
             raise CreateCartError(f"Failed to create cart: {str(e)}")
 
-    async def get_cart_by_user_id(self, user_id: int) -> Optional[
-        ShoppingCart]:
+    async def get_cart_by_user_id(
+            self,
+            user_id: int
+    ) -> Optional[ShoppingCart]:
         result = await self._session.execute(
             select(ShoppingCartModel)
             .filter_by(user_id=user_id)
