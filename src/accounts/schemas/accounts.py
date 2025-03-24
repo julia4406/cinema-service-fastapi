@@ -34,10 +34,23 @@ class UserCreateRequest(BaseModel):
 
 
 class UserAdminCreateRequest(BaseModel):
-    email: str
+    email: EmailStr
     password: str
     is_active: Optional[bool] = False
     group: Optional[UserGroupEnum] = UserGroupEnum.USER
+
+    @field_validator("email")
+    def check_email(cls, email: str) -> str:
+        try:
+            validate_email(email)
+        except EmailNotValidError:
+            raise ValueError("The email field is not valid")
+        return email
+
+    @field_validator("password")
+    def check_password(cls, password: str):
+        validate_password_strength(password)
+        return password
 
 
 class UserCreateResponse(BaseModel):
@@ -53,7 +66,7 @@ class UserCreateResponse(BaseModel):
 
 
 class UserAdminUpdateRequest(BaseModel):
-    email: Optional[str] = None
+    email: Optional[EmailStr] = None
     is_active: Optional[bool] = None
     group: Optional[UserGroupEnum] = None
 

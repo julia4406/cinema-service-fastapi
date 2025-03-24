@@ -10,6 +10,7 @@ from accounts.repositories.tokens import (
     RefreshTokensRepository,
     PasswordResetTokenRepository
 )
+from accounts.schemas.accounts import UserAdminCreateRequest, UserAdminResponse, UserAdminUpdateRequest
 from accounts.services.email_service import EmailService
 from accounts.security.jwt import JWTAuthManager
 from src.database.models import UserModel, ProfileModel
@@ -32,11 +33,15 @@ class AccountsService:
         self.jwt_service = JWTAuthManager()
         self.reset_token_repo = PasswordResetTokenRepository(db)
 
+    async def get_by_email(self, email: EmailStr) -> UserModel:
+        user = await self.user_repo.get_by_email(email)
+        if not user:
+            raise ValueError("User not found")
+        return user
+
     async def register_user(self, user: UserCreateRequest) -> UserCreateResponse:
         if await self.user_repo.is_email_exists(user.email):
             raise ValueError("This email is already registered")
-
-        user = UserCreateRequest(email=user.email, password=user.password)
 
         new_user = await self.user_repo.create_user(user)
         activation_token = await self.activation_token_repo.create_activation_token(user_id=new_user.id)
@@ -50,6 +55,44 @@ class AccountsService:
             created_at=new_user.created_at,
             message="Activation link has been sent to your email",
         )
+
+    async def register_user_by_admin(self, user: UserAdminCreateRequest) -> UserAdminResponse:
+        if await self.user_repo.is_email_exists(user.email):
+            raise ValueError("This email is already registered")
+
+        new_user = await self.user_repo.create_user_by_admin(user)
+        if not new_user.is_active:
+            activation_token = await self.activation_token_repo.create_activation_token(user_id=new_user.id)
+            await self.email_service.send_activation_email(user.email, activation_token.token)
+
+        return UserAdminResponse(
+            id=new_user.id,
+            email=new_user.email,
+            is_active=new_user.is_active,
+            group=new_user.group.name,
+        )
+
+    async def update_user(self, user_id: int, user_data: UserAdminUpdateRequest) -> UserModel:
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            raise ValueError("User not found")
+
+        if user_data.email and user_data.email != user.email:
+            if await self.user_repo.is_email_exists(user_data.email):
+                raise ValueError("This email is already registered")
+
+        updated_user = await self.user_repo.update_user(user_id, user_data)
+        return updated_user
+
+    async def delete_user(self, user_id: int, current_user: UserModel) -> None:
+        if user_id == current_user.id:
+            raise ValueError("Cannot delete yourself")
+
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            raise ValueError("User not found")
+
+        await self.user_repo.delete_user(user_id)
 
     async def activate_user(self, token: str) -> dict:
         activation_token = await self.activation_token_repo.get_activation_token(token)
