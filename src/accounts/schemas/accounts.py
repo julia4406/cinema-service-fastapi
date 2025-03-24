@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, field_validator
 from email_validator import validate_email, EmailNotValidError
 
-from src.database.models import GenderEnum
+from src.database.models import GenderEnum, UserGroupEnum
 from src.accounts.validators import (
     validate_password_strength,
     validate_info,
@@ -33,6 +33,13 @@ class UserCreateRequestSchema(BaseModel):
         return password
 
 
+class UserAdminCreateRequestSchema(BaseModel):
+    email: str
+    password: str
+    is_active: Optional[bool] = False
+    group: Optional[UserGroupEnum] = UserGroupEnum.USER
+
+
 class UserCreateResponseSchema(BaseModel):
     id: int
     email: str
@@ -45,9 +52,31 @@ class UserCreateResponseSchema(BaseModel):
     }
 
 
+class UserAdminUpdateRequest(BaseModel):
+    email: Optional[str] = None
+    is_active: Optional[bool] = None
+    group: Optional[UserGroupEnum] = None
+
+
 class UserLoginRequestSchema(BaseModel):
     email: EmailStr
     password: str
+
+
+class UserAdminResponse(BaseModel):
+    id: int
+    email: str
+    is_active: bool
+    group: UserGroupEnum
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    avatar: Optional[str] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    info: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 
 class ProfileResponse(BaseModel):
