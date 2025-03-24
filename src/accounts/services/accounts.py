@@ -2,7 +2,9 @@ from datetime import datetime, timezone
 
 from fastapi import UploadFile
 from pydantic import EmailStr
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from accounts.repositories.accounts import UserRepository, ProfileRepository
 from accounts.repositories.tokens import (
@@ -65,14 +67,24 @@ class AccountsService:
             activation_token = await self.activation_token_repo.create_activation_token(user_id=new_user.id)
             await self.email_service.send_activation_email(user.email, activation_token.token)
 
+        result = await self.db.execute(
+            select(UserModel)
+            .filter_by(id=new_user.id)
+            .options(joinedload(UserModel.group))
+        )
+        user_with_group = result.scalar_one_or_none()
+
+        if not user_with_group:
+            raise ValueError("User not found")
+
         return UserAdminResponse(
-            id=new_user.id,
-            email=new_user.email,
-            is_active=new_user.is_active,
-            group=new_user.group.name,
+            id=user_with_group.id,
+            email=user_with_group.email,
+            is_active=user_with_group.is_active,
+            group=user_with_group.group.name,
         )
 
-    async def update_user(self, user_id: int, user_data: UserAdminUpdateRequest) -> UserModel:
+    async def update_user(self, user_id: int, user_data: UserAdminUpdateRequest) -> UserAdminResponse:
         user = await self.user_repo.get_by_id(user_id)
         if not user:
             raise ValueError("User not found")
@@ -82,7 +94,22 @@ class AccountsService:
                 raise ValueError("This email is already registered")
 
         updated_user = await self.user_repo.update_user(user_id, user_data)
-        return updated_user
+
+        result = await self.db.execute(
+            select(UserModel)
+            .filter_by(id=updated_user.id)
+            .options(joinedload(UserModel.group))
+        )
+        user_with_group = result.scalar_one_or_none()
+        if not user_with_group:
+            raise ValueError("User not found after update")
+
+        return UserAdminResponse(
+            id=updated_user.id,
+            email=updated_user.email,
+            is_active=updated_user.is_active,
+            group=updated_user.group.name,
+        )
 
     async def delete_user(self, user_id: int, current_user: UserModel) -> None:
         if user_id == current_user.id:
