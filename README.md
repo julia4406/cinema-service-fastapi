@@ -10,9 +10,13 @@ docker-compose -f docker-compose-local.yml down -v
 docker-compose -f docker-compose-local.yml up --build
 2.
 Після створення контейнера(він залишаеться запущений) в терміналі:
-alembic upgrade head
+    alembic upgrade head
 
 Мають завантажитись міграції.
+/// If we need a create new migrations
+    alembic revision --autogenerate -m "describe_changes"
+    alembic upgrade head
+
 3.
 Скопіювати налаштування в .env (з .env.sample + для пошти тут нижче є 
 налаштування)

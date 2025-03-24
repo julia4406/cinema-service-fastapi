@@ -1,14 +1,19 @@
 from datetime import datetime
 
 from pydantic import BaseModel
-from database.models.orders import StatusEnum
+from src.database.models.orders import StatusEnum
 
 
 class PaymentCreateSchema(BaseModel):
     ...
 
 class OrderSchema(BaseModel):
+    id: int
     user_id: int
     created_at: datetime
     status: StatusEnum
-    total_amount: float
+    total_amount: float | None
+
+    model_config = {
+        "from_attributes": True
+    }

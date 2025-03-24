@@ -6,9 +6,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models.orders import OrderModel, StatusEnum
-from database.models.payments import PaymentModel, PaymentStatus
-from database.session_postgresql import get_postgresql_db
+from src.database.models.orders import OrderModel, StatusEnum
+from src.database.models.payments import PaymentModel, PaymentStatus
+from src.database.session_postgresql import get_postgresql_db
 from payments.schemas.payments import OrderSchema
 
 STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY")
@@ -45,19 +45,21 @@ async def create_payment(
     await db.commit()
     await db.refresh(new_payment)
 
-    items = []
-    for item in current_order.items:
-        items.append(
-            {
-                "price_data": {
-                    "currency": "usd",
-                    "product_data": {
-                        "name": f"{item.movie.name} - Order #{order_id}"},
-                    "unit_amount": int(item.price_at_order * 100)
-                },
-                "quantity": 1,
-            }
-        )
+    # items = []
+    # for item in current_order.items:
+    #     items.append(
+    #         {
+    #             "price_data": {
+    #                 "currency": "usd",
+    #                 "product_data": {
+    #                     "name": f"{item.movie.name} - Order #{order_id}"},
+    #                 "unit_amount": int(item.price_at_order * 100)
+    #             },
+    #             "quantity": 1,
+    #         }
+    #     )
+
+
 
     base_url = str(request.base_url).rstrip("/")
     success_url = f"{base_url}/api/v1/payments/success?session_id={{CHECKOUT_SESSION_ID}}"
@@ -66,7 +68,15 @@ async def create_payment(
     try:
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
-            line_items=items,
+            line_items={
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {
+                        "name": f"Order #{order_id}"},
+                    "unit_amount": int(unit_amount * 100)
+                },
+                "quantity": 1,
+            },
             mode="payment",
             success_url=success_url,
             cancel_url=cancel_url,
@@ -161,9 +171,12 @@ async def get_payments_list():
 async def get_payment_detail():
     return {"message": "Payments endpoint works!"}
 
+
 @router.get("/orders/{order_id}", response_model=OrderSchema)
 async def test(order_id: int, db: AsyncSession = Depends(get_postgresql_db)) -> OrderSchema:
     order_res = await db.execute(select(OrderModel).filter_by(id=order_id))
     order = order_res.scalars().first()
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
     return OrderSchema.model_validate(order)
 
