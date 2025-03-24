@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.accounts.utils import hash_password, check_password
 
-from database.models import Base
+from src.database.models import Base
 from typing import Optional
 
 
