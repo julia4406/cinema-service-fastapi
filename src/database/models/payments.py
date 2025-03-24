@@ -4,7 +4,6 @@ from typing import Optional
 from sqlalchemy import ForeignKey, DateTime, DECIMAL, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Enum as SQLAlchemyEnum
-from src.database.models import Base
 from enum import Enum
 
 from src.database.models import Base
