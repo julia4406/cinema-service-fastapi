@@ -7,7 +7,7 @@ from sqlalchemy import Enum as SQLAlchemyEnum
 from src.database.models import Base
 from enum import Enum
 
-from src.database.models import OrderItemModel
+from src.database.models import Base
 
 
 class PaymentStatus(Enum):

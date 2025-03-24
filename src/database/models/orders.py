@@ -6,7 +6,7 @@ from typing import List
 
 from sqlalchemy import ForeignKey, Numeric, func, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from src.database.models import Base, UserModel, MovieModel, PaymentItemModel
+from src.database.models import Base
 
 
 class StatusEnum(enum.Enum):

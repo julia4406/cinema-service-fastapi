@@ -8,7 +8,7 @@ from sqlalchemy import (
     DateTime, func, Enum)
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
-from src.database.models import Base, PurchasedModel, CartItemModel
+from src.database.models import Base
 
 
 class ReactionType(str, enum.Enum):
