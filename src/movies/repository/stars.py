@@ -9,6 +9,15 @@ class StarsRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def is_star_by_name(self, name: str):
+        existing_stmt = select(StarModel).where(
+            (StarModel.name == name)
+        )
+
+        existing_result = await self.db.execute(existing_stmt)
+        existing_genre = existing_result.scalars().first()
+        return True if existing_genre else False
+
     async def get_stars(self, limit: int = 10, offset: int = 0):
         stars = await self.db.execute(select(StarModel).offset(offset).limit(limit))
         return stars.scalars().all()
@@ -20,14 +29,7 @@ class StarsRepository:
         return star
 
     async def add_star(self, star: StarModel):
-        existing_stmt = select(StarModel).where(
-            (StarModel.name == star.name)
-        )
-
-        existing_result = await self.db.execute(existing_stmt)
-        existing_star = existing_result.scalars().first()
-
-        if existing_star:
+        if await self.is_star_by_name(star.name):
             return False
 
         self.db.add(star)
