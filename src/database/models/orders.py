@@ -2,11 +2,11 @@ from __future__ import annotations
 import enum
 
 from datetime import datetime
-from sqlalchemy import ForeignKey, Numeric, String, func, Enum
+from typing import List
+
+from sqlalchemy import ForeignKey, Numeric, func, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from database.models.base import Base
-from database.models.accounts import UserModel
-from database.models.movies import MovieModel
+from database.models import Base
 
 
 class StatusEnum(enum.Enum):
@@ -66,3 +66,9 @@ class OrderItemModel(Base):
         back_populates="items",
     )
     movie: Mapped["MovieModel"] = relationship("MovieModel")
+
+    payment_items: Mapped[List["PaymentItemModel"]] = relationship(
+        "PaymentItemModel",
+        back_populates="order_item",
+        cascade="all, delete-orphan",
+    )
