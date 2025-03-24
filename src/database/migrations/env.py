@@ -2,17 +2,25 @@ from logging.config import fileConfig
 
 from alembic import context
 
-from database.models import (
-    movies,
-    accounts,
-    orders,
-    payments,
-    shopping_carts,
-    tokens
-)   # noqa: F401
+# from database.models import (
+#     movies,
+#     accounts,
+#     orders,
+#     payments,
+#     shopping_carts,
+#     tokens
+# )   # noqa: F401
 
-from database.models.base import Base
-from database.session_postgresql import sync_postgresql_engine
+from src.database.models.movies import Base as MoviesBase
+from src.database.models.accounts import Base as AccountsBase
+from src.database.models.orders import Base as OrdersBase
+from src.database.models.payments import Base as PaymentsBase
+from src.database.models.shopping_carts import Base as ShoppingCartsBase
+from src.database.models.tokens import Base as TokensBase
+
+from src.database.models.base import Base as BasicBase
+
+from src.database.session_postgresql import sync_postgresql_engine
 
 
 # this is the Alembic Config object, which provides
@@ -28,7 +36,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = Base.metadata
+target_metadata = BasicBase.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
