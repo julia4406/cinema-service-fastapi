@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, UniqueConstraint
 
-from database.models import Base
+from src.database.models import Base
 
 
 class TokenBaseModel(Base):

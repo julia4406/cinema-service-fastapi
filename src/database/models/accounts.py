@@ -5,7 +5,7 @@ from datetime import datetime, date
 from sqlalchemy import Enum, func, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database.models import Base
+from src.database.models import Base
 from typing import Optional
 
 
