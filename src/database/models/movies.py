@@ -25,8 +25,8 @@ MoviesGenresModel = Table(
     Column(
         "genre_id",
         ForeignKey("genres.id", ondelete="CASCADE"), primary_key=True, nullable=False),
+    extend_existing=True,
 )
-
 
 MoviesDirectorsModel = Table(
     "movie_directors",
@@ -37,8 +37,8 @@ MoviesDirectorsModel = Table(
     Column(
         "director_id",
         ForeignKey("directors.id", ondelete="CASCADE"), primary_key=True, nullable=False),
+    extend_existing=True,
 )
-
 
 MoviesStarsModel = Table(
     "movie_stars",
@@ -49,11 +49,13 @@ MoviesStarsModel = Table(
     Column(
         "star_id",
         ForeignKey("stars.id", ondelete="CASCADE"), primary_key=True, nullable=False),
+    extend_existing=True,
 )
 
 
 class StarModel(Base):
     __tablename__ = "stars"
+    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
@@ -67,6 +69,7 @@ class StarModel(Base):
 
 class GenreModel(Base):
     __tablename__ = "genres"
+    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
@@ -80,6 +83,7 @@ class GenreModel(Base):
 
 class DirectorModel(Base):
     __tablename__ = "directors"
+    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
@@ -93,6 +97,7 @@ class DirectorModel(Base):
 
 class CertificationModel(Base):
     __tablename__ = "certifications"
+    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
@@ -102,6 +107,7 @@ class CertificationModel(Base):
 
 class CommentModel(Base):
     __tablename__ = "comments"
+    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     text: Mapped[Text] = mapped_column(Text, nullable=False)
@@ -109,6 +115,42 @@ class CommentModel(Base):
 
     movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
     movie: Mapped["MovieModel"] = relationship("MovieModel", back_populates="comments")
+
+
+class UserFavoriteModel(Base):
+    __tablename__ = "user_favorites"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
+    added_at = Column(DateTime(timezone=True), default=func.now())
+
+    user = relationship("UserModel", back_populates="favorites")
+    movie = relationship("MovieModel", back_populates="favorites")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "movie_id"),
+        {"extend_existing": True},
+    )
+
+
+class UserReactionModel(Base):
+    __tablename__ = "reactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
+    reaction_type = Column(Enum(ReactionType), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+    user = relationship("UserModel", back_populates="reactions")
+    movie = relationship("MovieModel", back_populates="reactions")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "movie_id"),
+        {"extend_existing": True},
+    )
 
 
 class MovieModel(Base):
@@ -149,7 +191,7 @@ class MovieModel(Base):
         back_populates="movies"
     )
 
-    favorites: Mapped[List["UserFavoriteModel"]] = relationship("UserFavoriteModel", back_populates="movie")
+    favorites: Mapped[List["UserFavoriteModel"]] = relationship("UserFavoriteModel", back_populates="user")
     reactions: Mapped[List["UserReactionModel"]] = relationship("UserReactionModel", back_populates="movie")
 
     purchases: Mapped[List["PurchasedModel"]] = relationship("PurchasedModel", back_populates="movie")
@@ -157,38 +199,5 @@ class MovieModel(Base):
 
     __table_args__ = (
         UniqueConstraint("name", "year", "time"),
-    )
-
-
-class UserFavoriteModel(Base):
-    __tablename__ = "user_favorites"
-
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
-    added_at = Column(DateTime(timezone=True), default=func.now())
-
-    user = relationship("UserModel", back_populates="favorites")
-    movie = relationship("MovieModel", back_populates="favorites")
-
-    __table_args__ = (
-        UniqueConstraint("user_id", "movie_id"),
-    )
-
-
-class UserReactionModel(Base):
-    __tablename__ = "reactions"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
-    reaction_type = Column(Enum(ReactionType), nullable=False)
-    created_at = Column(DateTime(timezone=True), default=func.now())
-    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
-
-    user = relationship("UserModel", back_populates="reactions")
-    movie = relationship("MovieModel", back_populates="reactions")
-
-    __table_args__ = (
-        UniqueConstraint("user_id", "movie_id"),
+        {"extend_existing": True}
     )
