@@ -15,7 +15,7 @@ from src.accounts.validators import (
 )
 
 
-class UserCreateRequestSchema(BaseModel):
+class UserCreateRequest(BaseModel):
     email: EmailStr
     password: str
 
@@ -33,14 +33,14 @@ class UserCreateRequestSchema(BaseModel):
         return password
 
 
-class UserAdminCreateRequestSchema(BaseModel):
+class UserAdminCreateRequest(BaseModel):
     email: str
     password: str
     is_active: Optional[bool] = False
     group: Optional[UserGroupEnum] = UserGroupEnum.USER
 
 
-class UserCreateResponseSchema(BaseModel):
+class UserCreateResponse(BaseModel):
     id: int
     email: str
     is_active: bool
@@ -58,7 +58,7 @@ class UserAdminUpdateRequest(BaseModel):
     group: Optional[UserGroupEnum] = None
 
 
-class UserLoginRequestSchema(BaseModel):
+class UserLoginRequest(BaseModel):
     email: EmailStr
     password: str
 

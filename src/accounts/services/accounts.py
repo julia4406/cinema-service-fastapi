@@ -15,10 +15,10 @@ from accounts.security.jwt import JWTAuthManager
 from src.database.models import UserModel, ProfileModel
 from accounts.validators.accounts import validate_password_strength
 from accounts.schemas import (
-    UserCreateResponseSchema,
-    UserCreateRequestSchema,
+    UserCreateResponse,
+    UserCreateRequest,
     JWTTokenResponse,
-    UserLoginRequestSchema,
+    UserLoginRequest,
     RefreshTokenRequest
 )
 
@@ -32,18 +32,18 @@ class AccountsService:
         self.jwt_service = JWTAuthManager()
         self.reset_token_repo = PasswordResetTokenRepository(db)
 
-    async def register_user(self, user: UserCreateRequestSchema) -> UserCreateResponseSchema:
+    async def register_user(self, user: UserCreateRequest) -> UserCreateResponse:
         if await self.user_repo.is_email_exists(user.email):
             raise ValueError("This email is already registered")
 
-        user = UserCreateRequestSchema(email=user.email, password=user.password)
+        user = UserCreateRequest(email=user.email, password=user.password)
 
         new_user = await self.user_repo.create_user(user)
         activation_token = await self.activation_token_repo.create_activation_token(user_id=new_user.id)
 
         await self.email_service.send_activation_email(user.email, activation_token.token)
 
-        return UserCreateResponseSchema(
+        return UserCreateResponse(
             id=new_user.id,
             email=new_user.email,
             is_active=new_user.is_active,
@@ -84,7 +84,7 @@ class AccountsService:
         await self.email_service.send_activation_email(email, new_token.token)
         return {"message": "New activation token has been sent"}
 
-    async def login_user(self, user: UserLoginRequestSchema) -> JWTTokenResponse:
+    async def login_user(self, user: UserLoginRequest) -> JWTTokenResponse:
         db_user = await self.user_repo.get_by_email(user.email)
         if not db_user or not db_user.verify_password(user.password):
             raise ValueError("Invalid credentials")

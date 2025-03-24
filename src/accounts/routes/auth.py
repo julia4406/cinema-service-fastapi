@@ -4,9 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.session_postgresql import get_postgresql_db
 from src.accounts.schemas import (
-    UserCreateRequestSchema,
-    UserCreateResponseSchema,
-    UserLoginRequestSchema,
+    UserCreateRequest,
+    UserCreateResponse,
+    UserLoginRequest,
     RefreshTokenRequest,
     ChangePasswordRequest,
     ForgotPasswordRequest,
@@ -20,9 +20,9 @@ from src.accounts.services.accounts import AccountsService
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register/", response_model=UserCreateResponseSchema)
+@router.post("/register/", response_model=UserCreateResponse)
 async def register_user(
-    user_data: UserCreateRequestSchema,
+    user_data: UserCreateRequest,
     db: AsyncSession = Depends(get_postgresql_db)
 ):
     service = AccountsService(db)
@@ -58,7 +58,7 @@ async def resend_activation(
 
 @router.post("/login/")
 async def login(
-        request: UserLoginRequestSchema,
+        request: UserLoginRequest,
         db: AsyncSession = Depends(get_postgresql_db)
 ):
     service = AccountsService(db)
