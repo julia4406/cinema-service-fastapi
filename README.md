@@ -13,3 +13,15 @@ docker-compose -f docker-compose-local.yml up --build
 User: admin
 Password: some_password
 Database: movies_db
+
+.env Change settings in MAIL
+# EMAIL
+MAIL_USERNAME=testsendingemail228@gmail.com
+MAIL_PASSWORD=mgqpmijmgicochgi
+MAIL_FROM=testsendingemail228@gmail.com
+MAIL_FROM_NAME=YourMovie
+MAIL_PORT=587
+MAIL_SERVER=smtp.gmail.com
+MAIL_STARTTLS=True
+MAIL_SSL_TLS=False
+SERVICE_URL=http://127.0.0.1:8000/
