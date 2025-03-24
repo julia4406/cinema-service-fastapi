@@ -8,6 +8,10 @@ class CartItemResponseSchema(BaseModel):
     cart_id: int
     movie_id: int
     added_at: datetime
+    title: str
+    price: float
+    genre: str
+    year: int
 
     class Config:
         from_attributes = True
