@@ -1,6 +1,6 @@
 import boto3
 from pydantic import EmailStr
-from fastapi import UploadFile, HTTPException
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -47,13 +47,19 @@ class UserRepository:
         await self.db.commit()
         await self.db.refresh(user)
 
-    async def create_user(self, user: UserCreateRequestSchema) -> UserModel:
+    async def get_or_create_group(self, group_name: UserGroupEnum) -> UserGroupModel:
         group_result = await self.db.execute(
-            select(UserGroupModel).filter_by(name=UserGroupEnum.USER)
+            select(UserGroupModel).filter_by(name=group_name.value)
         )
         group = group_result.scalar_one_or_none()
         if not group:
-            raise ValueError("Default user group not found in database")
+            group = UserGroupModel(name=group_name.value)
+            self.db.add(group)
+            await self.db.flush()
+        return group
+
+    async def create_user(self, user: UserCreateRequestSchema) -> UserModel:
+        group = await self.get_or_create_group(UserGroupEnum.USER)
 
         db_user = UserModel(**user.model_dump(), group_id=group.id)
         self.db.add(db_user)
@@ -98,7 +104,7 @@ class ProfileRepository:
         await self.db.delete(profile)
         await self.db.commit()
 
-    async def update_avatar(self, profile: ProfileModel, avatar_file: UploadFile, user_id: int) -> ProfileModel:
+    async def update_avatar(self, profile: ProfileModel, avatar_file: UploadFile, user_id: int) -> ProfileModel | None:
         allowed_types = {"image/jpeg", "image/png"}
         max_size_mb = 8
         max_size_bytes = max_size_mb * 1024 * 1024
