@@ -9,8 +9,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
-from database.models.accounts import UserModel
-from database.models.base import Base
+from database.models import Base
 from database.validators.purchased import validate_movie_not_already_purchased
 from database.validators.shopping_carts import (
     validate_movie_not_in_cart,
@@ -80,7 +79,7 @@ class ShoppingCartModel(Base):
 
     items: Mapped[List["CartItemModel"]] = relationship(
         "CartItemModel",
-        back_populates="carts",
+        back_populates="cart",
         cascade="all, delete-orphan",
     )
 
@@ -106,8 +105,14 @@ class CartItemModel(Base):
         nullable=False
     )
 
-    cart: Mapped["ShoppingCartModel"] = relationship("ShoppingCartModel")
-    movie: Mapped["MovieModel"] = relationship()
+    cart: Mapped["ShoppingCartModel"] = relationship(
+        "ShoppingCartModel",
+        back_populates="items"
+    )
+    movie: Mapped["MovieModel"] = relationship(
+        "MovieModel",
+        back_populates="cart_items"
+    )
 
     __table_args__ = (
         UniqueConstraint(
