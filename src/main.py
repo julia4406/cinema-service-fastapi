@@ -1,14 +1,16 @@
 import uvicorn
 from fastapi import FastAPI
 from payments.routes.payments import router as payment_router
-from accounts.routes.routes import router
+from src.accounts.routes.auth import router as auth_router
+from src.accounts.routes.profile import router as profile_router
 
 app = FastAPI(
     title="Online Cinema Service"
 )
 
 api_version_prefix = "/api/v1"
-app.include_router(router)
+app.include_router(auth_router)
+app.include_router(profile_router)
 
 app.include_router(
     payment_router,
