@@ -9,6 +9,10 @@ class CartItem:
     cart_id: int
     movie_id: int
     added_at: datetime
+    title: str
+    price: float
+    genre: str
+    year: int
 
 
 @dataclass
