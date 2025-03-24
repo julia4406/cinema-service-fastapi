@@ -14,7 +14,7 @@ docker-compose -f docker-compose-local.yml up --build
 
 Мають завантажитись міграції.
 /// If we need a create new migrations
-    alembic revision --autogenerate -m "describe_changes"
+    alembic revision -m "describe_changes"
     alembic upgrade head
 
 3.
