@@ -28,7 +28,7 @@ class PaymentModel(Base):
         nullable=False,
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         default=datetime.now(timezone.utc),
     )
     status: Mapped[PaymentStatus] = mapped_column(
