@@ -59,6 +59,9 @@ class CartRepository(CartRepositoryInterface):
                 await self._session.flush()
                 await self._session.refresh(cart_item)
                 return CartItem(**object_as_dict(cart_item))
+        except ValueError as e:
+            await self._session.rollback()
+            raise CartItemError(f"Cannot add movie to cart: {str(e)}")
         except SQLAlchemyError as e:
             await self._session.rollback()
             raise CartItemError(f"Failed to add item to cart: {str(e)}")
