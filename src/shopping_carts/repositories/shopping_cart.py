@@ -50,6 +50,7 @@ class CartRepository(CartRepositoryInterface):
             .options(
                 joinedload(ShoppingCartModel.items)
                 .joinedload(CartItemModel.movie)
+                .joinedload(MovieModel.genres)
             )
         )
         cart = result.scalars().first()
@@ -72,11 +73,21 @@ class CartRepository(CartRepositoryInterface):
 
     async def add_item_to_cart(self, cart_id: int, movie_id: int) -> CartItem:
         try:
+            existing_item = await self._session.execute(
+                select(CartItemModel).filter_by(
+                    cart_id=cart_id,
+                    movie_id=movie_id
+                )
+            )
+            if existing_item.scalars().first():
+                raise CartItemError(
+                    f"Movie with ID {movie_id} is already in cart with ID {cart_id}"
+                )
+
             cart_item = CartItemModel(cart_id=cart_id, movie_id=movie_id)
             self._session.add(cart_item)
             await self._session.flush()
 
-            # Явно загружаем cart_item с данными фильма и жанрами
             result = await self._session.execute(
                 select(CartItemModel)
                 .filter_by(id=cart_item.id)
@@ -104,9 +115,7 @@ class CartRepository(CartRepositoryInterface):
                     "year": movie.year if movie else None,
                 }
             )
-            print("here")
             cart_item_dto = CartItem(**item_dict)
-            print("here222")
             return cart_item_dto
         except (ValueError, SQLAlchemyError) as e:
             await self._session.rollback()
