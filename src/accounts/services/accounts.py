@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
 
+from fastapi import UploadFile
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from accounts.repositories.accounts import UserRepository
+from accounts.repositories.accounts import UserRepository, ProfileRepository
 from accounts.repositories.tokens import (
     ActivationTokensRepository,
     RefreshTokensRepository,
@@ -11,7 +12,7 @@ from accounts.repositories.tokens import (
 )
 from accounts.services.email_service import EmailService
 from accounts.security.jwt import JWTAuthManager
-from src.database.models import UserModel
+from src.database.models import UserModel, ProfileModel
 from accounts.validators.accounts import validate_password_strength
 from accounts.schemas import (
     UserCreateResponseSchema,
@@ -98,6 +99,9 @@ class AccountsService:
             refresh_token=refresh_token
         )
 
+    async def logout_user(self, user: UserModel):
+        await RefreshTokensRepository(self.db).delete_all_by_user_id(user.id)
+
     async def refresh_access_token(self, refresh_token: RefreshTokenRequest) -> JWTTokenResponse:
         refresh_token = refresh_token.refresh_token
         user = await self.jwt_service.verify_refresh_token(refresh_token, db=self.db)
@@ -146,3 +150,24 @@ class AccountsService:
         await self.db.commit()
         await self.reset_token_repo.delete_reset_token(token)
         return {"message": "Password has been changed successfully"}
+
+
+class ProfileService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+        self.profile_repo = ProfileRepository(db)
+
+    async def get_profile(self, current_user: UserModel) -> ProfileModel:
+        profile = await self.profile_repo.get_by_user_id(current_user.id)
+        if not profile:
+            raise ValueError("Profile is not found")
+        return profile
+
+    async def update_profile(self, current_user: UserModel, profile_data) -> ProfileModel:
+        profile = await self.get_profile(current_user)
+        updated_profile = await self.profile_repo.update(profile, profile_data.model_dump(exclude_unset=True))
+        return updated_profile
+
+    async def upload_avatar(self, current_user: UserModel, avatar_file: UploadFile) -> ProfileModel:
+        profile = await self.get_profile(current_user)
+        return await self.profile_repo.update_avatar(profile, avatar_file, current_user.id)

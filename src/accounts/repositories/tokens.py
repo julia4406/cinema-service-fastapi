@@ -55,7 +55,7 @@ class RefreshTokensRepository:
         result = await self.db.execute(select(RefreshTokenModel).filter_by(user_id=user_id, token=token))
         return result.scalar_one_or_none()
 
-    async def delete_all_by_user_id(self, user_id: EmailStr) -> RefreshTokenModel | None:
+    async def delete_all_by_user_id(self, user_id: int) -> RefreshTokenModel | None:
         await self.db.execute(delete(RefreshTokenModel).filter_by(user_id=user_id))
         await self.db.commit()
 
