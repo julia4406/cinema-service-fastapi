@@ -3,8 +3,9 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
+from pydantic import EmailStr
 
-from src.database.models.tokens import ActivationTokenModel
+from src.database.models.tokens import ActivationTokenModel, RefreshTokenModel
 
 
 class ActivationTokensRepository:
@@ -43,4 +44,17 @@ class ActivationTokensRepository:
             delete(ActivationTokenModel)
             .where(ActivationTokenModel.expires_at < datetime.now(timezone.utc).replace(tzinfo=None))
         )
+        await self.db.commit()
+
+
+class RefreshTokensRepository:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def get_refresh_token(self, token: str, user_id: int) -> RefreshTokenModel | None:
+        result = await self.db.execute(select(RefreshTokenModel).filter_by(user_id=user_id, token=token))
+        return result.scalar_one_or_none()
+
+    async def delete_all_by_user_id(self, user_id: EmailStr) -> RefreshTokenModel | None:
+        await self.db.execute(delete(RefreshTokenModel).filter_by(user_id=user_id))
         await self.db.commit()

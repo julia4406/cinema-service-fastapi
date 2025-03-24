@@ -1,11 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.database.session_postgresql import get_postgresql_db
-from src.accounts.schemas import UserCreateRequestSchema, UserCreateResponseSchema
+from src.accounts.schemas import (
+    UserCreateRequestSchema,
+    UserCreateResponseSchema,
+    UserLoginRequestSchema,
+    RefreshTokenRequest
+)
+
 from src.accounts.services.accounts import AccountsService
 
+
 router = APIRouter(prefix="/auth", tags=["auth"])
+
 
 @router.post("/register/", response_model=UserCreateResponseSchema)
 async def register_user(
@@ -39,5 +48,26 @@ async def resend_activation(
     service = AccountsService(db)
     try:
         return await service.resend_activation(email)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/login/")
+async def login(request: UserLoginRequestSchema, db: AsyncSession = Depends(get_postgresql_db)):
+    service = AccountsService(db)
+    try:
+        return await service.login_user(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/refresh/")
+async def refresh_token(
+        refresh_token: RefreshTokenRequest,
+        db: AsyncSession = Depends(get_postgresql_db)
+):
+    service = AccountsService(db)
+    try:
+        return await service.refresh_access_token(refresh_token)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
