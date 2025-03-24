@@ -5,9 +5,22 @@ An online cinema is a digital platform that allows users to select, watch, and p
 
 
 ** To run database ** 
-підняти базу:
+1.
 docker-compose -f docker-compose-local.yml down -v 
 docker-compose -f docker-compose-local.yml up --build
+2.
+Після створення контейнера(він залишаеться запущений) в терміналі:
+alembic upgrade head
+
+Мають завантажитись міграції.
+3.
+Скопіювати налаштування в .env (з .env.sample + для пошти тут нижче є 
+налаштування)
+4.
+Run main.py і перевірити що все працює
+
+
+
 
 для налаштування бази - обрати Postgres
 User: admin
