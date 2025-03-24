@@ -33,3 +33,8 @@ class UserCreateResponseSchema(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+
+class UserLoginRequestSchema(BaseModel):
+    email: EmailStr
+    password: str
