@@ -8,6 +8,7 @@ from shopping_carts.repositories.shopping_cart import CartRepository
 from shopping_carts.services.shopping_cart import CartService
 
 
+# TODO: replace get_current_user with deps from accounts
 async def get_current_user() -> UserModel:
     return UserModel(id=1)
 

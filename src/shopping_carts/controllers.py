@@ -11,6 +11,7 @@ from shopping_carts.schemas.shopping_cart import (
 )
 
 
+# TODO: replace get_current_user with deps from accounts
 async def get_cart(
         user: UserModel = Depends(get_current_user),
         cart_service: CartServiceInterface = Depends(get_cart_service),
