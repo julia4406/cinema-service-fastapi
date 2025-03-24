@@ -10,6 +10,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from src.database.models import Base
+
 from src.database.validators.purchased import validate_movie_not_already_purchased
 from src.database.validators.shopping_carts import (
     validate_movie_not_in_cart,
