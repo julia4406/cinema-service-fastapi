@@ -1,18 +1,19 @@
 from typing import List, Optional
 
 from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from database.exceptions.shopping_cart import (
     CreateCartError,
     CartItemError,
     CreatePurchaseError
 )
-from database.models.shopping_carts import (
+from database.models import (
     ShoppingCartModel,
     CartItemModel,
-    PurchasedModel
+    PurchasedModel, MovieModel
 )
 from database.utils import object_as_dict
 from shopping_carts.dto.shopping_cart import CartItem, ShoppingCart, Purchase
@@ -23,49 +24,45 @@ class CartRepository(CartRepositoryInterface):
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def add_item_to_cart(self, cart_id: int, movie_id: int) -> CartItem:
+    async def create_cart(self, user_id: int) -> ShoppingCart:
         try:
-            async with self._session.begin():
-                cart_item = CartItemModel(cart_id=cart_id, movie_id=movie_id)
-                self._session.add(cart_item)
-                await self._session.flush()
-                await self._session.refresh(
-                    cart_item,
-                    attribute_names=["movie"]
-                )
-                item_dict = object_as_dict(cart_item)
-                item_dict.update(
-                    {
-                        "title": cart_item.movie.title,
-                        "price": cart_item.movie.price,
-                        "genre": cart_item.movie.genre,
-                        "year": cart_item.movie.year,
-                    }
-                )
-                return CartItem(**item_dict)
-        except (ValueError, SQLAlchemyError) as e:
+            cart = ShoppingCartModel(user_id=user_id)
+            self._session.add(cart)
+            await self._session.flush()
+            await self._session.refresh(cart)
+            cart_dict = object_as_dict(cart)
+            cart_dict["items"] = []
+            return ShoppingCart(**cart_dict)
+        except IntegrityError:
             await self._session.rollback()
-            if isinstance(e, ValueError):
-                raise CartItemError(f"Cannot add movie to cart: {str(e)}")
-            raise CartItemError(f"Failed to add item to cart: {str(e)}")
+            raise CreateCartError(
+                f"Cart already exists for user with ID {user_id}"
+            )
+        except SQLAlchemyError as e:
+            await self._session.rollback()
+            raise CreateCartError(f"Failed to create cart: {str(e)}")
 
     async def get_cart_by_user_id(self, user_id: int) -> Optional[
         ShoppingCart]:
         result = await self._session.execute(
-            select(ShoppingCartModel).filter_by(user_id=user_id)
+            select(ShoppingCartModel)
+            .filter_by(user_id=user_id)
+            .options(
+                joinedload(ShoppingCartModel.items)
+                .joinedload(CartItemModel.movie)
+            )
         )
         cart = result.scalars().first()
         if not cart:
             return None
-
         cart_dict = object_as_dict(cart)
         cart_dict["items"] = [
             CartItem(
                 **{
                     **object_as_dict(item),
-                    "title": item.movie.title,
+                    "name": item.movie.name,
                     "price": item.movie.price,
-                    "genre": item.movie.genre,
+                    "genres": item.movie.genres,
                     "year": item.movie.year,
                 }
             )
@@ -75,55 +72,81 @@ class CartRepository(CartRepositoryInterface):
 
     async def add_item_to_cart(self, cart_id: int, movie_id: int) -> CartItem:
         try:
-            async with self._session.begin():
-                cart_item = CartItemModel(cart_id=cart_id, movie_id=movie_id)
-                self._session.add(cart_item)
-                await self._session.flush()
-                await self._session.refresh(cart_item)
-                return CartItem(**object_as_dict(cart_item))
-        except ValueError as e:
+            cart_item = CartItemModel(cart_id=cart_id, movie_id=movie_id)
+            self._session.add(cart_item)
+            await self._session.flush()
+
+            # Явно загружаем cart_item с данными фильма и жанрами
+            result = await self._session.execute(
+                select(CartItemModel)
+                .filter_by(id=cart_item.id)
+                .options(
+                    joinedload(CartItemModel.movie).joinedload(
+                        MovieModel.genres
+                    )
+                )
+            )
+            cart_item = result.scalars().first()
+
+            if not cart_item:
+                raise CartItemError(
+                    "Failed to retrieve cart item after creation"
+                )
+
+            movie = cart_item.movie
+            item_dict = object_as_dict(cart_item)
+            item_dict.update(
+                {
+                    "name": movie.name if movie else None,
+                    "price": movie.price if movie else None,
+                    "genres": [genre.name for genre in
+                               movie.genres] if movie and movie.genres else None,
+                    "year": movie.year if movie else None,
+                }
+            )
+            print("here")
+            cart_item_dto = CartItem(**item_dict)
+            print("here222")
+            return cart_item_dto
+        except (ValueError, SQLAlchemyError) as e:
             await self._session.rollback()
-            raise CartItemError(f"Cannot add movie to cart: {str(e)}")
-        except SQLAlchemyError as e:
-            await self._session.rollback()
+            if isinstance(e, ValueError):
+                raise CartItemError(f"Cannot add movie to cart: {str(e)}")
             raise CartItemError(f"Failed to add item to cart: {str(e)}")
 
     async def remove_item_from_cart(self, cart_item_id: int) -> None:
         try:
-            async with self._session.begin():
-                result = await self._session.execute(
-                    select(CartItemModel).filter_by(id=cart_item_id)
-                )
-                item = result.scalars().first()
-                if item:
-                    await self._session.delete(item)
-                    await self._session.flush()
+            result = await self._session.execute(
+                select(CartItemModel).filter_by(id=cart_item_id)
+            )
+            item = result.scalars().first()
+            if item:
+                await self._session.delete(item)
+                await self._session.flush()
         except SQLAlchemyError as e:
             await self._session.rollback()
             raise CartItemError(f"Failed to remove item from cart: {str(e)}")
 
     async def clear_cart(self, cart_id: int) -> None:
         try:
-            async with self._session.begin():
-                result = await self._session.execute(
-                    select(CartItemModel).filter_by(cart_id=cart_id)
-                )
-                items = result.scalars().all()
-                for item in items:
-                    await self._session.delete(item)
-                await self._session.flush()
+            result = await self._session.execute(
+                select(CartItemModel).filter_by(cart_id=cart_id)
+            )
+            items = result.scalars().all()
+            for item in items:
+                await self._session.delete(item)
+            await self._session.flush()
         except SQLAlchemyError as e:
             await self._session.rollback()
             raise CartItemError(f"Failed to clear cart: {str(e)}")
 
     async def create_purchase(self, user_id: int, movie_id: int) -> Purchase:
         try:
-            async with self._session.begin():
-                purchase = PurchasedModel(user_id=user_id, movie_id=movie_id)
-                self._session.add(purchase)
-                await self._session.flush()
-                await self._session.refresh(purchase)
-                return Purchase(**object_as_dict(purchase))
+            purchase = PurchasedModel(user_id=user_id, movie_id=movie_id)
+            self._session.add(purchase)
+            await self._session.flush()
+            await self._session.refresh(purchase)
+            return Purchase(**object_as_dict(purchase))
         except SQLAlchemyError as e:
             await self._session.rollback()
             raise CreatePurchaseError(f"Failed to create purchase: {str(e)}")
@@ -135,18 +158,24 @@ class CartRepository(CartRepositoryInterface):
         purchases = result.scalars().all()
         return [Purchase(**object_as_dict(purchase)) for purchase in purchases]
 
-    async def remove_purchase_by_id(self, movie_id: int) -> None:
+    async def get_purchase_by_id(self, purchase_id: int) -> Optional[Purchase]:
+        result = await self._session.execute(
+            select(PurchasedModel).filter_by(id=purchase_id)
+        )
+        purchase = result.scalars().first()
+        if not purchase:
+            return None
+        return Purchase(**object_as_dict(purchase))
+
+    async def remove_purchase_by_id(self, purchase_id: int) -> None:
         try:
-            async with self._session.begin():
-                result = await self._session.execute(
-                    select(PurchasedModel).filter_by(movie_id=movie_id)
-                )
-                purchases = result.scalars().all()
-                for purchase in purchases:
-                    await self._session.delete(purchase)
+            result = await self._session.execute(
+                select(PurchasedModel).filter_by(id=purchase_id)
+            )
+            purchase = result.scalars().first()
+            if purchase:
+                await self._session.delete(purchase)
                 await self._session.flush()
         except SQLAlchemyError as e:
             await self._session.rollback()
-            raise CreatePurchaseError(
-                f"Failed to remove purchases for movie {movie_id}: {str(e)}"
-            )
+            raise CreatePurchaseError(f"Failed to remove purchase: {str(e)}")

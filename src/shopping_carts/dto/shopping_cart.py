@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 
 @dataclass
@@ -9,10 +9,10 @@ class CartItem:
     cart_id: int
     movie_id: int
     added_at: datetime
-    title: str
+    name: str
     price: float
-    genre: str
     year: int
+    genres: Optional[List[str]] = None
 
 
 @dataclass

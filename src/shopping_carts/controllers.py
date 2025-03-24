@@ -1,8 +1,9 @@
 from fastapi import Depends, HTTPException
 
+from accounts.dependencies import get_current_user
 from database.exceptions.shopping_cart import CreateCartError, CartItemError
-from database.models.accounts import UserModel
-from shopping_carts.dependencies import get_current_user, get_cart_service
+from database.models import UserModel
+from shopping_carts.dependencies import get_cart_service
 from shopping_carts.interfaces.services import CartServiceInterface
 from shopping_carts.schemas.shopping_cart import (
     CartResponseSchema,
@@ -11,7 +12,6 @@ from shopping_carts.schemas.shopping_cart import (
 )
 
 
-# TODO: replace get_current_user with deps from accounts
 async def get_cart(
         user: UserModel = Depends(get_current_user),
         cart_service: CartServiceInterface = Depends(get_cart_service),

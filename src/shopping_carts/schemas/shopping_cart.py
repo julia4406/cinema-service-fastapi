@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 
 class CartItemResponseSchema(BaseModel):
@@ -8,9 +8,9 @@ class CartItemResponseSchema(BaseModel):
     cart_id: int
     movie_id: int
     added_at: datetime
-    title: str
+    name: str
     price: float
-    genre: str
+    genres: Optional[List[str]] = None
     year: int
 
     class Config:
