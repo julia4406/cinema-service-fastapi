@@ -23,22 +23,34 @@ class CartRepository(CartRepositoryInterface):
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def create_cart(self, user_id: int) -> ShoppingCart:
+    async def add_item_to_cart(self, cart_id: int, movie_id: int) -> CartItem:
         try:
             async with self._session.begin():
-                cart = ShoppingCartModel(user_id=user_id)
-                self._session.add(cart)
+                cart_item = CartItemModel(cart_id=cart_id, movie_id=movie_id)
+                self._session.add(cart_item)
                 await self._session.flush()
-                await self._session.refresh(cart)
-                return ShoppingCart(**object_as_dict(cart))
-        except SQLAlchemyError as e:
+                await self._session.refresh(
+                    cart_item,
+                    attribute_names=["movie"]
+                )
+                item_dict = object_as_dict(cart_item)
+                item_dict.update(
+                    {
+                        "title": cart_item.movie.title,
+                        "price": cart_item.movie.price,
+                        "genre": cart_item.movie.genre,
+                        "year": cart_item.movie.year,
+                    }
+                )
+                return CartItem(**item_dict)
+        except (ValueError, SQLAlchemyError) as e:
             await self._session.rollback()
-            raise CreateCartError(f"Failed to create cart: {str(e)}")
+            if isinstance(e, ValueError):
+                raise CartItemError(f"Cannot add movie to cart: {str(e)}")
+            raise CartItemError(f"Failed to add item to cart: {str(e)}")
 
-    async def get_cart_by_user_id(
-            self,
-            user_id: int
-    ) -> Optional[ShoppingCart]:
+    async def get_cart_by_user_id(self, user_id: int) -> Optional[
+        ShoppingCart]:
         result = await self._session.execute(
             select(ShoppingCartModel).filter_by(user_id=user_id)
         )
@@ -47,8 +59,18 @@ class CartRepository(CartRepositoryInterface):
             return None
 
         cart_dict = object_as_dict(cart)
-        cart_dict["items"] = [CartItem(**object_as_dict(item)) for item in
-                              cart.items]
+        cart_dict["items"] = [
+            CartItem(
+                **{
+                    **object_as_dict(item),
+                    "title": item.movie.title,
+                    "price": item.movie.price,
+                    "genre": item.movie.genre,
+                    "year": item.movie.year,
+                }
+            )
+            for item in cart.items
+        ]
         return ShoppingCart(**cart_dict)
 
     async def add_item_to_cart(self, cart_id: int, movie_id: int) -> CartItem:
