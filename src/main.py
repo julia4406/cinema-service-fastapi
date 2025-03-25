@@ -23,14 +23,14 @@ app.include_router(
     prefix=f"{api_version_prefix}/payments",
     tags=["payments"]
 )
-app.include_router(
-    movies_router,
-    prefix=f"{api_version_prefix}/movies",
-    tags=["movies"]
-    shopping_cart_router,
-    prefix=f"{api_version_prefix}/cart",
-    tags=["cart"]
-)
+# app.include_router(
+#     movies_router,
+#     prefix=f"{api_version_prefix}/movies",
+#     tags=["movies"],
+#     shopping_cart_router,
+#     prefix=f"{api_version_prefix}/cart",
+#     tags=["cart"]
+# )
 # app.include_router(accounts_router, prefix=f"{api_version_prefix}/accounts", tags=["accounts"])
 # app.include_router(profiles_router, prefix=f"{api_version_prefix}/profiles", tags=["profiles"])
 # app.include_router(movie_router, prefix=f"{api_version_prefix}/theater", tags=["theater"])
