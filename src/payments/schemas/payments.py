@@ -22,6 +22,10 @@ class CreatePaymentSchema(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class EmailSchema(BaseModel):
+    email: EmailStr
+
+
 class PaymentResponseSchema(BaseModel):
     id: int
     user_id: int
