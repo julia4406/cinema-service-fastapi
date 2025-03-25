@@ -16,8 +16,12 @@ from src.database.models import (
     PurchasedModel, MovieModel
 )
 from src.database.utils import object_as_dict
-from shopping_carts.dto.shopping_cart import CartItem, ShoppingCart, Purchase
-from shopping_carts.interfaces.repositories import CartRepositoryInterface
+from src.shopping_carts.dto.shopping_cart import (
+    CartItem,
+    ShoppingCart,
+    Purchase
+)
+from src.shopping_carts.interfaces.repositories import CartRepositoryInterface
 
 
 class CartRepository(CartRepositoryInterface):

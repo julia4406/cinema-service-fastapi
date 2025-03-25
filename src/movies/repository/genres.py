@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from src.database.models.movies import GenreModel
-from movies.schemas.genres import GenreCreateSchema
+from src.movies.schemas.genres import GenreCreateSchema
 
 
 class GenresRepository:
