@@ -2,7 +2,6 @@ import uvicorn
 from fastapi import FastAPI
 from payments.routes.payments import router as payment_router
 
-from src.movies.routes import router as movies_router
 from shopping_carts.routes.shopping_cart import router as shopping_cart_router
 from orders.routes.orders import router as orders_router
 from src.accounts.routes.auth import router as auth_router
@@ -24,10 +23,12 @@ app.include_router(
     prefix=f"{api_version_prefix}/payments",
     tags=["payments"]
 )
+# app.include_router(
+#     movies_router,
+#     prefix=f"{api_version_prefix}/movies",
+#     tags=["movies"]
+# )
 app.include_router(
-    movies_router,
-    prefix=f"{api_version_prefix}/movies",
-    tags=["movies"]
     shopping_cart_router,
     prefix=f"{api_version_prefix}/cart",
     tags=["cart"]
