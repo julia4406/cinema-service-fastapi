@@ -1,18 +1,19 @@
 import os
 
 import stripe
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, BackgroundTasks
 from fastapi.responses import JSONResponse
-from pydantic import EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from payments.repositories.payments import PaymentRepository
+from payments.services.payments import get_metadata
+from src.payments.validators.payments_validators import validate_email
 from src.database.models import UserModel
 from src.database.models.orders import OrderModel, StatusEnum
 from src.database.models.payments import PaymentModel, PaymentStatus
 from src.database.session_postgresql import get_postgresql_db
-from src.payments.schemas.payments import OrderSchema
-from src.accounts.services.email_service import EmailService
+from src.accounts.services.email_service import EmailService, get_email_service
 
 STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY")
 
@@ -113,63 +114,79 @@ async def create_payment(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# @router.post("/webhook")
+# async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_postgresql_db)):
+#     payload = await request.body()
+#     signature_header = request.headers.get("Stripe-Signature")
+#     event = None
+#
+#     try:
+#         event = stripe.Webhook.construct_event(
+#             payload, signature_header, STRIPE_WEBHOOK_SECRET
+#         )
+#     except ValueError as e:
+#         # Invalid payload
+#         return JSONResponse(status_code=400,
+#                             content={"message": "Invalid payload"})
+#     except stripe.error.SignatureVerificationError as e:
+#         # Invalid signature
+#         return JSONResponse(status_code=400,
+#                             content={"message": "Invalid signature"})
+#
+#     # Обробка події "checkout.session.completed"
+#     if event["type"] == "checkout.session.completed":
+#         session = event["data"]["object"]
+#         payment_intent = session.get("payment_intent")
+#         if payment_intent:
+#             # Завершення платежу, оновити статус у базі даних
+#             payment = await db.execute(
+#                 select(PaymentModel).filter_by(external_payment_id=session["id"]))
+#             payment_record = payment.scalars().first()
+#             if payment_record:
+#                 payment_record.status = "success"
+#                 await db.commit()
+#
+#         # Платіж завершено, можна виконати інші дії, наприклад, підтвердити замовлення
+#         print(f"Payment successful for session {session['id']}")
+#
+#     # Обробка інших подій, якщо потрібно
+#     # Наприклад, для скасування платежу:
+#     elif event["type"] == "checkout.session.async_payment_failed":
+#         session = event["data"]["object"]
+#         # Встановіть статус як failed
+#         payment = await db.execute(
+#             select(PaymentModel).filter_by(external_payment_id=session["id"]))
+#         payment_record = payment.scalars().first()
+#         if payment_record:
+#             payment_record.status = "failed"
+#             await db.commit()
+#
+#     return JSONResponse(status_code=200, content={"message": "Event received"})
+
+
 @router.get("/success/")
 async def success_payment(
         session_id: str,
-        db: AsyncSession = Depends(get_postgresql_db)
+        background_tasks: BackgroundTasks,
+        db: AsyncSession = Depends(get_postgresql_db),
+        email_service: EmailService = Depends(get_email_service)
 ) -> JSONResponse:
     try:
         stripe.api_key = STRIPE_SECRET_KEY
         session = stripe.checkout.Session.retrieve(session_id)
-        metadata = session.metadata
+        metadata = get_metadata(session)
 
-        if not metadata:
-            raise HTTPException(
-                status_code=400,
-                detail="Missing metadata in Stripe session"
-            )
+        payment_repository = PaymentRepository(db)
+        await payment_repository.successful_payment_model(
+            metadata.payment_id, metadata.order_id
+        )
 
-        order_id = metadata.get("order_id")
-        payment_id = metadata.get("payment_id")
-        user_email = metadata.get("user_email")
+        background_tasks.add_task(
+            email_service.cancellation_payment_email,
+            recipient_email=metadata.user_email,
+            order_id=metadata.order_id
+        )
 
-        if not order_id or not payment_id or not user_email:
-            raise HTTPException(
-                status_code=400,
-                detail="Missing order_id or payment_id in metadata"
-            )
-
-        try:
-            order_id = int(order_id)
-            payment_id = int(payment_id)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid ID format.")
-
-        payment_res = await db.execute(select(PaymentModel).filter_by(
-            id=payment_id))
-        payment = payment_res.scalars().first()
-
-        if not payment:
-            raise HTTPException(
-                status_code=400,
-                detail="Payment not found."
-            )
-
-        payment.status = PaymentStatus.SUCCESSFUL
-        await db.flush()
-
-        order_res = await db.execute(select(OrderModel).filter_by(id=order_id))
-        order = order_res.scalars().first()
-
-        if not order:
-            raise HTTPException(
-                status_code=400,
-                detail="Order not found."
-            )
-        order.status = StatusEnum.PAID
-        # await email_service.confirmation_payment_email(user_email, order_id)
-
-        await db.commit()
         return JSONResponse(
             content={"message": "The payment has been completed successfully."}
         )
@@ -180,63 +197,26 @@ async def success_payment(
 @router.get("/cancel/")
 async def cancel_payment(
         session_id: str,
-        db: AsyncSession = Depends(get_postgresql_db)
+        background_tasks: BackgroundTasks,
+        db: AsyncSession = Depends(get_postgresql_db),
+        email_service: EmailService = Depends(get_email_service)
 ) -> JSONResponse:
     try:
         stripe.api_key = STRIPE_SECRET_KEY
         session = stripe.checkout.Session.retrieve(session_id)
-        metadata = session.metadata
+        metadata = get_metadata(session)
 
-        if not metadata:
-            raise HTTPException(
-                status_code=400,
-                detail="Missing metadata in Stripe session"
-            )
+        payment_repository = PaymentRepository(db)
+        await payment_repository.canceled_payment_model(
+            metadata.payment_id, metadata.order_id
+        )
 
-        order_id = metadata.get("order_id")
-        payment_id = metadata.get("payment_id")
-        user_email = metadata.get("user_email")
+        background_tasks.add_task(
+            email_service.cancellation_payment_email,
+            recipient_email=metadata.user_email,
+            order_id=metadata.order_id
+        )
 
-        if not order_id or not payment_id or not user_email:
-            raise HTTPException(
-                status_code=400,
-                detail="Missing order_id or payment_id in metadata"
-            )
-
-        try:
-            order_id = int(order_id)
-            payment_id = int(payment_id)
-
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid ID format.")
-
-        payment_res = await db.execute(select(PaymentModel).filter_by(
-            id=payment_id))
-        payment = payment_res.scalars().first()
-
-        if not payment:
-            raise HTTPException(
-                status_code=400,
-                detail="Payment not found."
-            )
-
-        payment.status = PaymentStatus.CANCELED
-        await db.flush()
-
-        order_res = await db.execute(select(OrderModel).filter_by(id=order_id))
-        order = order_res.scalars().first()
-
-        if not order:
-            raise HTTPException(
-                status_code=400,
-                detail="Order not found."
-            )
-        order.status = StatusEnum.CANCELLED
-        # await email_service.cancellation_payment_email(
-        #     user_email, order_id
-        # )
-
-        await db.commit()
         return JSONResponse(
             content={"message": "The payment was canceled."}
         )
@@ -245,7 +225,7 @@ async def cancel_payment(
 
 
 @router.get("/")
-async def get_payments_list():
+async def get_payments_history():
     return {"message": "Payments endpoint works!"}
 
 
@@ -253,12 +233,4 @@ async def get_payments_list():
 async def get_payment_detail():
     return {"message": "Payments endpoint works!"}
 
-
-@router.get("/orders/{order_id}", response_model=OrderSchema)
-async def test(order_id: int, db: AsyncSession = Depends(get_postgresql_db)) -> OrderSchema:
-    order_res = await db.execute(select(OrderModel).filter_by(id=order_id))
-    order = order_res.scalars().first()
-    if order is None:
-        raise HTTPException(status_code=404, detail="Order not found")
-    return OrderSchema.model_validate(order)
 

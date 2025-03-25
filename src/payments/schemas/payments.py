@@ -1,19 +1,46 @@
-from datetime import datetime
+import datetime
+from decimal import Decimal
 
-from pydantic import BaseModel
-from src.database.models.orders import StatusEnum
+from pydantic import BaseModel, EmailStr
+
+from src.accounts.schemas import UserLoginRequestSchema
+from src.database.models import PaymentStatus
 
 
-class PaymentCreateSchema(BaseModel):
-    ...
+class PaymentListSchema(BaseModel):
+    created_at: datetime.datetime
+    amount: Decimal
+    status: PaymentStatus
 
-class OrderSchema(BaseModel):
+    model_config = {"from_attributes": True}
+
+
+class PaymentSchema(BaseModel):
     id: int
     user_id: int
-    created_at: datetime
-    status: StatusEnum
-    total_amount: float | None
+    order_id: int
+    created_at: datetime.datetime
+    status: PaymentStatus
+    amount: Decimal
+    user: UserLoginRequestSchema
+    order: "OrderSchema"
+    items: list["PaymentItemSchema"]
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
+
+
+class PaymentItemSchema(BaseModel):
+    id: int
+    payment_id: int
+    order_item_id: int
+    price_at_payment: Decimal
+    payment: PaymentSchema
+    order_item: "OrderItemSchema"
+
+    model_config = {"from_attributes": True}
+
+
+class StripeMetadataSchema(BaseModel):
+    order_id: int
+    payment_id: int
+    user_email: EmailStr
