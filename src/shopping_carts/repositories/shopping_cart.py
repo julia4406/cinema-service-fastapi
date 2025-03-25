@@ -77,6 +77,15 @@ class CartRepository(CartRepositoryInterface):
         ]
         return ShoppingCart(**cart_dict)
 
+    async def get_or_create_cart_by_user_id(
+            self,
+            user_id: int
+    ) -> ShoppingCart:
+        cart = await self.get_cart_by_user_id(user_id)
+        if not cart:
+            cart = await self.create_cart(user_id)
+        return cart
+
     async def add_item_to_cart(self, cart_id: int, movie_id: int) -> CartItem:
         try:
             existing_item = await self._session.execute(
