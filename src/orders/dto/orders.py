@@ -23,4 +23,4 @@ class Order:
     created_at: datetime
     status: StatusEnum
     items: List[OrderItem]
-    total_amount: Optional[List[str]] = None
+    total_amount: float | None
