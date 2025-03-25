@@ -1,8 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import List, Optional
 
-from database.models import StatusEnum
+from src.database.models import StatusEnum
 
 
 class OrderItemResponseSchema(BaseModel):
@@ -13,8 +13,7 @@ class OrderItemResponseSchema(BaseModel):
     genres: Optional[List[str]] = None
     year: int
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class OrderResponseSchema(BaseModel):
@@ -25,12 +24,25 @@ class OrderResponseSchema(BaseModel):
     total_amount: float | None
     items: List[OrderItemResponseSchema]
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class OrderListResponseSchema(BaseModel):
     orders: List[OrderResponseSchema]
+    total: int
+
+
+class OrderFilterSchema(BaseModel):
+    user_id: Optional[int] = None
+    date_from: Optional[datetime] = None
+    date_to: Optional[datetime] = None
+    status: Optional[StatusEnum] = None
+    limit: int = Field(default=10, ge=1, le=100)
+    offset: int = Field(default=0, ge=0)
+
+
+class OrderStatusUpdateSchema(BaseModel):
+    status: StatusEnum
 
 
 class MessageResponseSchema(BaseModel):
