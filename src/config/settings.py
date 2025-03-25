@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from pydantic_settings import BaseSettings
 
@@ -9,10 +9,18 @@ load_dotenv()
 
 
 class BaseAppSettings(BaseSettings):
+    ROOT_DIR: Path = Path(__file__).parent.parent.parent
     BASE_DIR: Path = Path(__file__).parent.parent
     PATH_TO_DB: str = str(BASE_DIR / "database" / "source" / "theater.db")
     PATH_TO_MOVIES_CSV: str = str(BASE_DIR / "database" / "seed_data" / "imdb_movies.csv")
     LOGIN_TIME_DAYS: int = 7
+
+    PRIVATE_KEY_PATH: Path = os.getenv("PRIVATE_KEY_PATH", (ROOT_DIR / "private_key.pem"))
+    PUBLIC_KEY_PATH: Path = os.getenv("PUBLIC_KEY_PATH", (ROOT_DIR / "public_key.pem"))
+    JWT_ALGORITHM: str = "RS256"
+
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
 
 class Settings(BaseAppSettings):
@@ -27,10 +35,6 @@ class Settings(BaseAppSettings):
     REDIS_BROKER_DB: int = os.getenv("REDIS_BROKER_DB")
     REDIS_BACKEND_DB: int = os.getenv("REDIS_BACKEND_DB")
 
-    SECRET_KEY_ACCESS: str = os.getenv("SECRET_KEY_ACCESS", os.urandom(32))
-    SECRET_KEY_REFRESH: str = os.getenv("SECRET_KEY_REFRESH", os.urandom(32))
-    JWT_SIGNING_ALGORITHM: str = os.getenv("JWT_SIGNING_ALGORITHM", "HS256")
-
     MAIL_USERNAME: str = os.getenv("MAIL_USERNAME")
     MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD")
     MAIL_FROM: str = os.getenv("MAIL_FROM")
@@ -39,6 +43,11 @@ class Settings(BaseAppSettings):
     MAIL_SERVER: str = os.getenv("MAIL_SERVER")
     MAIL_STARTTLS: bool = os.getenv("MAIL_STARTTLS", "True") == "True"
     MAIL_SSL_TLS: bool = os.getenv("MAIL_SSL_TLS", "False") == "True"
+
+    AWS_ACCESS_KEY: str = os.getenv("AWS_ACCESS_KEY")
+    AWS_SECRET_KEY: str = os.getenv("AWS_SECRET_KEY")
+    S3_BUCKET: str = os.getenv("S3_BUCKET")
+    AWS_REGION: Optional[str] = os.getenv("AWS_REGION", "us-east-1")
 
     SERVICE_URL: str = os.getenv("SERVICE_URL")
 

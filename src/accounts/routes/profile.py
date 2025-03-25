@@ -1,0 +1,58 @@
+import botocore.exceptions
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.database.session_postgresql import get_postgresql_db
+from src.accounts.schemas import ProfileResponse, ProfileUpdateRequest
+from src.accounts.services.accounts import ProfileService
+from src.accounts.dependencies import get_current_user
+from src.database.models import UserModel
+
+
+router = APIRouter(tags=["profile"])
+
+
+@router.get("/profile/", response_model=ProfileResponse)
+async def get_profile(
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_postgresql_db)
+):
+    service = ProfileService(db)
+    try:
+        profile = await service.get_profile(current_user)
+        return profile
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.patch("/profile/", response_model=ProfileResponse)
+async def update_profile(
+    profile_data: ProfileUpdateRequest = Depends(),
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_postgresql_db)
+):
+    service = ProfileService(db)
+    try:
+        updated_profile = await service.update_profile(current_user, profile_data)
+        return updated_profile
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/profile/avatar/", response_model=ProfileResponse)
+async def upload_avatar(
+    avatar_file: UploadFile = File(...),
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_postgresql_db)
+):
+    service = ProfileService(db)
+    try:
+        updated_profile = await service.upload_avatar(current_user, avatar_file)
+        return updated_profile
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except botocore.exceptions.ClientError as e:
+        raise HTTPException(status_code=500, detail=f"S3 error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")

@@ -5,6 +5,8 @@ from datetime import datetime, date
 from sqlalchemy import Enum, func, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from src.accounts.utils import hash_password, check_password
+
 from src.database.models import Base
 from typing import Optional
 
@@ -61,7 +63,10 @@ class UserModel(Base):
 
     @password.setter
     def password(self, password: str):
-        self._hashed_password = password
+        self._hashed_password = hash_password(password)
+
+    def verify_password(self, password: str) -> bool:
+        return check_password(password, self._hashed_password)
 
     group: Mapped["UserGroupModel"] = relationship(
         "UserGroupModel",
