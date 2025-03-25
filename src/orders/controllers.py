@@ -88,27 +88,6 @@ async def cancel_pending_order(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def cancel_paid_order(
-        order_id: int,
-        user: UserModel = Depends(get_current_user),
-        order_service: OrderServiceInterface = Depends(get_order_service),
-) -> MessageResponseSchema:
-    # Cancel a paid order (changes status from paid to cancelled, temporary for user).
-    # Args:
-    #     order_id (int): ID of the order to cancel.
-    #     user (UserModel): Current authenticated user.
-    #     order_service (OrderServiceInterface): Order service instance.
-    # Returns:
-    #     MessageResponseSchema: Success message.
-    try:
-        await order_service.cancel_paid_order(user.id, order_id)
-        return MessageResponseSchema(
-            message="Paid order cancelled successfully"
-        )
-    except (ValueError, OrderUpdateError) as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
 async def confirm_order(
         order_id: int,
         user: UserModel = Depends(get_current_user),
@@ -128,7 +107,7 @@ async def confirm_order(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def get_all_orders(
+async def admin_get_all_orders(
         filters: OrderFilterSchema = Depends(),
         order_service: OrderServiceInterface = Depends(get_order_service),
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN))
@@ -147,7 +126,7 @@ async def get_all_orders(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def update_order_status(
+async def admin_update_order_status(
         order_id: int,
         update_data: OrderStatusUpdateSchema,
         order_service: AdminOrderServiceInterface = Depends(get_order_service),
