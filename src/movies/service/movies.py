@@ -87,3 +87,12 @@ class MoviesService:
             raise HTTPException(status_code=400, detail="Invalid input data.")
         else:
             return DetailMessageSchema(detail="Movie updated successfully.")
+
+    async def delete_movie(self, movie_id: int):
+        movie = await self.repository.get_movie_by_id(movie_id)
+
+        if not movie:
+            raise HTTPException(status_code=404, detail="Movie not found")
+
+        await self.repository.delete_instance(movie)
+        return

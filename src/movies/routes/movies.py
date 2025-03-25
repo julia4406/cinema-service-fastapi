@@ -85,3 +85,30 @@ async def update_movie(
         db: AsyncSession = Depends(get_db),
 ) -> DetailMessageSchema:
     return await MoviesService(db).update_movie(movie_id, movie_data)
+
+
+@router.delete(
+    "/{movie_id}/",
+    summary="Delete a movie by ID",
+    status_code=204,
+    responses={
+        204: {
+            "description": "Movie deleted successfully."
+        },
+        404: {
+            "description": "Movie not found.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Movie with the given ID was not found."
+                    }
+                }
+            },
+        },
+    },
+)
+async def delete_movie(
+        movie_id: int,
+        db: AsyncSession = Depends(get_db),
+) -> None:
+    return await MoviesService(db).delete_movie(movie_id)
