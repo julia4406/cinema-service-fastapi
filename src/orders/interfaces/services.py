@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import List, Optional, Tuple
 
-from database.models import StatusEnum
-from orders.dto.orders import Order
+from src.database.models import StatusEnum
+from src.orders.dto.orders import Order
 
 
 class OrderServiceInterface(ABC):

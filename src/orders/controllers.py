@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 
-from database.models import UserGroupEnum
+from src.database.models import UserGroupEnum
 from src.database.models import UserModel
 from src.accounts.dependencies import get_current_user, role_required
 
