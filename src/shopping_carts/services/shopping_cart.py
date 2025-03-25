@@ -1,6 +1,6 @@
-from shopping_carts.dto.shopping_cart import ShoppingCart, CartItem
-from shopping_carts.interfaces.repositories import CartRepositoryInterface
-from shopping_carts.interfaces.services import CartServiceInterface
+from src.shopping_carts.dto.shopping_cart import ShoppingCart, CartItem
+from src.shopping_carts.interfaces.repositories import CartRepositoryInterface
+from src.shopping_carts.interfaces.services import CartServiceInterface
 
 
 class CartService(CartServiceInterface):

@@ -1,4 +1,4 @@
-from shopping_carts.dto.shopping_cart import ShoppingCart, CartItem
+from src.shopping_carts.dto.shopping_cart import ShoppingCart, CartItem
 
 
 class CartServiceInterface:

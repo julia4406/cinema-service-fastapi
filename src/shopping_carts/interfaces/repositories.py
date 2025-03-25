@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from shopping_carts.dto.shopping_cart import ShoppingCart, CartItem, Purchase
+from src.shopping_carts.dto.shopping_cart import (
+    ShoppingCart,
+    CartItem,
+    Purchase
+)
 
 
 class CartRepositoryInterface(ABC):
