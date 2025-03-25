@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +11,7 @@ from src.movies.schemas.movies import (
     MovieDetailSchema,
     MovieCreateSchema,
     MovieUpdateSchema,
-    DetailMessageSchema, MovieLikeResponseSchema, MovieFavoriteResponseSchema,
+    DetailMessageSchema, MovieLikeResponseSchema, MovieFavoriteResponseSchema, MovieSortEnum,
 )
 
 
@@ -19,20 +21,28 @@ class MoviesService:
 
     async def get_movies(
             self,
+            filters: dict[str, str],
+            sort_by: Optional[MovieSortEnum] = None,
             page: int = 1,
-            per_page: int = 10
+            per_page: int = 10,
     ):
-        total_items, movies = await self.repository.get_movies_paginated(page=page, per_page=per_page)
+        filtered_movies = await self.repository.filter_movies(filters, sort_by)
 
+        total_items = len(filtered_movies)
         total_pages = (total_items + per_page - 1) // per_page
 
-        if not movies:
+        start = (page - 1) * per_page
+        end = start + per_page
+
+        paginated_movies = filtered_movies[start:end]
+
+        if not paginated_movies:
             raise HTTPException(status_code=404, detail="No movies found.")
 
         return MovieListResponseSchema(
             movies=[
                 MovieListItemSchema.model_validate(movie)
-                for movie in movies
+                for movie in paginated_movies
             ],
             prev_page=(
                 f"/?page={page - 1}&per_page={per_page}"

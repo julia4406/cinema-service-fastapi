@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -6,7 +8,7 @@ from database.session_postgresql import get_postgresql_db as get_db
 from src.database.models.accounts import UserModel
 from src.movies.schemas.movies import (
     MovieListResponseSchema, MovieDetailSchema, MovieCreateSchema, MovieUpdateSchema, DetailMessageSchema,
-    MovieLikeResponseSchema, MovieFavoriteResponseSchema,
+    MovieLikeResponseSchema, MovieFavoriteResponseSchema, MovieSortEnum,
 )
 from src.movies.service.movies import MoviesService
 
@@ -22,8 +24,48 @@ async def get_movies(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=100),
+    search: Optional[str] = Query(
+        None,
+        description="Search by title or description"
+    ),
+    year: Optional[int] = Query(
+        None,
+        description="Filter by release year"
+    ),
+    min_imdb: Optional[float] = Query(
+        None,
+        description="Filter by minimum IMDb rating"
+    ),
+    max_imdb: Optional[float] = Query(
+        None,
+        description="Filter by maximum IMDb rating"
+    ),
+    min_price: Optional[float] = Query(
+        None,
+        description="Filter by minimum price"
+    ),
+    max_price: Optional[float] = Query(
+        None,
+        description="Filter by maximum price"
+    ),
+    sort_by: Optional[MovieSortEnum] = Query(
+        None,
+        description="Sort movies by criteria"
+    ),
 ):
-    return await MoviesService(db).get_movies(page=page, per_page=per_page)
+    filters = {
+        "name": search,
+        "year": year,
+        "min_imdb": min_imdb,
+        "max_imdb": max_imdb,
+        "min_price": min_price,
+        "max_price": max_price,
+    }
+
+    return await MoviesService(db).get_movies(
+        page=page, per_page=per_page,
+        filters=filters, sort_by=sort_by
+    )
 
 
 @router.get(

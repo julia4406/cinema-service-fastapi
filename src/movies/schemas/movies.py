@@ -1,3 +1,4 @@
+import enum
 from datetime import datetime
 from typing import List, Optional
 
@@ -137,3 +138,14 @@ class MovieFavoriteResponseSchema(BaseModel):
     movie: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class MovieSortEnum(str, enum.Enum):
+    PRICE_ASC = "price_asc"
+    PRICE_DESC = "price_desc"
+    RELEASE_YEAR_ASC = "release_year_asc"
+    RELEASE_YEAR_DESC = "release_year_desc"
+    VOTES_ASC = "votes_asc"
+    VOTES_DESC = "votes_desc"
+    IMDb_ASC = "imdb_asc"
+    IMDb_DESC = "imdb_desc"

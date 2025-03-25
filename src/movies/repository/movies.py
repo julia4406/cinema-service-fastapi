@@ -17,7 +17,7 @@ from src.database.models.movies import (
     UserReactionModel, UserFavoriteModel,
 )
 from src.database.models.shopping_carts import PurchasedModel
-from src.movies.schemas.movies import MovieCreateSchema
+from src.movies.schemas.movies import MovieCreateSchema, MovieSortEnum
 
 
 class MoviesRepository:
@@ -258,3 +258,44 @@ class MoviesRepository:
         await self.commit_instance(movie_fav)
 
         return movie_fav
+
+    async def filter_movies(
+            self,
+            filters: dict[str, str],
+            sort_by: Optional[MovieSortEnum] = None
+    ) -> list[MovieModel]:
+        query = select(MovieModel)
+
+        if filters.get("name"):
+            query = query.filter(MovieModel.name.ilike(f"%{filters['name']}%"))
+        if filters.get("year") is not None:
+            query = query.filter(MovieModel.year == filters["year"])
+        if filters.get("min_imdb") is not None:
+            query = query.filter(MovieModel.imdb >= float(filters["min_imdb"]))
+        if filters.get("max_imdb") is not None:
+            query = query.filter(MovieModel.imdb <= float(filters["max_imdb"]))
+        if filters.get("min_price") is not None:
+            query = query.filter(MovieModel.price >= float(filters["min_price"]))
+        if filters.get("max_price") is not None:
+            query = query.filter(MovieModel.price <= float(filters["max_price"]))
+
+        if sort_by:
+            if sort_by == MovieSortEnum.PRICE_ASC:
+                query = query.order_by(MovieModel.price)
+            elif sort_by == MovieSortEnum.PRICE_DESC:
+                query = query.order_by(MovieModel.price.desc())
+            elif sort_by == MovieSortEnum.RELEASE_YEAR_ASC:
+                query = query.order_by(MovieModel.year)
+            elif sort_by == MovieSortEnum.RELEASE_YEAR_DESC:
+                query = query.order_by(MovieModel.year.desc())
+            elif sort_by == MovieSortEnum.VOTES_ASC:
+                query = query.order_by(MovieModel.votes)
+            elif sort_by == MovieSortEnum.VOTES_DESC:
+                query = query.order_by(MovieModel.votes.desc())
+            elif sort_by == MovieSortEnum.IMDb_ASC:
+                query = query.order_by(MovieModel.imdb)
+            elif sort_by == MovieSortEnum.IMDb_DESC:
+                query = query.order_by(MovieModel.imdb.desc())
+
+        result = await self.db.execute(query)
+        return result.scalars().all()
