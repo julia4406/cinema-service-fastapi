@@ -39,7 +39,7 @@ class PaymentResponseSchema(BaseModel):
         from_attributes = True
 
 
-class PaymentListSchema(BaseModel):
+class PaymentHistorySchema(BaseModel):
     created_at: datetime
     amount: Decimal
     status: PaymentStatus

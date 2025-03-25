@@ -1,5 +1,6 @@
 import os
 from decimal import Decimal
+from typing import List
 
 import stripe
 from fastapi import APIRouter, status, HTTPException, Depends, Request, BackgroundTasks
@@ -8,7 +9,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
-from src.payments.schemas.payments import CreatePaymentSchema, EmailSchema
+from src.payments.schemas.payments import CreatePaymentSchema, EmailSchema, \
+    PaymentHistorySchema
 from src.database.models import UserModel
 
 from src.database.models.payments import (
@@ -153,6 +155,7 @@ async def stripe_webhook(
 async def create_payment(
         order_id:int,
         request: Request,
+        current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
         db: AsyncSession = Depends(get_postgresql_db),
 ):
     current_order_res = await db.execute(
@@ -238,7 +241,7 @@ async def success_payment() -> JSONResponse:
 @router.get("/cancel/")
 async def cancel_payment() -> JSONResponse:
         return JSONResponse(
-            content={"message": "The payment was canceled."}
+            content={"message": "The payment has been canceled."}
         )
 
 
@@ -246,33 +249,20 @@ async def cancel_payment() -> JSONResponse:
 # Get a list of all user payments
 # router.get("/", status_code=status.HTTP_200_OK)(get_user_payments)
 
-@router.get("/{order_id}")
-async def get_items_detail(
-        order_id:int,
+@router.get("/history/{user_id}")
+async def get_payments_history(
+        user_id:int,
+        # current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
         db: AsyncSession = Depends(get_postgresql_db),
 ):
-    current_order_res = await db.execute(
-        select(OrderModel)
-        .options(
-            selectinload(OrderModel.items)
-            .selectinload(OrderItemModel.movie)
-        )
-        .filter_by(id=order_id)
+    payment_history_res = await db.execute(
+        select(PaymentModel).filter_by(user_id=user_id)
     )
-    current_order = current_order_res.scalars().first()
 
-    items = [
-                {
-                    "price_data": {
-                        "currency": "usd",
-                        "product_data": {
-                            "name": f"{item.movie.name} - Order #{order_id}"},
-                        "unit_amount": int(item.price_at_order * 100)
-                    },
-                    "quantity": 1,
-                } for item in current_order.items
-            ]
+    payment_history= payment_history_res.scalars().all()
 
-    return items
-
-
+    return [PaymentHistorySchema(
+            created_at=item.created_at,
+            amount=Decimal(item.amount),
+            status=item.status
+        ) for item in payment_history]
