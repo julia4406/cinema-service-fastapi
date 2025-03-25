@@ -6,8 +6,8 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from payments.repositories.payments import PaymentRepository
-from payments.services.payments import get_metadata
+from src.payments.repositories.payments import PaymentRepository
+from src.payments.services.payments import get_metadata
 from src.payments.validators.payments_validators import validate_email
 from src.database.models import UserModel
 from src.database.models.orders import OrderModel, StatusEnum
@@ -48,6 +48,7 @@ async def create_payment(
         user_id=current_order.user_id,
         order_id=current_order.id,
         amount=current_order.total_amount,
+        status=PaymentStatus.PENDING
     )
 
     db.add(new_payment)

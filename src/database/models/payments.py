@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import ForeignKey, DateTime, DECIMAL, String
+from sqlalchemy import ForeignKey, DateTime, DECIMAL, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Enum as SQLAlchemyEnum
 from enum import Enum
@@ -13,6 +13,7 @@ class PaymentStatus(Enum):
     SUCCESSFUL = "successful"
     CANCELED = "canceled"
     REFUNDED = "refunded"
+    PENDING = "pending"
 
 
 class PaymentModel(Base):
@@ -29,7 +30,8 @@ class PaymentModel(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.now(timezone.utc),
+        server_default=func.now(),
+        default=func.now(),
     )
     status: Mapped[PaymentStatus] = mapped_column(
         SQLAlchemyEnum(PaymentStatus),
