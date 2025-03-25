@@ -4,6 +4,7 @@ from pydantic import EmailStr
 
 settings = Settings()
 
+
 class EmailService:
     def __init__(self):
         self.conf = ConnectionConfig(

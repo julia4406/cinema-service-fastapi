@@ -79,6 +79,7 @@ async def logout(
     except ValueError:
         raise HTTPException(status_code=400, detail="Logout failed")
 
+
 @router.post("/refresh/")
 async def refresh_token(
         refresh_token: RefreshTokenRequest,

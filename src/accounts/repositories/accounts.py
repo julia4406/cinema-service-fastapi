@@ -4,8 +4,9 @@ from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from src.accounts.schemas.accounts import (UserAdminUpdateRequest,
-                                        UserAdminCreateRequest)
+from src.accounts.schemas.accounts import (
+    UserAdminUpdateRequest, UserAdminCreateRequest
+)
 from src.database.models import UserModel, ProfileModel, UserGroupModel
 from src.database.models.accounts import UserGroupEnum
 from src.accounts.schemas import UserCreateRequest

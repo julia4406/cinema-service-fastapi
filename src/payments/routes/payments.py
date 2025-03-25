@@ -1,38 +1,24 @@
 import os
 from decimal import Decimal
-from typing import List
 
 import stripe
-from fastapi import APIRouter, status, HTTPException, Depends, Request, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, Request, BackgroundTasks
 from fastapi.responses import JSONResponse
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
-from src.payments.schemas.payments import CreatePaymentSchema, EmailSchema, \
-    PaymentHistorySchema
+from src.payments.schemas.payments import (
+    CreatePaymentSchema, EmailSchema, PaymentHistorySchema
+)
 from src.database.models import UserModel
-
 from src.database.models.payments import (
     PaymentModel, PaymentStatus, PaymentItemModel
 )
-
 from src.database.models.orders import OrderModel, StatusEnum, OrderItemModel
-
 from src.database.session_postgresql import get_postgresql_db
-
-#
-# # from payments.controllers_payments import get_user_payments
-# from payments.schemas.payments import PaymentListSchema
 from src.database.models.accounts import UserGroupEnum
-
-# # from src.payments.repositories.payments import PaymentRepository
-# # from src.payments.services.payments import get_metadata
-# from src.payments.validators.payments_validators import validate_email
-# from src.database.models import UserModel
-# from src.database.models.orders import OrderModel, StatusEnum
-# from src.database.models.payments import PaymentModel, PaymentStatus
-# from src.database.session_postgresql import get_postgresql_db
 from src.accounts.services.email_service import EmailService, get_email_service
 from src.accounts.dependencies import role_required
 
@@ -153,7 +139,7 @@ async def stripe_webhook(
 
 @router.post("/{order_id}")
 async def create_payment(
-        order_id:int,
+        order_id: int,
         request: Request,
         current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
         db: AsyncSession = Depends(get_postgresql_db),
@@ -172,7 +158,7 @@ async def create_payment(
     if not current_order:
         raise HTTPException(status_code=400, detail="Order not found")
 
-    if  current_order.status != StatusEnum.PENDING:
+    if current_order.status != StatusEnum.PENDING:
         raise HTTPException(
             status_code=400, detail="Order is not available for payment."
         )
@@ -181,7 +167,6 @@ async def create_payment(
 
     if unit_amount <= 0:
         raise HTTPException(status_code=400, detail="Invalid total sum.")
-
 
     user_res = await db.execute(
         select(UserModel).filter_by(id=current_order.user_id)
@@ -233,36 +218,34 @@ async def create_payment(
 
 @router.get("/success/")
 async def success_payment() -> JSONResponse:
-        return JSONResponse(
-            content={"message": "The payment has been successfully completed."}
-        )
+    return JSONResponse(
+        content={"message": "The payment has been successfully completed."}
+    )
 
 
 @router.get("/cancel/")
 async def cancel_payment() -> JSONResponse:
-        return JSONResponse(
-            content={"message": "The payment has been canceled."}
-        )
+    return JSONResponse(
+        content={"message": "The payment has been canceled."}
+    )
 
-
-#
-# Get a list of all user payments
-# router.get("/", status_code=status.HTTP_200_OK)(get_user_payments)
 
 @router.get("/history/{user_id}")
 async def get_payments_history(
-        user_id:int,
-        # current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
+        user_id: int,
+        current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
         db: AsyncSession = Depends(get_postgresql_db),
 ):
     payment_history_res = await db.execute(
         select(PaymentModel).filter_by(user_id=user_id)
     )
 
-    payment_history= payment_history_res.scalars().all()
+    payment_history = payment_history_res.scalars().all()
 
-    return [PaymentHistorySchema(
+    return [
+        PaymentHistorySchema(
             created_at=item.created_at,
             amount=Decimal(item.amount),
             status=item.status
-        ) for item in payment_history]
+        ) for item in payment_history
+    ]

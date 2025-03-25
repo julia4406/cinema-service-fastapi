@@ -1,5 +1,3 @@
-from typing import Optional, Any
-
 from typing import Optional, Any, Coroutine
 from uuid import uuid4
 
@@ -15,7 +13,6 @@ from src.database.models.movies import (
     CertificationModel,
     DirectorModel,
     GenreModel,
-    MovieModel,
     StarModel,
 )
 from src.database.models.shopping_carts import PurchasedModel
@@ -33,9 +30,11 @@ class MoviesRepository:
 
         total_items = await self.db.scalar(select(func.count()).select_from(MovieModel))
 
-        query = (select(MovieModel)
-            .order_by(MovieModel.id)
-            .offset(offset).limit(per_page)
+        query = (
+            select(MovieModel).
+            order_by(MovieModel.id).
+            offset(offset).
+            limit(per_page)
             .options(
                 joinedload(MovieModel.genres),
                 joinedload(MovieModel.stars),
@@ -169,8 +168,8 @@ class MoviesRepository:
             select(func.count(PurchasedModel.id))
             .where(
                 PurchasedModel.movie_id == instance.id
+            )
         )
-    )
         if found_instance.scalar_one() > 0:
             return found_instance
 

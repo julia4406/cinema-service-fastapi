@@ -96,7 +96,9 @@ class UserReactionModel(Base):
     movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
     reaction_type: Mapped[ReactionType] = mapped_column(Enum(ReactionType), nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), default=func.now())
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), default=func.now(), onupdate=func.now()
+    )
 
     user: Mapped["UserModel"] = relationship("UserModel", back_populates="reactions")
     movie: Mapped["MovieModel"] = relationship("MovieModel", back_populates="reactions")
@@ -167,6 +169,7 @@ class MoviesDirectorsModel(Base):
 
     movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True)
     director_id: Mapped[int] = mapped_column(ForeignKey("directors.id", ondelete="CASCADE"), primary_key=True)
+
 
 class MoviesStarsModel(Base):
     __tablename__ = "movies_stars_association"

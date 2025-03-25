@@ -1,10 +1,4 @@
-from decimal import Decimal
-
-from pydantic import BaseModel, EmailStr
-
-from src.database.models.orders import OrderModel
-
-from src.database.models import UserModel
+from pydantic import EmailStr
 
 from pydantic import BaseModel, Field
 from decimal import Decimal
