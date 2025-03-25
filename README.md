@@ -42,3 +42,23 @@ MAIL_SERVER=smtp.gmail.com
 MAIL_STARTTLS=True
 MAIL_SSL_TLS=False
 SERVICE_URL=http://127.0.0.1:8000/
+
+для налаштування пермішинів потрібно:
+
+імпортувати  
+
+    from src.accounts.dependencies import role_required
+    from src.database.models import UserGroupEnum
+
+додати через депендс в ендпоїнт:
+
+    current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
+
+приклад:
+
+    @router.get("/users/{user_email}", response_model=UserAdminResponse)
+    async def get_user_by_email(
+        user_email: EmailStr,
+        current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
+        db: AsyncSession = Depends(get_postgresql_db)
+    ):
