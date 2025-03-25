@@ -1,19 +1,20 @@
-from typing import Optional, Any, Coroutine
+from typing import Optional, Any
 from uuid import uuid4
 
-from pydantic import UUID4
 from sqlalchemy import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
+from sqlalchemy.sql.functions import now
 
 from src.database.models.movies import (
-    MovieModel,
     CertificationModel,
     DirectorModel,
     GenreModel,
+    MovieModel,
     StarModel,
+    UserReactionModel,
 )
 from src.database.models.shopping_carts import PurchasedModel
 from src.movies.schemas.movies import MovieCreateSchema
@@ -208,3 +209,27 @@ class MoviesRepository:
     ) -> Optional[Any]:
         result = await self.db.execute(select(instance).filter_by(id=instance_id))
         return result.scalars().first()
+
+    async def toggle_movie_like(
+            self,
+            movie: MovieModel,
+            user_id: int,
+    ) -> UserReactionModel:
+        result = await self.db.execute(
+            select(UserReactionModel).filter_by(movie_id=movie.id, user_id=user_id)
+        )
+        movie_like = result.scalars().first()
+        if movie_like:
+            movie_like.is_liked = not movie_like.is_liked
+            movie_like.created_at = now()
+        else:
+            movie_like = UserReactionModel(
+                user_id=user_id,
+                movie_id=movie.id,
+                is_liked=True
+            )
+            self.db.add(movie_like)
+
+        await self.commit_instance(movie_like)
+
+        return movie_like

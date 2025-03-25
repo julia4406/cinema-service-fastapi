@@ -119,3 +119,13 @@ class MovieUpdateSchema(BaseModel):
 
 class DetailMessageSchema(BaseModel):
     detail: str
+
+
+class MovieLikeResponseSchema(BaseModel):
+    is_liked: bool
+    created_at: datetime
+    user:  int
+    movie: int
+
+    class Config:
+        from_attributes = True

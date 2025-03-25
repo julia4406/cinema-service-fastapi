@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database.session_postgresql import get_postgresql_db as get_db
+from accounts.dependencies import get_current_user
+from database.session_postgresql import get_postgresql_db as get_db
+from src.database.models.accounts import UserModel
 from src.movies.schemas.movies import (
     MovieListResponseSchema, MovieDetailSchema, MovieCreateSchema, MovieUpdateSchema, DetailMessageSchema,
+    MovieLikeResponseSchema,
 )
 from src.movies.service.movies import MoviesService
 
@@ -112,3 +115,43 @@ async def delete_movie(
         db: AsyncSession = Depends(get_db),
 ) -> None:
     return await MoviesService(db).delete_movie(movie_id)
+
+
+@router.post(
+    "/{movie_id}/like/",
+    response_model=MovieLikeResponseSchema,
+    summary="Like or dislike a movie",
+    responses={
+        200: {"description": "Movie like status updated."},
+        404: {
+            "description": "Movie or user not found.",
+            "content": {
+                "application/json":
+                    {
+                        "example": {
+                            "detail": "Movie with the given ID was not found."
+                        }
+                    }
+            }
+        },
+        401: {
+            "description": "Unauthorized access.",
+            "content":
+                {
+                    "application/json":
+                        {
+                            "example":
+                                {
+                                    "detail": "Invalid or expired token."
+                                }
+                        }
+                }
+        },
+    }
+)
+async def like_or_dislike(
+        movie_id: int,
+        db: AsyncSession = Depends(get_db),
+        user: UserModel = Depends(get_current_user)
+) -> MovieLikeResponseSchema:
+    return await MoviesService(db).like_or_dislike_movie(movie_id, user)

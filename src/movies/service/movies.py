@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from database.models import UserModel
 from src.movies.repository.movies import MoviesRepository
 from src.movies.schemas.movies import (
     MovieListResponseSchema,
@@ -8,7 +9,7 @@ from src.movies.schemas.movies import (
     MovieDetailSchema,
     MovieCreateSchema,
     MovieUpdateSchema,
-    DetailMessageSchema,
+    DetailMessageSchema, MovieLikeResponseSchema,
 )
 
 
@@ -96,5 +97,25 @@ class MoviesService:
         result = await self.repository.delete_instance(movie)
         if result:
             raise HTTPException(status_code=404, detail="Movie was purchased.")
-
         return
+
+    async def like_or_dislike_movie(
+            self,
+            movie_id: int,
+            user: UserModel
+    ) -> MovieLikeResponseSchema:
+        movie = await self.repository.get_movie_by_id(movie_id)
+        if not movie:
+            raise HTTPException(
+                status_code=404,
+                detail="Movie with the given ID was not found."
+            )
+
+        movie_like = await self.repository.toggle_movie_like(movie, user.id)
+
+        return MovieLikeResponseSchema(
+            is_liked=movie_like.is_liked,
+            created_at=movie_like.created_at,
+            user=user.id,
+            movie=movie.id,
+        )
