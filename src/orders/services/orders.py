@@ -107,10 +107,4 @@ class OrderService(OrderServiceInterface):
             StatusEnum.PAID
         )
 
-        payment_url = trigger_payment_gateway(order_id)
-
         return await self._order_repository.get_order_by_id(order_id)
-
-
-def trigger_payment_gateway(order_id: int) -> str:
-    return f"https://fake-payment-gateway.com/pay/order/{order_id}"
