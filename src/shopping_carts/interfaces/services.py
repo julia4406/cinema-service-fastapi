@@ -26,14 +26,14 @@ class AdminCartServiceInterface:
             self,
             user_id: int,
             movie_id: int
-            ) -> ShoppingCart:
+    ) -> ShoppingCart:
         pass
 
     async def remove_item_from_cart(
             self,
             user_id: int,
             movie_id: int
-            ) -> ShoppingCart:
+    ) -> ShoppingCart:
         pass
 
     async def clear_cart(self, user_id: int) -> ShoppingCart:

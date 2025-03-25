@@ -123,7 +123,7 @@ async def admin_get_user_cart(
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
         cart_service: AdminCartServiceInterface = Depends(
             get_admin_cart_service
-            ),
+        ),
 ) -> CartResponseSchema:
     cart = await cart_service.get_or_create_cart(user_id)
     return CartResponseSchema(**cart.__dict__)
@@ -135,7 +135,7 @@ async def admin_add_movie_to_cart(
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
         cart_service: AdminCartServiceInterface = Depends(
             get_admin_cart_service
-            ),
+        ),
 ) -> CartResponseSchema:
     try:
         cart = await cart_service.add_item_to_cart(user_id, movie_id)
@@ -150,7 +150,7 @@ async def admin_remove_movie_from_cart(
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
         cart_service: AdminCartServiceInterface = Depends(
             get_admin_cart_service
-            ),
+        ),
 ) -> MessageResponseSchema:
     await cart_service.remove_item_from_cart(user_id, movie_id)
     return MessageResponseSchema(message="Item removed successfully")
@@ -161,7 +161,7 @@ async def admin_clear_user_cart(
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
         cart_service: AdminCartServiceInterface = Depends(
             get_admin_cart_service
-            ),
+        ),
 ) -> MessageResponseSchema:
     await cart_service.clear_cart(user_id)
     return MessageResponseSchema(message="Cart cleared successfully")
