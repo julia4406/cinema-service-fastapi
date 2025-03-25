@@ -8,8 +8,7 @@ from src.orders.routes.orders import router as orders_router
 from src.accounts.routes.auth import router as auth_router
 from src.accounts.routes.profile import router as profile_router
 from src.accounts.routes.admin import router as admin_router
-
-# from src.movies.routes import router as movies_router
+from src.movies.routes import router as movies_router
 
 app = FastAPI(
     title="Online Cinema Service"
@@ -25,11 +24,11 @@ app.include_router(
     prefix=f"{api_version_prefix}/payments",
     tags=["payments"]
 )
-# app.include_router(
-#     movies_router,
-#     prefix=f"{api_version_prefix}/movies",
-#     tags=["movies"]
-# )
+app.include_router(
+    movies_router,
+    prefix=f"{api_version_prefix}/movies",
+    tags=["movies"]
+)
 app.include_router(
     shopping_cart_router,
     prefix=f"{api_version_prefix}/cart",
