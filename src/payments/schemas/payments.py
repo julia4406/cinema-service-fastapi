@@ -23,8 +23,6 @@ class PaymentSchema(BaseModel):
     created_at: datetime.datetime
     status: PaymentStatus
     amount: Decimal
-    user: UserModel
-    order: OrderModel
     items: list["PaymentItemSchema"]
 
     model_config = {"from_attributes": True}
@@ -36,7 +34,6 @@ class PaymentItemSchema(BaseModel):
     order_item_id: int
     price_at_payment: Decimal
     payment: PaymentSchema
-    order_item: "OrderItemSchema"
 
     model_config = {"from_attributes": True}
 

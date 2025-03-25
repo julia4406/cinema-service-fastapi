@@ -70,3 +70,8 @@ stripe login
  
 stripe listen --forward-to http://localhost:8000/webhook
 !put webhook secret key into .env
+
+start uvicorn from terminal:
+uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+

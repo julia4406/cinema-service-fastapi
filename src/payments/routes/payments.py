@@ -1,24 +1,63 @@
 import os
+# from typing import List
 
 import stripe
-from fastapi import APIRouter, HTTPException, Depends, Request, BackgroundTasks
+from fastapi import APIRouter, status, HTTPException, Depends, Request, BackgroundTasks
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-# from src.payments.repositories.payments import PaymentRepository
-# from src.payments.services.payments import get_metadata
-from src.payments.validators.payments_validators import validate_email
 from src.database.models import UserModel
-from src.database.models.orders import OrderModel, StatusEnum
+
 from src.database.models.payments import PaymentModel, PaymentStatus
+
+from src.database.models.orders import OrderModel, StatusEnum
+
 from src.database.session_postgresql import get_postgresql_db
-from src.accounts.services.email_service import EmailService, get_email_service
+
+#
+# # from payments.controllers_payments import get_user_payments
+# from payments.schemas.payments import PaymentListSchema
+# from src.database.models.accounts import UserGroupEnum
+#
+# # from src.payments.repositories.payments import PaymentRepository
+# # from src.payments.services.payments import get_metadata
+# from src.payments.validators.payments_validators import validate_email
+# from src.database.models import UserModel
+# from src.database.models.orders import OrderModel, StatusEnum
+# from src.database.models.payments import PaymentModel, PaymentStatus
+# from src.database.session_postgresql import get_postgresql_db
+# from src.accounts.services.email_service import EmailService, get_email_service
+# from src.accounts.dependencies import role_required
 
 STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY")
-
+STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 router = APIRouter()
+
+# @router.post("/webhook")
+# async def stripe_webhook(request: Request):
+#     stripe_signature = request.headers.get("stripe-signature")
+#     if not stripe_signature:
+#         raise HTTPException(status_code=400, detail="No stripe signature")
+#
+#     payload = await request.body()
+#
+#     try:
+#         event = stripe.Webhook.construct_event(
+#             payload,
+#             stripe_signature,
+#             STRIPE_WEBHOOK_SECRET,
+#         )
+#     except Exception as e:
+#         print(e)
+#
+#     if event.type == "checkout.session.completed":
+#         session = event.data.object
+#         print(session)
+#
+
+
+
 
 
 @router.post("/{order_id}")
@@ -115,25 +154,25 @@ async def create_payment(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/webhook")
-async def handle_webhook(request: Request):
-    payload = await request.body()
-    sig_header = request.headers.get("stripe-signature")
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, STRIPE_SECRET_KEY)
-    except ValueError as e:
-        return JSONResponse(
-            {"status": "error", "message": f"Invalid payload: {str(e)}"},
-            status_code=400)
-    except stripe.error.SignatureVerificationError:
-        return JSONResponse({"status": "error", "message": "Invalid signature"},
-                            status_code=400)
-    event_type = event["type"]
-    if event_type == "checkout.session.completed":
-        return JSONResponse({"status": "OK"}, status_code=200)
-    return JSONResponse({"status": "error", "message": "Event type not handled"},
-                        status_code=400)
+# @router.post("/webhook")
+# async def handle_webhook(request: Request):
+#     payload = await request.body()
+#     sig_header = request.headers.get("stripe-signature")
+#     try:
+#         event = stripe.Webhook.construct_event(
+#             payload, sig_header, STRIPE_SECRET_KEY)
+#     except ValueError as e:
+#         return JSONResponse(
+#             {"status": "error", "message": f"Invalid payload: {str(e)}"},
+#             status_code=400)
+#     except stripe.error.SignatureVerificationError:
+#         return JSONResponse({"status": "error", "message": "Invalid signature"},
+#                             status_code=400)
+#     event_type = event["type"]
+#     if event_type == "checkout.session.completed":
+#         return JSONResponse({"status": "OK"}, status_code=200)
+#     return JSONResponse({"status": "error", "message": "Event type not handled"},
+#                         status_code=400)
 
 
 # full webhook
@@ -261,62 +300,67 @@ async def handle_webhook(request: Request):
 
 #
 # old webhook
-# @router.post("/webhook")
-# async def handle_webhook(request: Request,
-#                          db: AsyncSession = Depends(get_postgresql_db)):
-#     endpoint_secret = STRIPE_SECRET_KEY
-#     payload = await request.body()
-#     sig_header = request.headers.get("stripe-signature")
-#
-#     try:
-#         event = stripe.Webhook.construct_event(
-#             payload, sig_header, endpoint_secret
-#         )
-#     except ValueError as e:
-#         return JSONResponse(
-#             {"status": "error", "message": f"Invalid payload: {str(e)}"},
-#             status_code=400
-#         )
-#     except stripe.error.SignatureVerificationError:
-#         return JSONResponse({"status": "error", "message": "Invalid signature"},
-#                             status_code=400)
-#
-#     event_type = event["type"]
-#     if event_type == "checkout.session.completed":
-#         session = event["data"]["object"]
-#         payment_intent_id = session["payment_intent"]
-#         order_id = session["metadata"]["order_id"]
-#
-#         payment_res = await db.execute(
-#             select(PaymentModel).filter_by(external_payment_id=payment_intent_id))
-#         payment = payment_res.scalars().first()
-#
-#         if payment:
-#             if session["payment_status"] == "paid":
-#                 payment.status = PaymentStatus.SUCCESSFUL
-#                 order_res = await db.execute(
-#                     select(OrderModel).filter_by(id=order_id))
-#                 order = order_res.scalars().first()
-#
-#                 if order:
-#                     order.status = StatusEnum.PAID  # Задаємо статус "оплачено"
-#                     await db.commit()
-#
-#             elif session["payment_status"] == "cancel":
-#                 payment.status = PaymentStatus.CANCELED
-#             elif session["payment_status"] == "refunded":
-#                 payment.status = PaymentStatus.REFUNDED
-#
-#             await db.commit()
-#
-#             return JSONResponse({"status": "success"}, status_code=200)
-#         else:
-#             return JSONResponse(
-#                 {"status": "error", "message": "Payment not found"},
-#                 status_code=400)
-#
-#     return JSONResponse({"status": "error", "message": "Event type not handled"},
-#                         status_code=400)
+@router.post("/webhook")
+async def handle_webhook(
+        request: Request,
+        db: AsyncSession = Depends(get_postgresql_db)
+):
+    stripe_signature = request.headers.get("stripe-signature")
+    if not stripe_signature:
+        raise HTTPException(status_code=400, detail="No stripe signature")
+
+    payload = await request.body()
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload,
+            stripe_signature,
+            STRIPE_WEBHOOK_SECRET,
+        )
+    except ValueError as e:
+        return JSONResponse(
+            {"status": "error", "message": f"Invalid payload: {str(e)}"},
+            status_code=400
+        )
+    except stripe.error.SignatureVerificationError:
+        return JSONResponse({"status": "error", "message": "Invalid signature"},
+                            status_code=400)
+
+    event_type = event["type"]
+    if event_type == "checkout.session.completed":
+        session = event.data.object
+        payment_intent_id = session["payment_intent"]
+        order_id = session["metadata"]["order_id"]
+
+        payment_res = await db.execute(
+            select(PaymentModel).filter_by(external_payment_id=payment_intent_id))
+        payment = payment_res.scalars().first()
+
+        if payment:
+            if session["payment_status"] == "paid":
+                order_res = await db.execute(
+                    select(OrderModel).filter_by(id=order_id))
+                order = order_res.scalars().first()
+
+                if order:
+                    order.status = StatusEnum.PAID
+                    await db.commit()
+
+            elif session["payment_status"] == "cancel":
+                payment.status = PaymentStatus.CANCELED
+            elif session["payment_status"] == "refunded":
+                payment.status = PaymentStatus.REFUNDED
+
+            await db.commit()
+
+            return JSONResponse({"status": "success"}, status_code=200)
+        else:
+            return JSONResponse(
+                {"status": "error", "message": "Payment not found"},
+                status_code=400)
+
+    return JSONResponse({"status": "error", "message": "Event type not handled"},
+                        status_code=400)
 
 # @router.get("/success/")
 # async def success_payment(
@@ -378,13 +422,11 @@ async def handle_webhook(request: Request):
 #         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/")
-async def get_payments_history():
-    return {"message": "Payments endpoint works!"}
-
-
-@router.get("/{payment_id}")
-async def get_payment_detail():
-    return {"message": "Payments endpoint works!"}
+# Get a list of all user payments
+# router.get("/", status_code=status.HTTP_200_OK)(get_user_payments)
+#
+# @router.get("/{payment_id}")
+# async def get_payment_detail():
+#     return {"message": "Payments endpoint works!"}
 
 
