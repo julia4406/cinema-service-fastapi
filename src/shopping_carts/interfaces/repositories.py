@@ -21,6 +21,12 @@ class CartRepositoryInterface(ABC):
     ) -> Optional[ShoppingCart]:
         pass
 
+    async def get_or_create_cart_by_user_id(
+            self,
+            user_id: int
+    ) -> ShoppingCart:
+        pass
+
     @abstractmethod
     async def add_item_to_cart(self, cart_id: int, movie_id: int) -> CartItem:
         pass
