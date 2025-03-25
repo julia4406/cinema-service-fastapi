@@ -23,19 +23,16 @@ class OrderService(OrderServiceInterface):
         self._session = session
 
     async def create_order(self, user_id: int) -> Order:
-        # Получаем корзину
         cart = await self._cart_repository.get_cart_by_user_id(user_id)
         if not cart or not cart.items:
             raise ValueError("Cart is empty or does not exist")
 
-        # Проверяем, что фильмы не куплены
         purchases = await self._cart_repository.get_user_purchases(user_id)
         purchased_movie_ids = {purchase.movie_id for purchase in purchases}
         cart_movie_ids = {item.movie_id for item in cart.items}
         if purchased_movie_ids & cart_movie_ids:
             raise ValueError("Some movies are already purchased")
 
-        # Проверяем наличие фильмов в базе
         movie_ids = [item.movie_id for item in cart.items]
         result = await self._session.execute(
             select(MovieModel).filter(MovieModel.id.in_(movie_ids))
@@ -44,10 +41,8 @@ class OrderService(OrderServiceInterface):
         if len(available_movies) != len(movie_ids):
             raise ValueError("Some movies are not available")
 
-        # Создаем заказ
         order = await self._order_repository.create_order(user_id, cart.items)
 
-        # Очищаем корзину после создания заказа
         await self._cart_repository.clear_cart(cart.id)
 
         return order
