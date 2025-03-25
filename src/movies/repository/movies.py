@@ -1,8 +1,10 @@
 from typing import Optional, Any
+from uuid import uuid4
 
+from pydantic import UUID4
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.sql import func
 
 from src.database.models.movies import (
@@ -31,14 +33,14 @@ class MoviesRepository:
             .order_by(MovieModel.id)
             .offset(offset).limit(per_page)
             .options(
-                joinedload(MovieModel.certifications),
                 joinedload(MovieModel.genres),
                 joinedload(MovieModel.stars),
                 joinedload(MovieModel.directors),
+                selectinload(MovieModel.certifications)
             )
         )
         result = await self.db.execute(query)
-        movies = result.scalars().all()
+        movies = result.unique().scalars().all()
 
         return total_items, movies
 
@@ -125,6 +127,9 @@ class MoviesRepository:
         )
 
         movie = MovieModel(
+            uuid=str(uuid4()),
+            meta_score=movie_data.meta_score,
+            gross=movie_data.gross,
             name=movie_data.name,
             year=movie_data.year,
             time=movie_data.time,

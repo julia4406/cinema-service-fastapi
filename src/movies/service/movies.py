@@ -1,8 +1,6 @@
 from fastapi import HTTPException
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database.models.movies import StarModel
 from src.movies.repository.movies import MoviesRepository
 from src.movies.schemas.movies import (
     MovieListResponseSchema,
@@ -48,3 +46,26 @@ class MoviesService:
             total_items=total_items,
         )
 
+    async def get_movie_by_id(self, movie_id):
+        movie = await self.repository.get_movie_by_id(movie_id)
+
+        if not movie:
+            raise HTTPException(status_code=404, detail="Movie not found")
+
+        return MovieDetailSchema.model_validate(movie)
+
+    async def create_movie(self, movie_data: MovieCreateSchema):
+        existing_movie = await self.repository.get_movie_by_name(movie_data)
+
+        if existing_movie:
+            raise HTTPException(
+                status_code=409,
+                detail="Movie already exists.",
+            )
+
+        try:
+            movie = await self.repository.create_movie_post(movie_data)
+            return MovieDetailSchema.model_validate(movie)
+        except HTTPException:
+            await self.repository.db.rollback()
+            raise HTTPException(status_code=400, detail="Invalid input data.")
