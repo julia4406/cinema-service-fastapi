@@ -29,7 +29,7 @@ class OrderRepository(OrderRepositoryInterface):
                 .filter_by(user_id=user_id, status=StatusEnum.PENDING)
                 .options(joinedload(OrderModel.items))
             )
-            pending_orders = existing_pending.scalars().all()
+            pending_orders = existing_pending.unique().scalars().all()
             pending_movie_ids = {
                 item.movie_id for order in pending_orders for item in
                 order.items
@@ -98,7 +98,7 @@ class OrderRepository(OrderRepositoryInterface):
                 .joinedload(MovieModel.genres)
             )
         )
-        orders = result.scalars().all()
+        orders = result.unique().scalars().all()
         return [
             Order(
                 **{
@@ -108,8 +108,9 @@ class OrderRepository(OrderRepositoryInterface):
                             **{
                                 **object_as_dict(item),
                                 "name": item.movie.name,
-                                "genres": [genre.name for genre in
-                                           item.movie.genres] if item.movie.genres else None,
+                                "genres": [
+                                    genre.name for genre in item.movie.genres
+                                ] if item.movie.genres else None,
                                 "year": item.movie.year
                             }
                         )
