@@ -7,7 +7,7 @@ from src.movies.schemas.movies import (
     MovieListItemSchema,
     MovieDetailSchema,
     MovieCreateSchema,
-    MovieUpdateSchema,
+    MovieUpdateSchema, DetailMessageSchema,
 )
 
 class MoviesService:
@@ -69,3 +69,21 @@ class MoviesService:
         except HTTPException:
             await self.repository.db.rollback()
             raise HTTPException(status_code=400, detail="Invalid input data.")
+
+    async def update_movie(self, movie_id: int, movie_data: MovieUpdateSchema):
+        movie = await self.repository.get_movie_by_id(movie_id)
+
+        if not movie:
+            raise HTTPException(status_code=404, detail="Movie not found")
+
+        for field, value in movie_data.model_dump(exclude_unset=True).items():
+            if value is not None:
+                setattr(movie, field, value)
+
+        try:
+            await self.repository.commit_instance(movie)
+        except HTTPException:
+            await self.repository.db.rollback()
+            raise HTTPException(status_code=400, detail="Invalid input data.")
+        else:
+            return DetailMessageSchema(detail="Movie updated successfully.")

@@ -115,3 +115,7 @@ class MovieUpdateSchema(BaseModel):
     price: Optional[float] = Field(None, ge=0)
     meta_score: Optional[float] = Field(None, ge=0, le=100)
     gross: Optional[float] = Field(None, ge=0)
+
+
+class DetailMessageSchema(BaseModel):
+    detail: str

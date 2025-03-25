@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.session_postgresql import get_postgresql_db as get_db
 from src.movies.schemas.movies import (
-    MovieListResponseSchema, MovieDetailSchema, MovieCreateSchema,
+    MovieListResponseSchema, MovieDetailSchema, MovieCreateSchema, MovieUpdateSchema, DetailMessageSchema,
 )
 from src.movies.service.movies import MoviesService
 
@@ -45,3 +45,43 @@ async def create_movie(
         db: AsyncSession = Depends(get_db),
 ):
     return await MoviesService(db).create_movie(movie_data)
+
+
+@router.patch(
+    "/{id}",
+    response_model=DetailMessageSchema,
+    summary="Update movie by ID",
+    status_code=200,
+    responses={
+        200: {
+            "description": "Movie updated successfully.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Movie updated successfully."}
+                }
+            },
+        },
+        400: {
+            "description": "Invalid input data.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Invalid input data."}
+                }
+            },
+        },
+        404: {
+            "description": "Movie not found.",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Movie not found."}
+                }
+            },
+        },
+    },
+)
+async def update_movie(
+        movie_id: int,
+        movie_data: MovieUpdateSchema,
+        db: AsyncSession = Depends(get_db),
+) -> DetailMessageSchema:
+    return await MoviesService(db).update_movie(movie_id, movie_data)
