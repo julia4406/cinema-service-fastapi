@@ -41,9 +41,6 @@ app.include_router(
 app.include_router(
     orders_router
 )
-# app.include_router(accounts_router, prefix=f"{api_version_prefix}/accounts", tags=["accounts"])
-# app.include_router(profiles_router, prefix=f"{api_version_prefix}/profiles", tags=["profiles"])
-# app.include_router(movie_router, prefix=f"{api_version_prefix}/theater", tags=["theater"])
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
