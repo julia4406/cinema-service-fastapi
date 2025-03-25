@@ -1,10 +1,11 @@
 from fastapi import APIRouter, status
 
-from shopping_carts.controllers import (
+from src.shopping_carts.controllers import (
     get_cart,
     create_cart,
     add_item_to_cart,
-    remove_item_from_cart, clear_cart
+    remove_item_from_cart,
+    clear_cart
 )
 
 router = APIRouter()

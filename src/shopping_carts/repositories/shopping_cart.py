@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from database.exceptions.shopping_cart import (
+from src.database.exceptions.shopping_cart import (
     CreateCartError,
     CartItemError,
     CreatePurchaseError
@@ -15,9 +15,13 @@ from database.models import (
     CartItemModel,
     PurchasedModel, MovieModel
 )
-from database.utils import object_as_dict
-from shopping_carts.dto.shopping_cart import CartItem, ShoppingCart, Purchase
-from shopping_carts.interfaces.repositories import CartRepositoryInterface
+from src.database.utils import object_as_dict
+from src.shopping_carts.dto.shopping_cart import (
+    CartItem,
+    ShoppingCart,
+    Purchase
+)
+from src.shopping_carts.interfaces.repositories import CartRepositoryInterface
 
 
 class CartRepository(CartRepositoryInterface):
