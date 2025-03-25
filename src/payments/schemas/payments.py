@@ -3,8 +3,9 @@ from decimal import Decimal
 
 from pydantic import BaseModel, EmailStr
 
-from src.accounts.schemas import UserLoginRequestSchema
-from src.database.models import PaymentStatus
+from src.database.models.orders import OrderModel
+
+from src.database.models import PaymentStatus, UserModel
 
 
 class PaymentListSchema(BaseModel):
@@ -22,8 +23,8 @@ class PaymentSchema(BaseModel):
     created_at: datetime.datetime
     status: PaymentStatus
     amount: Decimal
-    user: UserLoginRequestSchema
-    order: "OrderSchema"
+    user: UserModel
+    order: OrderModel
     items: list["PaymentItemSchema"]
 
     model_config = {"from_attributes": True}

@@ -6,8 +6,8 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.payments.repositories.payments import PaymentRepository
-from src.payments.services.payments import get_metadata
+# from src.payments.repositories.payments import PaymentRepository
+# from src.payments.services.payments import get_metadata
 from src.payments.validators.payments_validators import validate_email
 from src.database.models import UserModel
 from src.database.models.orders import OrderModel, StatusEnum
@@ -48,7 +48,7 @@ async def create_payment(
         user_id=current_order.user_id,
         order_id=current_order.id,
         amount=current_order.total_amount,
-        status=PaymentStatus.PENDING
+        status=PaymentStatus.SUCCESSFUL
     )
 
     db.add(new_payment)
@@ -81,7 +81,7 @@ async def create_payment(
 
     base_url = str(request.base_url).rstrip("/")
     success_url = f"{base_url}/api/v1/payments/success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{base_url}/api/v1/payments/cancel?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{base_url}/api/v1/payments/cancel"
 
     try:
         stripe.api_key = STRIPE_SECRET_KEY
@@ -115,114 +115,267 @@ async def create_payment(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.post("/webhook")
+async def handle_webhook(request: Request):
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_SECRET_KEY)
+    except ValueError as e:
+        return JSONResponse(
+            {"status": "error", "message": f"Invalid payload: {str(e)}"},
+            status_code=400)
+    except stripe.error.SignatureVerificationError:
+        return JSONResponse({"status": "error", "message": "Invalid signature"},
+                            status_code=400)
+    event_type = event["type"]
+    if event_type == "checkout.session.completed":
+        return JSONResponse({"status": "OK"}, status_code=200)
+    return JSONResponse({"status": "error", "message": "Event type not handled"},
+                        status_code=400)
+
+
+# full webhook
 # @router.post("/webhook")
-# async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_postgresql_db)):
+# async def handle_webhook(request: Request,
+#                          db: AsyncSession = Depends(get_postgresql_db)):
+#     endpoint_secret = STRIPE_SECRET_KEY
 #     payload = await request.body()
-#     signature_header = request.headers.get("Stripe-Signature")
-#     event = None
+#     sig_header = request.headers.get("stripe-signature")
 #
 #     try:
 #         event = stripe.Webhook.construct_event(
-#             payload, signature_header, STRIPE_WEBHOOK_SECRET
+#             payload, sig_header, endpoint_secret
 #         )
 #     except ValueError as e:
-#         # Invalid payload
-#         return JSONResponse(status_code=400,
-#                             content={"message": "Invalid payload"})
-#     except stripe.error.SignatureVerificationError as e:
-#         # Invalid signature
-#         return JSONResponse(status_code=400,
-#                             content={"message": "Invalid signature"})
+#         return JSONResponse(
+#             {"status": "error", "message": f"Invalid payload: {str(e)}"},
+#             status_code=400
+#         )
+#     except stripe.error.SignatureVerificationError:
+#         return JSONResponse({"status": "error", "message": "Invalid signature"},
+#                             status_code=400)
 #
-#     # Обробка події "checkout.session.completed"
-#     if event["type"] == "checkout.session.completed":
+#     event_type = event["type"]
+#
+#     # Обробка події checkout.session.completed
+#     if event_type == "checkout.session.completed":
 #         session = event["data"]["object"]
-#         payment_intent = session.get("payment_intent")
-#         if payment_intent:
-#             # Завершення платежу, оновити статус у базі даних
-#             payment = await db.execute(
-#                 select(PaymentModel).filter_by(external_payment_id=session["id"]))
-#             payment_record = payment.scalars().first()
-#             if payment_record:
-#                 payment_record.status = "success"
-#                 await db.commit()
+#         payment_intent_id = session["payment_intent"]
+#         order_id = session["metadata"]["order_id"]
 #
-#         # Платіж завершено, можна виконати інші дії, наприклад, підтвердити замовлення
-#         print(f"Payment successful for session {session['id']}")
+#         payment_res = await db.execute(
+#             select(PaymentModel).filter_by(external_payment_id=payment_intent_id))
+#         payment = payment_res.scalars().first()
 #
-#     # Обробка інших подій, якщо потрібно
-#     # Наприклад, для скасування платежу:
-#     elif event["type"] == "checkout.session.async_payment_failed":
+#         if payment:
+#             if session["payment_status"] == "paid":
+#                 payment.status = PaymentStatus.SUCCESSFUL
+#                 order_res = await db.execute(
+#                     select(OrderModel).filter_by(id=order_id))
+#                 order = order_res.scalars().first()
+#
+#                 if order:
+#                     order.status = StatusEnum.PAID  # Задаємо статус "оплачено"
+#                     await db.commit()
+#
+#             elif session["payment_status"] == "cancel":
+#                 payment.status = PaymentStatus.CANCELED
+#             elif session["payment_status"] == "refunded":
+#                 payment.status = PaymentStatus.REFUNDED
+#
+#             await db.commit()
+#             return JSONResponse({"status": "success"}, status_code=200)
+#
+#     # Обробка події payment_intent.succeeded
+#     elif event_type == "payment_intent.succeeded":
+#         payment_intent = event["data"]["object"]
+#         payment_intent_id = payment_intent["id"]
+#
+#         payment_res = await db.execute(
+#             select(PaymentModel).filter_by(external_payment_id=payment_intent_id))
+#         payment = payment_res.scalars().first()
+#
+#         if payment:
+#             payment.status = PaymentStatus.SUCCESSFUL
+#             await db.commit()
+#             return JSONResponse({"status": "success"}, status_code=200)
+#
+#     # Обробка події charge.succeeded
+#     elif event_type == "charge.succeeded":
+#         charge = event["data"]["object"]
+#         charge_id = charge["id"]
+#
+#         payment_res = await db.execute(
+#             select(PaymentModel).filter_by(external_payment_id=charge_id))
+#         payment = payment_res.scalars().first()
+#
+#         if payment:
+#             payment.status = PaymentStatus.SUCCESSFUL
+#             await db.commit()
+#             return JSONResponse({"status": "success"}, status_code=200)
+#
+#     # Інші події, які можна обробити:
+#     elif event_type == "payment_intent.payment_failed":
+#         payment_intent = event["data"]["object"]
+#         payment_intent_id = payment_intent["id"]
+#
+#         payment_res = await db.execute(
+#             select(PaymentModel).filter_by(external_payment_id=payment_intent_id))
+#         payment = payment_res.scalars().first()
+#
+#         if payment:
+#             payment.status = PaymentStatus.CANCELED
+#             await db.commit()
+#             return JSONResponse({"status": "success"}, status_code=200)
+#
+#     elif event_type == "charge.failed":
+#         charge = event["data"]["object"]
+#         charge_id = charge["id"]
+#
+#         payment_res = await db.execute(
+#             select(PaymentModel).filter_by(external_payment_id=charge_id))
+#         payment = payment_res.scalars().first()
+#
+#         if payment:
+#             payment.status = PaymentStatus.CANCELED
+#             await db.commit()
+#             return JSONResponse({"status": "success"}, status_code=200)
+#
+#     elif event_type == "charge.refunded":
+#         charge = event["data"]["object"]
+#         charge_id = charge["id"]
+#
+#         payment_res = await db.execute(
+#             select(PaymentModel).filter_by(external_payment_id=charge_id))
+#         payment = payment_res.scalars().first()
+#
+#         if payment:
+#             payment.status = PaymentStatus.REFUNDED
+#             await db.commit()
+#             return JSONResponse({"status": "success"}, status_code=200)
+#
+#     return JSONResponse({"status": "error", "message": "Event type not handled"},
+#                         status_code=400)
+
+#
+# old webhook
+# @router.post("/webhook")
+# async def handle_webhook(request: Request,
+#                          db: AsyncSession = Depends(get_postgresql_db)):
+#     endpoint_secret = STRIPE_SECRET_KEY
+#     payload = await request.body()
+#     sig_header = request.headers.get("stripe-signature")
+#
+#     try:
+#         event = stripe.Webhook.construct_event(
+#             payload, sig_header, endpoint_secret
+#         )
+#     except ValueError as e:
+#         return JSONResponse(
+#             {"status": "error", "message": f"Invalid payload: {str(e)}"},
+#             status_code=400
+#         )
+#     except stripe.error.SignatureVerificationError:
+#         return JSONResponse({"status": "error", "message": "Invalid signature"},
+#                             status_code=400)
+#
+#     event_type = event["type"]
+#     if event_type == "checkout.session.completed":
 #         session = event["data"]["object"]
-#         # Встановіть статус як failed
-#         payment = await db.execute(
-#             select(PaymentModel).filter_by(external_payment_id=session["id"]))
-#         payment_record = payment.scalars().first()
-#         if payment_record:
-#             payment_record.status = "failed"
+#         payment_intent_id = session["payment_intent"]
+#         order_id = session["metadata"]["order_id"]
+#
+#         payment_res = await db.execute(
+#             select(PaymentModel).filter_by(external_payment_id=payment_intent_id))
+#         payment = payment_res.scalars().first()
+#
+#         if payment:
+#             if session["payment_status"] == "paid":
+#                 payment.status = PaymentStatus.SUCCESSFUL
+#                 order_res = await db.execute(
+#                     select(OrderModel).filter_by(id=order_id))
+#                 order = order_res.scalars().first()
+#
+#                 if order:
+#                     order.status = StatusEnum.PAID  # Задаємо статус "оплачено"
+#                     await db.commit()
+#
+#             elif session["payment_status"] == "cancel":
+#                 payment.status = PaymentStatus.CANCELED
+#             elif session["payment_status"] == "refunded":
+#                 payment.status = PaymentStatus.REFUNDED
+#
 #             await db.commit()
 #
-#     return JSONResponse(status_code=200, content={"message": "Event received"})
+#             return JSONResponse({"status": "success"}, status_code=200)
+#         else:
+#             return JSONResponse(
+#                 {"status": "error", "message": "Payment not found"},
+#                 status_code=400)
+#
+#     return JSONResponse({"status": "error", "message": "Event type not handled"},
+#                         status_code=400)
 
-
-@router.get("/success/")
-async def success_payment(
-        session_id: str,
-        background_tasks: BackgroundTasks,
-        db: AsyncSession = Depends(get_postgresql_db),
-        email_service: EmailService = Depends(get_email_service)
-) -> JSONResponse:
-    try:
-        stripe.api_key = STRIPE_SECRET_KEY
-        session = stripe.checkout.Session.retrieve(session_id)
-        metadata = get_metadata(session)
-
-        payment_repository = PaymentRepository(db)
-        await payment_repository.successful_payment_model(
-            metadata.payment_id, metadata.order_id
-        )
-
-        background_tasks.add_task(
-            email_service.cancellation_payment_email,
-            recipient_email=metadata.user_email,
-            order_id=metadata.order_id
-        )
-
-        return JSONResponse(
-            content={"message": "The payment has been completed successfully."}
-        )
-    except stripe.error.StripeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.get("/cancel/")
-async def cancel_payment(
-        session_id: str,
-        background_tasks: BackgroundTasks,
-        db: AsyncSession = Depends(get_postgresql_db),
-        email_service: EmailService = Depends(get_email_service)
-) -> JSONResponse:
-    try:
-        stripe.api_key = STRIPE_SECRET_KEY
-        session = stripe.checkout.Session.retrieve(session_id)
-        metadata = get_metadata(session)
-
-        payment_repository = PaymentRepository(db)
-        await payment_repository.canceled_payment_model(
-            metadata.payment_id, metadata.order_id
-        )
-
-        background_tasks.add_task(
-            email_service.cancellation_payment_email,
-            recipient_email=metadata.user_email,
-            order_id=metadata.order_id
-        )
-
-        return JSONResponse(
-            content={"message": "The payment was canceled."}
-        )
-    except stripe.error.StripeError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+# @router.get("/success/")
+# async def success_payment(
+#         session_id: str,
+#         background_tasks: BackgroundTasks,
+#         db: AsyncSession = Depends(get_postgresql_db),
+#         email_service: EmailService = Depends(get_email_service)
+# ) -> JSONResponse:
+#     try:
+#         stripe.api_key = STRIPE_SECRET_KEY
+#         session = stripe.checkout.Session.retrieve(session_id)
+#         metadata = get_metadata(session)
+#
+#         payment_repository = PaymentRepository(db)
+#         await payment_repository.successful_payment_model(
+#             metadata.payment_id, metadata.order_id
+#         )
+#
+#         background_tasks.add_task(
+#             email_service.cancellation_payment_email,
+#             recipient_email=metadata.user_email,
+#             order_id=metadata.order_id
+#         )
+#
+#         return JSONResponse(
+#             content={"message": "The payment has been completed successfully."}
+#         )
+#     except stripe.error.StripeError as e:
+#         raise HTTPException(status_code=400, detail=str(e))
+#
+#
+# @router.get("/cancel/")
+# async def cancel_payment(
+#         session_id: str,
+#         background_tasks: BackgroundTasks,
+#         db: AsyncSession = Depends(get_postgresql_db),
+#         email_service: EmailService = Depends(get_email_service)
+# ) -> JSONResponse:
+#     try:
+#         stripe.api_key = STRIPE_SECRET_KEY
+#         session = stripe.checkout.Session.retrieve(session_id)
+#         metadata = get_metadata(session)
+#
+#         payment_repository = PaymentRepository(db)
+#         await payment_repository.canceled_payment_model(
+#             metadata.payment_id, metadata.order_id
+#         )
+#
+#         background_tasks.add_task(
+#             email_service.cancellation_payment_email,
+#             recipient_email=metadata.user_email,
+#             order_id=metadata.order_id
+#         )
+#
+#         return JSONResponse(
+#             content={"message": "The payment was canceled."}
+#         )
+#     except stripe.error.StripeError as e:
+#         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/")

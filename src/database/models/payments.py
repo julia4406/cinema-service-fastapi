@@ -13,7 +13,6 @@ class PaymentStatus(Enum):
     SUCCESSFUL = "successful"
     CANCELED = "canceled"
     REFUNDED = "refunded"
-    PENDING = "pending"
 
 
 class PaymentModel(Base):

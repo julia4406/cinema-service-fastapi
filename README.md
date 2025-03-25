@@ -62,3 +62,11 @@ SERVICE_URL=http://127.0.0.1:8000/
         current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
         db: AsyncSession = Depends(get_postgresql_db)
     ):
+
+
+STRIPE:
+stripe --version
+stripe login
+ 
+stripe listen --forward-to http://localhost:8000/webhook
+!put webhook secret key into .env
