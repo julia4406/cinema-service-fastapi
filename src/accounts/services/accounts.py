@@ -6,18 +6,18 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from accounts.repositories.accounts import UserRepository, ProfileRepository
-from accounts.repositories.tokens import (
+from src.accounts.repositories.accounts import UserRepository, ProfileRepository
+from src.accounts.repositories.tokens import (
     ActivationTokensRepository,
     RefreshTokensRepository,
     PasswordResetTokenRepository
 )
-from accounts.schemas.accounts import UserAdminCreateRequest, UserAdminResponse, UserAdminUpdateRequest
-from accounts.services.email_service import EmailService
-from accounts.security.jwt import JWTAuthManager
+from src.accounts.schemas.accounts import UserAdminCreateRequest, UserAdminResponse, UserAdminUpdateRequest
+from src.accounts.services.email_service import EmailService
+from src.accounts.security.jwt import JWTAuthManager
 from src.database.models import UserModel, ProfileModel
-from accounts.validators.accounts import validate_password_strength
-from accounts.schemas import (
+from src.accounts.validators.accounts import validate_password_strength
+from src.accounts.schemas import (
     UserCreateResponse,
     UserCreateRequest,
     JWTTokenResponse,

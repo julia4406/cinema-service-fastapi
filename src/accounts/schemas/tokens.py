@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator
 
-from accounts.validators import validate_password_strength
+from src.accounts.validators import validate_password_strength
 
 
 class JWTTokenResponse(BaseModel):
