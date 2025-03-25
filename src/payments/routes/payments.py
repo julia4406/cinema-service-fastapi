@@ -71,6 +71,7 @@ async def stripe_webhook(
         payment_data = CreatePaymentSchema(
             user_id=int(session["metadata"]["user_id"]),
             order_id=int(session["metadata"]["order_id"]),
+            status=PaymentStatus.SUCCESSFUL,
             amount=Decimal(session["metadata"]["total_amount"]),
             external_payment_id=session["payment_intent"]
         )
@@ -94,6 +95,28 @@ async def stripe_webhook(
             {"status": "success", "message": "Payment created"},
             status_code=201
         )
+
+    elif event.type in ["checkout.session.async_payment_failed", "checkout.session.payment_failed"]:
+        session = event.data.object
+
+        payment_data = CreatePaymentSchema(
+            user_id=int(session["metadata"]["user_id"]),
+            order_id=int(session["metadata"]["order_id"]),
+            status=PaymentStatus.CANCELED,
+            amount=Decimal(session["metadata"]["total_amount"]),
+            external_payment_id=session["payment_intent"]
+        )
+        new_payment = PaymentModel(**payment_data.model_dump())
+
+        db.add(new_payment)
+        await db.commit()
+        await db.refresh(new_payment)
+
+        return JSONResponse(
+            {"status": "cancel", "message": "Payment cancelled"},
+            status_code=201
+        )
+
 
 
 @router.post("/{order_id}")

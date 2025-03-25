@@ -15,7 +15,7 @@ from src.database.models.payments import PaymentStatus
 class CreatePaymentSchema(BaseModel):
     user_id: int = Field(..., gt=0)
     order_id: int = Field(..., gt=0)
-
+    status: PaymentStatus
     amount: Decimal = Field(..., gt=0)
     external_payment_id: str
 
