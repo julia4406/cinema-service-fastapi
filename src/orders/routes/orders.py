@@ -5,7 +5,6 @@ from src.orders.controllers import (
     get_user_orders,
     get_order,
     cancel_pending_order,
-    cancel_paid_order,
     confirm_order
 )
 
@@ -23,11 +22,6 @@ router.get("/{order_id}", status_code=status.HTTP_200_OK)(get_order)
 # Cancel a pending order
 router.patch("/{order_id}/cancel", status_code=status.HTTP_200_OK)(
     cancel_pending_order
-)
-
-# Cancel a paid order (temporary for user testing)
-router.patch("/{order_id}/cancel-paid", status_code=status.HTTP_200_OK)(
-    cancel_paid_order
 )
 
 # Confirm an order and initiate payment

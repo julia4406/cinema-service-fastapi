@@ -1,13 +1,20 @@
 from fastapi import Depends, HTTPException, status
+
+from src.database.models import UserGroupEnum
 from src.database.models import UserModel
-from src.accounts.dependencies import get_current_user
+from src.accounts.dependencies import get_current_user, role_required
 
 from src.database.exceptions.orders import CreateOrderError, OrderUpdateError
 from src.orders.dependencies import get_order_service
-from src.orders.interfaces.services import OrderServiceInterface
+from src.orders.interfaces.services import (
+    OrderServiceInterface,
+    AdminOrderServiceInterface
+)
 from src.orders.schemas.orders import (
     OrderResponseSchema,
-    OrderListResponseSchema
+    OrderListResponseSchema,
+    OrderFilterSchema,
+    OrderStatusUpdateSchema
 )
 from src.shopping_carts.schemas.shopping_cart import MessageResponseSchema
 
@@ -81,27 +88,6 @@ async def cancel_pending_order(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-async def cancel_paid_order(
-        order_id: int,
-        user: UserModel = Depends(get_current_user),
-        order_service: OrderServiceInterface = Depends(get_order_service),
-) -> MessageResponseSchema:
-    # Cancel a paid order (changes status from paid to cancelled, temporary for user).
-    # Args:
-    #     order_id (int): ID of the order to cancel.
-    #     user (UserModel): Current authenticated user.
-    #     order_service (OrderServiceInterface): Order service instance.
-    # Returns:
-    #     MessageResponseSchema: Success message.
-    try:
-        await order_service.cancel_paid_order(user.id, order_id)
-        return MessageResponseSchema(
-            message="Paid order cancelled successfully"
-        )
-    except (ValueError, OrderUpdateError) as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
 async def confirm_order(
         order_id: int,
         user: UserModel = Depends(get_current_user),
@@ -119,3 +105,55 @@ async def confirm_order(
         return OrderResponseSchema(**order.__dict__)
     except (ValueError, OrderUpdateError) as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+async def admin_get_all_orders(
+        filters: OrderFilterSchema = Depends(),
+        order_service: OrderServiceInterface = Depends(get_order_service),
+        admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN))
+):
+    """Retrieve a list of all orders with filters and pagination for admins.
+        Args:
+            filters (OrderFilterSchema): Filtering options including user_id, date range, status, limit, and offset.
+            order_service (OrderServiceInterface): Order service instance.
+            admin (UserModel): Current authenticated admin user.
+        Returns:
+            OrderListResponseSchema: List of orders with total count.
+        """
+    try:
+        orders, total = await order_service.get_all_orders(
+            filters.user_id,
+            filters.date_from,
+            filters.date_to,
+            filters.status,
+            filters.limit,
+            filters.offset
+        )
+        return OrderListResponseSchema(orders=orders, total=total)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+async def admin_update_order_status(
+        order_id: int,
+        update_data: OrderStatusUpdateSchema,
+        order_service: AdminOrderServiceInterface = Depends(get_order_service),
+        admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN))
+):
+    """Update the status of a specific order manually by an admin.
+        Args:
+            order_id (int): ID of the order to update.
+            update_data (OrderStatusUpdateSchema): New status data for the order.
+            order_service (OrderServiceInterface): Order service instance.
+            admin (UserModel): Current authenticated admin user.
+        Returns:
+            OrderResponseSchema: Updated order details.
+        """
+    try:
+        order = await order_service.update_order_status(
+            order_id,
+            update_data.status
+        )
+        return OrderResponseSchema(**order.__dict__)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

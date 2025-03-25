@@ -5,6 +5,7 @@ from src.payments.routes.payments import router as payment_router
 from src.shopping_carts.routes.shopping_cart import router as shopping_cart_router
 from src.shopping_carts.routes.admin import router as admin_shopping_cart_router
 from src.orders.routes.orders import router as orders_router
+from src.orders.routes.admin import router as admin_orders_router
 from src.accounts.routes.auth import router as auth_router
 from src.accounts.routes.profile import router as profile_router
 from src.accounts.routes.admin import router as admin_router
@@ -40,6 +41,10 @@ app.include_router(
 )
 app.include_router(
     orders_router
+)
+app.include_router(
+    admin_orders_router,
+    prefix=f"{api_version_prefix}/admin/orders", tags=["admin_orders"],
 )
 
 if __name__ == "__main__":
