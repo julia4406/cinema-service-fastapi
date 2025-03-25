@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.session_postgresql import get_postgresql_db as get_db
-from movies.schemas.genres import GenreSchema, GenresResponseSchema, GenreCreateSchema
-from movies.service.genres import GenresService
+from src.database.session_postgresql import get_postgresql_db as get_db
+from src.movies.schemas.genres import GenreSchema, GenresResponseSchema, GenreCreateSchema
+from src.movies.service.genres import GenresService
 
 router = APIRouter()
 
