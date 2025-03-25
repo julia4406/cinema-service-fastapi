@@ -3,7 +3,7 @@ import enum
 from typing import List
 from uuid import UUID as UUIDType
 
-from sqlalchemy import String, Float, Text, DECIMAL, UniqueConstraint, ForeignKey, Integer, DateTime, func, Enum
+from sqlalchemy import String, Text, DECIMAL, UniqueConstraint, ForeignKey, DateTime, func, Enum
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from src.database.models import Base
