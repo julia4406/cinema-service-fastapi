@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from database.models.movies import StarModel
-from movies.schemas.stars import StarCreateSchema
+from src.database.models.movies import StarModel
+from src.movies.schemas.stars import StarCreateSchema
 
 
 class StarsRepository:

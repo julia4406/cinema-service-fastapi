@@ -2,9 +2,9 @@ from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models.movies import StarModel
-from movies.repository.stars import StarsRepository
-from movies.schemas.stars import StarSchema, StarCreateSchema
+from src.database.models.movies import StarModel
+from src.movies.repository.stars import StarsRepository
+from src.movies.schemas.stars import StarSchema, StarCreateSchema
 
 
 class StarsService:
