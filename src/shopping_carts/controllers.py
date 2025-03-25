@@ -1,13 +1,20 @@
 from fastapi import Depends, HTTPException
 
-from src.accounts.dependencies import get_current_user
+from src.database.models import UserGroupEnum
+from src.accounts.dependencies import get_current_user, role_required
 from src.database.exceptions.shopping_cart import (
     CreateCartError,
     CartItemError
 )
 from src.database.models import UserModel
-from src.shopping_carts.dependencies import get_cart_service
-from src.shopping_carts.interfaces.services import CartServiceInterface
+from src.shopping_carts.dependencies import (
+    get_cart_service,
+    get_admin_cart_service
+)
+from src.shopping_carts.interfaces.services import (
+    CartServiceInterface,
+    AdminCartServiceInterface
+)
 from src.shopping_carts.schemas.shopping_cart import (
     CartResponseSchema,
     CartItemResponseSchema,
@@ -109,3 +116,52 @@ async def clear_cart(
         raise HTTPException(status_code=404, detail=str(e))
     except CartItemError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+async def admin_get_user_cart(
+        user_id: int,
+        admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
+        cart_service: AdminCartServiceInterface = Depends(
+            get_admin_cart_service
+            ),
+) -> CartResponseSchema:
+    cart = await cart_service.get_or_create_cart(user_id)
+    return CartResponseSchema(**cart.__dict__)
+
+
+async def admin_add_movie_to_cart(
+        user_id: int,
+        movie_id: int,
+        admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
+        cart_service: AdminCartServiceInterface = Depends(
+            get_admin_cart_service
+            ),
+) -> CartResponseSchema:
+    try:
+        cart = await cart_service.add_item_to_cart(user_id, movie_id)
+        return CartResponseSchema(**cart.__dict__)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+async def admin_remove_movie_from_cart(
+        user_id: int,
+        movie_id: int,
+        admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
+        cart_service: AdminCartServiceInterface = Depends(
+            get_admin_cart_service
+            ),
+) -> MessageResponseSchema:
+    await cart_service.remove_item_from_cart(user_id, movie_id)
+    return MessageResponseSchema(message="Item removed successfully")
+
+
+async def admin_clear_user_cart(
+        user_id: int,
+        admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
+        cart_service: AdminCartServiceInterface = Depends(
+            get_admin_cart_service
+            ),
+) -> MessageResponseSchema:
+    await cart_service.clear_cart(user_id)
+    return MessageResponseSchema(message="Cart cleared successfully")
