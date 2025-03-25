@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, field_validator
 from email_validator import validate_email, EmailNotValidError
 
-from src.database.models import GenderEnum
+from src.database.models import GenderEnum, UserGroupEnum
 from src.accounts.validators import (
     validate_password_strength,
     validate_info,
@@ -15,7 +15,7 @@ from src.accounts.validators import (
 )
 
 
-class UserCreateRequestSchema(BaseModel):
+class UserCreateRequest(BaseModel):
     email: EmailStr
     password: str
 
@@ -33,7 +33,27 @@ class UserCreateRequestSchema(BaseModel):
         return password
 
 
-class UserCreateResponseSchema(BaseModel):
+class UserAdminCreateRequest(BaseModel):
+    email: EmailStr
+    password: str
+    is_active: Optional[bool] = False
+    group: Optional[UserGroupEnum] = UserGroupEnum.USER
+
+    @field_validator("email")
+    def check_email(cls, email: str) -> str:
+        try:
+            validate_email(email)
+        except EmailNotValidError:
+            raise ValueError("The email field is not valid")
+        return email
+
+    @field_validator("password")
+    def check_password(cls, password: str):
+        validate_password_strength(password)
+        return password
+
+
+class UserCreateResponse(BaseModel):
     id: int
     email: str
     is_active: bool
@@ -45,9 +65,31 @@ class UserCreateResponseSchema(BaseModel):
     }
 
 
-class UserLoginRequestSchema(BaseModel):
+class UserAdminUpdateRequest(BaseModel):
+    email: Optional[EmailStr] = None
+    is_active: Optional[bool] = None
+    group: Optional[UserGroupEnum] = None
+
+
+class UserLoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class UserAdminResponse(BaseModel):
+    id: int
+    email: str
+    is_active: bool
+    group: UserGroupEnum
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    avatar: Optional[str] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    info: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 
 class ProfileResponse(BaseModel):
