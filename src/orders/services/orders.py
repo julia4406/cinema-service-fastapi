@@ -3,12 +3,12 @@ from typing import List
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models import StatusEnum
-from database.models.movies import MovieModel
-from orders.dto.orders import Order
-from orders.interfaces.repositories import OrderRepositoryInterface
-from orders.interfaces.services import OrderServiceInterface
-from shopping_carts.interfaces.repositories import CartRepositoryInterface
+from src.database.models import StatusEnum
+from src.database.models.movies import MovieModel
+from src.orders.dto.orders import Order
+from src.orders.interfaces.repositories import OrderRepositoryInterface
+from src.orders.interfaces.services import OrderServiceInterface
+from src.shopping_carts.interfaces.repositories import CartRepositoryInterface
 
 
 class OrderService(OrderServiceInterface):
