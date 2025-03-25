@@ -22,7 +22,7 @@ class OrderResponseSchema(BaseModel):
     user_id: int
     created_at: datetime
     status: StatusEnum
-    total_amount: Optional[List[str]] = None
+    total_amount: float | None
     items: List[OrderItemResponseSchema]
 
     class Config:
