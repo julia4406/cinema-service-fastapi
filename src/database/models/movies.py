@@ -75,6 +75,7 @@ class UserFavoriteModel(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
     added_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), default=func.now())
+    is_favorite: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
     user: Mapped["UserModel"] = relationship("UserModel", back_populates="favorites")
     movie: Mapped["MovieModel"] = relationship("MovieModel", back_populates="favorites")

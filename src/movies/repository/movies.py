@@ -14,7 +14,7 @@ from src.database.models.movies import (
     GenreModel,
     MovieModel,
     StarModel,
-    UserReactionModel,
+    UserReactionModel, UserFavoriteModel,
 )
 from src.database.models.shopping_carts import PurchasedModel
 from src.movies.schemas.movies import MovieCreateSchema
@@ -233,3 +233,28 @@ class MoviesRepository:
         await self.commit_instance(movie_like)
 
         return movie_like
+
+    async def toggle_movie_favorite(
+            self,
+            movie: MovieModel,
+            user_id: int,
+    ) -> UserFavoriteModel:
+        result = await self.db.execute(
+            select(UserFavoriteModel).filter_by(movie_id=movie.id, user_id=user_id)
+        )
+        movie_fav = result.scalars().first()
+
+        if movie_fav:
+            movie_fav.is_favorite = not movie_fav.is_favorite
+            movie_fav.created_at = now()
+        else:
+            movie_fav = UserFavoriteModel(
+                user_id=user_id,
+                movie_id=movie.id,
+                is_favorite=True
+            )
+            self.db.add(movie_fav)
+
+        await self.commit_instance(movie_fav)
+
+        return movie_fav

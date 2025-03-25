@@ -9,7 +9,7 @@ from src.movies.schemas.movies import (
     MovieDetailSchema,
     MovieCreateSchema,
     MovieUpdateSchema,
-    DetailMessageSchema, MovieLikeResponseSchema,
+    DetailMessageSchema, MovieLikeResponseSchema, MovieFavoriteResponseSchema,
 )
 
 
@@ -116,6 +116,27 @@ class MoviesService:
         return MovieLikeResponseSchema(
             is_liked=movie_like.is_liked,
             created_at=movie_like.created_at,
+            user=user.id,
+            movie=movie.id,
+        )
+
+    async def favorite_or_unfavorite(
+            self,
+            movie_id: int,
+            user: UserModel
+    ) -> MovieFavoriteResponseSchema:
+        movie = await self.repository.get_movie_by_id(movie_id)
+        if not movie:
+            raise HTTPException(
+                status_code=404,
+                detail="Movie with the given ID was not found."
+            )
+
+        movie_favorite = await self.repository.toggle_movie_favorite(movie, user.id)
+
+        return MovieFavoriteResponseSchema(
+            is_favorite=movie_favorite.is_favorite,
+            added_at=movie_favorite.added_at,
             user=user.id,
             movie=movie.id,
         )

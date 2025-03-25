@@ -127,5 +127,13 @@ class MovieLikeResponseSchema(BaseModel):
     user:  int
     movie: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MovieFavoriteResponseSchema(BaseModel):
+    is_favorite: bool
+    added_at: datetime
+    user: int
+    movie: int
+
+    model_config = ConfigDict(from_attributes=True)

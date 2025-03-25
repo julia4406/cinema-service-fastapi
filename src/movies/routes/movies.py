@@ -6,7 +6,7 @@ from database.session_postgresql import get_postgresql_db as get_db
 from src.database.models.accounts import UserModel
 from src.movies.schemas.movies import (
     MovieListResponseSchema, MovieDetailSchema, MovieCreateSchema, MovieUpdateSchema, DetailMessageSchema,
-    MovieLikeResponseSchema,
+    MovieLikeResponseSchema, MovieFavoriteResponseSchema,
 )
 from src.movies.service.movies import MoviesService
 
@@ -155,3 +155,43 @@ async def like_or_dislike(
         user: UserModel = Depends(get_current_user)
 ) -> MovieLikeResponseSchema:
     return await MoviesService(db).like_or_dislike_movie(movie_id, user)
+
+
+@router.post(
+    "/{movie_id}/favorite/",
+    response_model=MovieFavoriteResponseSchema,
+    summary="Add or remove a movie from favorites",
+    responses={
+        200: {"description": "Movie favorite status updated."},
+        404: {
+            "description": "Movie or user not found.",
+            "content": {
+                "application/json":
+                    {
+                        "example": {
+                            "detail": "Movie with the given ID was not found."
+                        }
+                    }
+            }
+        },
+        401: {
+            "description": "Unauthorized access.",
+            "content":
+                {
+                    "application/json":
+                        {
+                            "example":
+                                {
+                                    "detail": "Invalid or expired token."
+                                }
+                        }
+                }
+        },
+    }
+)
+async def favorite_or_unfavorite(
+        movie_id: int,
+        db: AsyncSession = Depends(get_db),
+        user: UserModel = Depends(get_current_user)
+) -> MovieFavoriteResponseSchema:
+    return await MoviesService(db).favorite_or_unfavorite(movie_id, user)
