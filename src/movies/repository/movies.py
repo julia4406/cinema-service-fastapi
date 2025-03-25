@@ -1,12 +1,14 @@
-from typing import Optional, Any
+from typing import Optional, Any, Coroutine
 from uuid import uuid4
 
 from pydantic import UUID4
+from sqlalchemy import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.sql import func
 
+from database.models import PurchasedModel
 from src.database.models.movies import (
     MovieModel,
     CertificationModel,
@@ -15,6 +17,7 @@ from src.database.models.movies import (
     MovieModel,
     StarModel,
 )
+from src.database.models.shopping_carts import PurchasedModel
 from src.movies.schemas.movies import MovieCreateSchema
 
 
@@ -161,7 +164,16 @@ class MoviesRepository:
 
         return movie_with_relations
 
-    async def delete_instance(self, instance: Any) -> None:
+    async def delete_instance(self, instance: Any) -> Result[tuple[PurchasedModel]] | None:
+        found_instance = await self.db.execute(
+            select(func.count(PurchasedModel.id))
+            .where(
+                PurchasedModel.movie_id == instance.id
+        )
+    )
+        if found_instance.scalar_one() > 0:
+            return found_instance
+
         await self.db.delete(instance)
         await self.db.commit()
 

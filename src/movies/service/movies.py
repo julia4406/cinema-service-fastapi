@@ -7,7 +7,8 @@ from src.movies.schemas.movies import (
     MovieListItemSchema,
     MovieDetailSchema,
     MovieCreateSchema,
-    MovieUpdateSchema, DetailMessageSchema,
+    MovieUpdateSchema,
+    DetailMessageSchema,
 )
 
 class MoviesService:
@@ -22,9 +23,6 @@ class MoviesService:
         total_items, movies = await self.repository.get_movies_paginated(page=page, per_page=per_page)
 
         total_pages = (total_items + per_page - 1) // per_page
-
-        start = (page - 1) * per_page
-        end = start + per_page
 
         if not movies:
             raise HTTPException(status_code=404, detail="No movies found.")
@@ -94,5 +92,8 @@ class MoviesService:
         if not movie:
             raise HTTPException(status_code=404, detail="Movie not found")
 
-        await self.repository.delete_instance(movie)
+        result = await self.repository.delete_instance(movie)
+        if result:
+            raise HTTPException(status_code=404, detail="Movie was purchased.")
+
         return
