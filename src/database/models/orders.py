@@ -27,8 +27,7 @@ class OrderModel(Base):
         nullable=False,
     )
     status: Mapped[StatusEnum] = mapped_column(
-        Enum(StatusEnum), nullable=False, unique=True,
-        default=StatusEnum.PENDING,
+        Enum(StatusEnum), nullable=False, default=StatusEnum.PENDING,
     )
     total_amount: Mapped[float | None] = mapped_column(
         Numeric(10, 2),
