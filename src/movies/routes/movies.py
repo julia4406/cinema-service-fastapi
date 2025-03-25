@@ -24,9 +24,13 @@ async def get_movies(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=100),
-    search: Optional[str] = Query(
+    search_title: Optional[str] = Query(
         None,
         description="Search by title or description"
+    ),
+    search_person: Optional[str] = Query(
+        None,
+        description="Search by actor or director"
     ),
     year: Optional[int] = Query(
         None,
@@ -54,7 +58,8 @@ async def get_movies(
     ),
 ):
     filters = {
-        "name": search,
+        "name": search_title,
+        "search_person": search_person,
         "year": year,
         "min_imdb": min_imdb,
         "max_imdb": max_imdb,

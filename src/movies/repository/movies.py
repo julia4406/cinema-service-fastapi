@@ -1,7 +1,7 @@
 from typing import Optional, Any
 from uuid import uuid4
 
-from sqlalchemy import Result
+from sqlalchemy import Result, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
@@ -14,7 +14,7 @@ from src.database.models.movies import (
     GenreModel,
     MovieModel,
     StarModel,
-    UserReactionModel, UserFavoriteModel,
+    UserReactionModel, UserFavoriteModel, MoviesStarsModel, MoviesDirectorsModel,
 )
 from src.database.models.shopping_carts import PurchasedModel
 from src.movies.schemas.movies import MovieCreateSchema, MovieSortEnum
@@ -267,7 +267,20 @@ class MoviesRepository:
         query = select(MovieModel)
 
         if filters.get("name"):
-            query = query.filter(MovieModel.name.ilike(f"%{filters['name']}%"))
+            query = query.filter(MovieModel.name.ilike(f"%{filters["name"]}%"))
+        if filters.get("search_person"):
+            query = (query
+                .join(MoviesStarsModel, isouter=True)
+                .join(StarModel, isouter=True)
+                .join(MoviesDirectorsModel, isouter=True)
+                .join(DirectorModel, isouter=True)
+                .filter(
+                    or_(
+                        StarModel.name.ilike(f"%{filters['search_person']}%"),
+                        DirectorModel.name.ilike(f"%{filters['search_person']}%")
+                    )
+                )
+            )
         if filters.get("year") is not None:
             query = query.filter(MovieModel.year == filters["year"])
         if filters.get("min_imdb") is not None:
