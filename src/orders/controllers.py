@@ -1,13 +1,20 @@
 from fastapi import Depends, HTTPException, status
+
+from database.models import UserGroupEnum
 from src.database.models import UserModel
-from src.accounts.dependencies import get_current_user
+from src.accounts.dependencies import get_current_user, role_required
 
 from src.database.exceptions.orders import CreateOrderError, OrderUpdateError
 from src.orders.dependencies import get_order_service
-from src.orders.interfaces.services import OrderServiceInterface
+from src.orders.interfaces.services import (
+    OrderServiceInterface,
+    AdminOrderServiceInterface
+)
 from src.orders.schemas.orders import (
     OrderResponseSchema,
-    OrderListResponseSchema
+    OrderListResponseSchema,
+    OrderFilterSchema,
+    OrderStatusUpdateSchema
 )
 from src.shopping_carts.schemas.shopping_cart import MessageResponseSchema
 
@@ -119,3 +126,38 @@ async def confirm_order(
         return OrderResponseSchema(**order.__dict__)
     except (ValueError, OrderUpdateError) as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+async def get_all_orders(
+        filters: OrderFilterSchema = Depends(),
+        order_service: OrderServiceInterface = Depends(get_order_service),
+        admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN))
+):
+    try:
+        orders, total = await order_service.get_all_orders(
+            filters.user_id,
+            filters.date_from,
+            filters.date_to,
+            filters.status,
+            filters.limit,
+            filters.offset
+        )
+        return OrderListResponseSchema(orders=orders, total=total)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+async def update_order_status(
+        order_id: int,
+        update_data: OrderStatusUpdateSchema,
+        order_service: AdminOrderServiceInterface = Depends(get_order_service),
+        admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN))
+):
+    try:
+        order = await order_service.update_order_status(
+            order_id,
+            update_data.status
+        )
+        return OrderResponseSchema(**order.__dict__)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
