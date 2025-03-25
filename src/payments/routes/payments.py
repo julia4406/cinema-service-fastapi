@@ -1,20 +1,19 @@
 import os
 from decimal import Decimal
 
-# from typing import List
-
 import stripe
 from fastapi import APIRouter, status, HTTPException, Depends, Request, BackgroundTasks
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
-from orders.dto.orders import OrderItem
 from src.payments.schemas.payments import CreatePaymentSchema
 from src.database.models import UserModel
 
-from src.database.models.payments import PaymentModel, PaymentStatus
+from src.database.models.payments import (
+    PaymentModel, PaymentStatus, PaymentItemModel
+)
 
 from src.database.models.orders import OrderModel, StatusEnum, OrderItemModel
 
@@ -83,12 +82,26 @@ async def stripe_webhook(
         await db.flush()
 
         order_res = await db.execute(
-            select(OrderModel).filter_by(id=int(session["metadata"]["order_id"]))
+            select(OrderModel)
+            .options(joinedload(OrderModel.items))
+            .filter_by(id=int(session["metadata"]["order_id"]))
         )
         order = order_res.scalars().first()
 
         if order:
             order.status = StatusEnum.PAID
+
+            payment_items = []
+            for item in order.items:
+                new_payment_item = PaymentItemModel(
+                    payment_id=new_payment.id,
+                    order_item_id=item.id,
+                    price_at_payment=item.price_at_order
+                )
+                payment_items.append(new_payment_item)
+                db.add(new_payment_item)
+                await db.flush()
+
             await db.commit()
             await db.refresh(order)
             await db.refresh(new_payment)
@@ -159,19 +172,8 @@ async def create_payment(
     if not user or not user.email:
         raise HTTPException(status_code=400, detail="User email not found")
 
-    # items = []
-    # for item in current_order.items:
-    #     items.append(
-    #         {
-    #             "price_data": {
-    #                 "currency": "usd",
-    #                 "product_data": {
-    #                     "name": f"{item.movie.name} - Order #{order_id}"},
-    #                 "unit_amount": int(item.price_at_order * 100)
-    #             },
-    #             "quantity": 1,
-    #         }
-    #     )
+    if unit_amount != sum(item.price_at_order for item in current_order.items):
+        raise HTTPException(status_code=400, detail="Not valid total summ.")
 
     base_url = str(request.base_url).rstrip("/")
     success_url = f"{base_url}/api/v1/payments/success?session_id={{CHECKOUT_SESSION_ID}}"
