@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from database.models import StatusEnum
-from orders.dto.orders import Order
-from shopping_carts.dto.shopping_cart import CartItem
+from src.database.models import StatusEnum
+from src.orders.dto.orders import Order
+from src.shopping_carts.dto.shopping_cart import CartItem
 
 
 class OrderRepositoryInterface(ABC):

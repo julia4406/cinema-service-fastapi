@@ -68,7 +68,8 @@ STRIPE:
 stripe --version
 stripe login
  
-stripe listen --forward-to http://localhost:8000/webhook
+stripe listen --forward-to http://127.0.0.1:8000/api/v1/payments/webhook
+
 !put webhook secret key into .env
 
 start uvicorn from terminal:

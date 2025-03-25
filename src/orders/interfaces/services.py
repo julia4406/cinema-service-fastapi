@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from orders.dto.orders import Order
+from src.orders.dto.orders import Order
 
 
 class OrderServiceInterface(ABC):
