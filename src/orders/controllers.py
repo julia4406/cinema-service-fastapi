@@ -112,6 +112,14 @@ async def admin_get_all_orders(
         order_service: OrderServiceInterface = Depends(get_order_service),
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN))
 ):
+    """Retrieve a list of all orders with filters and pagination for admins.
+        Args:
+            filters (OrderFilterSchema): Filtering options including user_id, date range, status, limit, and offset.
+            order_service (OrderServiceInterface): Order service instance.
+            admin (UserModel): Current authenticated admin user.
+        Returns:
+            OrderListResponseSchema: List of orders with total count.
+        """
     try:
         orders, total = await order_service.get_all_orders(
             filters.user_id,
@@ -132,6 +140,15 @@ async def admin_update_order_status(
         order_service: AdminOrderServiceInterface = Depends(get_order_service),
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN))
 ):
+    """Update the status of a specific order manually by an admin.
+        Args:
+            order_id (int): ID of the order to update.
+            update_data (OrderStatusUpdateSchema): New status data for the order.
+            order_service (OrderServiceInterface): Order service instance.
+            admin (UserModel): Current authenticated admin user.
+        Returns:
+            OrderResponseSchema: Updated order details.
+        """
     try:
         order = await order_service.update_order_status(
             order_id,
