@@ -1,4 +1,5 @@
-from typing import List
+from datetime import datetime
+from typing import List, Optional, Tuple
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,19 +69,6 @@ class OrderService(OrderServiceInterface):
             StatusEnum.CANCELLED
         )
 
-    async def cancel_paid_order(self, user_id: int, order_id: int) -> None:
-        order = await self._order_repository.get_order_by_id(order_id)
-        if not order or order.user_id != user_id:
-            raise ValueError("Order not found or does not belong to user")
-        if order.status != StatusEnum.PAID:
-            raise ValueError(
-                "Only paid orders can be cancelled via this method"
-            )
-        await self._order_repository.update_order_status(
-            order_id,
-            StatusEnum.CANCELLED
-        )
-
     async def confirm_order(self, user_id: int, order_id: int) -> Order:
         order = await self._order_repository.get_order_by_id(order_id)
         if not order or order.user_id != user_id:
@@ -102,4 +90,28 @@ class OrderService(OrderServiceInterface):
             StatusEnum.PAID
         )
 
+        return await self._order_repository.get_order_by_id(order_id)
+
+    async def get_all_orders(
+            self,
+            user_id: Optional[int] = None,
+            date_from: Optional[datetime] = None,
+            date_to: Optional[datetime] = None,
+            status: Optional[StatusEnum] = None,
+            limit: int = 100,
+            offset: int = 0
+    ) -> Tuple[List[Order], int]:
+        return await self._order_repository.get_all_orders(
+            user_id, date_from, date_to, status, limit, offset
+        )
+
+    async def update_order_status(
+            self,
+            order_id: int,
+            status: StatusEnum
+    ) -> Order:
+        order = await self._order_repository.get_order_by_id(order_id)
+        if not order:
+            raise ValueError("Order not found")
+        await self._order_repository.update_order_status(order_id, status)
         return await self._order_repository.get_order_by_id(order_id)
