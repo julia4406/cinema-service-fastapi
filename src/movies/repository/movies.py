@@ -1,3 +1,5 @@
+from typing import Optional, Any
+
 from typing import Optional, Any, Coroutine
 from uuid import uuid4
 
@@ -8,7 +10,6 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.sql import func
 
-from database.models import PurchasedModel
 from src.database.models.movies import (
     MovieModel,
     CertificationModel,
@@ -39,7 +40,6 @@ class MoviesRepository:
                 joinedload(MovieModel.genres),
                 joinedload(MovieModel.stars),
                 joinedload(MovieModel.directors),
-                selectinload(MovieModel.certifications)
             )
         )
         result = await self.db.execute(query)
