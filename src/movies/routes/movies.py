@@ -8,7 +8,7 @@ from database.session_postgresql import get_postgresql_db as get_db
 from src.database.models.accounts import UserModel
 from src.movies.schemas.movies import (
     MovieListResponseSchema, MovieDetailSchema, MovieCreateSchema, MovieUpdateSchema, DetailMessageSchema,
-    MovieLikeResponseSchema, MovieFavoriteResponseSchema, MovieSortEnum,
+    MovieLikeResponseSchema, MovieFavoriteResponseSchema, MovieSortEnum, FavoriteMoviesSchema,
 )
 from src.movies.service.movies import MoviesService
 
@@ -242,3 +242,62 @@ async def favorite_or_unfavorite(
         user: UserModel = Depends(get_current_user)
 ) -> MovieFavoriteResponseSchema:
     return await MoviesService(db).favorite_or_unfavorite(movie_id, user)
+
+
+@router.get(
+    "/favorites/",
+    response_model=FavoriteMoviesSchema,
+)
+async def favorites(
+page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    search_title: Optional[str] = Query(
+        None,
+        description="Search by title or description"
+    ),
+    search_person: Optional[str] = Query(
+        None,
+        description="Search by actor or director"
+    ),
+    year: Optional[int] = Query(
+        None,
+        description="Filter by release year"
+    ),
+    min_imdb: Optional[float] = Query(
+        None,
+        description="Filter by minimum IMDb rating"
+    ),
+    max_imdb: Optional[float] = Query(
+        None,
+        description="Filter by maximum IMDb rating"
+    ),
+    min_price: Optional[float] = Query(
+        None,
+        description="Filter by minimum price"
+    ),
+    max_price: Optional[float] = Query(
+        None,
+        description="Filter by maximum price"
+    ),
+    sort_by: Optional[MovieSortEnum] = Query(
+        None,
+        description="Sort movies by criteria"
+    ),
+    db: AsyncSession = Depends(get_db),
+    user: UserModel = Depends(get_current_user)
+) -> FavoriteMoviesSchema:
+    filters = {
+        "name": search_title,
+        "search_person": search_person,
+        "year": year,
+        "min_imdb": min_imdb,
+        "max_imdb": max_imdb,
+        "min_price": min_price,
+        "max_price": max_price,
+    }
+
+    return await MoviesService(db).get_movies(
+        page=page, per_page=per_page,
+        filters=filters, sort_by=sort_by,
+        user=user
+    )

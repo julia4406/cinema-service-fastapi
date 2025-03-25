@@ -8,6 +8,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 from sqlalchemy.sql.functions import now
 
+from database.models import UserModel
 from src.database.models.movies import (
     CertificationModel,
     DirectorModel,
@@ -262,9 +263,19 @@ class MoviesRepository:
     async def filter_movies(
             self,
             filters: dict[str, str],
-            sort_by: Optional[MovieSortEnum] = None
+            sort_by: Optional[MovieSortEnum] = None,
+            user: UserModel = None,
     ) -> list[MovieModel]:
-        query = select(MovieModel)
+        if user:
+            query = (select(MovieModel)
+                .join(UserFavoriteModel)
+                .filter(
+                    UserFavoriteModel.user_id == user.id,
+                    UserFavoriteModel.is_favorite == True
+                )
+            )
+        else:
+            query = select(MovieModel)
 
         if filters.get("name"):
             query = query.filter(MovieModel.name.ilike(f"%{filters["name"]}%"))
@@ -312,3 +323,18 @@ class MoviesRepository:
 
         result = await self.db.execute(query)
         return result.scalars().all()
+
+    async def get_user_favorite_movies(self, user_id: int):
+        query = (
+            select(MovieModel)
+            .join(UserFavoriteModel)
+            .filter(
+                UserFavoriteModel.user_id == user_id,
+                UserFavoriteModel.is_favorite == True
+            )
+        )
+
+        result = await self.db.execute(query)
+        favorite_movies = result.scalars().all()
+
+        return favorite_movies

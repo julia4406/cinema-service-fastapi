@@ -11,7 +11,10 @@ from src.movies.schemas.movies import (
     MovieDetailSchema,
     MovieCreateSchema,
     MovieUpdateSchema,
-    DetailMessageSchema, MovieLikeResponseSchema, MovieFavoriteResponseSchema, MovieSortEnum,
+    DetailMessageSchema,
+    MovieLikeResponseSchema,
+    MovieFavoriteResponseSchema,
+    MovieSortEnum,
 )
 
 
@@ -22,11 +25,12 @@ class MoviesService:
     async def get_movies(
             self,
             filters: dict[str, str],
+            user: UserModel = None,
             sort_by: Optional[MovieSortEnum] = None,
             page: int = 1,
             per_page: int = 10,
     ):
-        filtered_movies = await self.repository.filter_movies(filters, sort_by)
+        filtered_movies = await self.repository.filter_movies(filters, sort_by, user)
 
         total_items = len(filtered_movies)
         total_pages = (total_items + per_page - 1) // per_page
