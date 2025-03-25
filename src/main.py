@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from payments.routes.payments import router as payment_router
 
 from src.shopping_carts.routes.shopping_cart import router as shopping_cart_router
+from src.shopping_carts.routes.admin import router as admin_shopping_cart_router
 from src.orders.routes.orders import router as orders_router
 from src.accounts.routes.auth import router as auth_router
 from src.accounts.routes.profile import router as profile_router
@@ -34,11 +35,12 @@ app.include_router(
     tags=["cart"]
 )
 app.include_router(
+    admin_shopping_cart_router,
+    prefix=f"{api_version_prefix}/admin/users", tags=["admin_cart"],
+)
+app.include_router(
     orders_router
 )
-# app.include_router(accounts_router, prefix=f"{api_version_prefix}/accounts", tags=["accounts"])
-# app.include_router(profiles_router, prefix=f"{api_version_prefix}/profiles", tags=["profiles"])
-# app.include_router(movie_router, prefix=f"{api_version_prefix}/theater", tags=["theater"])
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
