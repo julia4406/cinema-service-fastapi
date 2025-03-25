@@ -1,6 +1,7 @@
-from typing import List, Optional
+from datetime import datetime
+from typing import List, Optional, Tuple
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -167,3 +168,66 @@ class OrderRepository(OrderRepositoryInterface):
             if isinstance(e, ValueError):
                 raise OrderUpdateError(f"Cannot update order status: {str(e)}")
             raise OrderUpdateError(f"Failed to update order status: {str(e)}")
+
+    async def get_all_orders(
+            self,
+            user_id: Optional[int] = None,
+            date_from: Optional[datetime] = None,
+            date_to: Optional[datetime] = None,
+            status: Optional[StatusEnum] = None,
+            limit: int = 100,
+            offset: int = 0
+    ) -> Tuple[List[Order], int]:
+        try:
+            query = (
+                select(OrderModel)
+                .options(
+                    joinedload(OrderModel.items)
+                    .joinedload(OrderItemModel.movie)
+                    .joinedload(MovieModel.genres)
+                )
+            )
+
+            if user_id is not None:
+                query = query.filter(OrderModel.user_id == user_id)
+            if date_from is not None:
+                query = query.filter(OrderModel.created_at >= date_from)
+            if date_to is not None:
+                query = query.filter(OrderModel.created_at <= date_to)
+            if status is not None:
+                query = query.filter(OrderModel.status == status)
+
+            count_query = select(func.count()).select_from(query.subquery())
+            total_result = await self._session.execute(count_query)
+            total = total_result.scalar_one()
+
+            query = query.limit(limit).offset(offset)
+            result = await self._session.execute(query)
+            orders = result.unique().scalars().all()
+
+            return [
+                Order(
+                    **{
+                        **object_as_dict(order),
+                        "items": [
+                            OrderItem(
+                                **{
+                                    **object_as_dict(item),
+                                    "name": item.movie.name,
+                                    "genres": (
+                                        [genre.name for genre in
+                                         item.movie.genres]
+                                        if item.movie.genres
+                                        else None
+                                    ),
+                                    "year": item.movie.year
+                                }
+                            )
+                            for item in order.items
+                        ]
+                    }
+                )
+                for order in orders
+            ], total
+        except SQLAlchemyError as e:
+            raise OrderUpdateError(f"Failed to fetch orders: {str(e)}")
