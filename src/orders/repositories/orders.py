@@ -188,13 +188,13 @@ class OrderRepository(OrderRepositoryInterface):
                 )
             )
 
-            if user_id is not None:
+            if user_id:
                 query = query.filter(OrderModel.user_id == user_id)
-            if date_from is not None:
+            if date_from:
                 query = query.filter(OrderModel.created_at >= date_from)
-            if date_to is not None:
+            if date_to:
                 query = query.filter(OrderModel.created_at <= date_to)
-            if status is not None:
+            if status:
                 query = query.filter(OrderModel.status == status)
 
             count_query = select(func.count()).select_from(query.subquery())
