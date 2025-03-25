@@ -1,12 +1,13 @@
 import boto3
 from pydantic import EmailStr
-from fastapi import UploadFile, HTTPException
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from accounts.schemas.accounts import UserAdminUpdateRequest, UserAdminCreateRequest
 from src.database.models import UserModel, ProfileModel, UserGroupModel
 from src.database.models.accounts import UserGroupEnum
-from src.accounts.schemas import UserCreateRequestSchema
+from src.accounts.schemas import UserCreateRequest
 from src.config.settings import Settings
 
 
@@ -47,13 +48,19 @@ class UserRepository:
         await self.db.commit()
         await self.db.refresh(user)
 
-    async def create_user(self, user: UserCreateRequestSchema) -> UserModel:
+    async def get_or_create_group(self, group_name: UserGroupEnum) -> UserGroupModel:
         group_result = await self.db.execute(
-            select(UserGroupModel).filter_by(name=UserGroupEnum.USER)
+            select(UserGroupModel).filter_by(name=group_name.value)
         )
         group = group_result.scalar_one_or_none()
         if not group:
-            raise ValueError("Default user group not found in database")
+            group = UserGroupModel(name=group_name.value)
+            self.db.add(group)
+            await self.db.flush()
+        return group
+
+    async def create_user(self, user: UserCreateRequest) -> UserModel:
+        group = await self.get_or_create_group(UserGroupEnum.USER)
 
         db_user = UserModel(**user.model_dump(), group_id=group.id)
         self.db.add(db_user)
@@ -66,6 +73,50 @@ class UserRepository:
         await self.db.refresh(db_user)
         await self.db.refresh(db_profile)
         return db_user
+
+    async def create_user_by_admin(self, user: UserAdminCreateRequest) -> UserModel:
+        group = await self.get_or_create_group(user.group)
+
+        db_user = UserModel(
+            email=user.email,
+            is_active=user.is_active,
+            group_id=group.id,
+        )
+        db_user.password = user.password
+        self.db.add(db_user)
+        await self.db.flush()
+
+        db_profile = ProfileModel(user_id=db_user.id)
+        self.db.add(db_profile)
+
+        await self.db.commit()
+        await self.db.refresh(db_user)
+        await self.db.refresh(db_profile)
+        return db_user
+
+    async def update_user(self, user_id: int, user_data: UserAdminUpdateRequest):
+        user = await self.get_by_id(user_id)
+        if not user:
+            raise ValueError("User not found")
+
+        update_data = user_data.model_dump(exclude_unset=True)
+        if "group" in update_data:
+            group = await self.get_or_create_group(update_data.pop("group"))
+            user.group_id = group.id
+
+        for key, value in update_data.items():
+            setattr(user, key, value)
+
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def delete_user(self, user_id: int):
+        user = await self.get_by_id(user_id)
+        if not user:
+            raise ValueError("User not found")
+        await self.db.delete(user)
+        await self.db.commit()
 
 
 class ProfileRepository:
@@ -98,7 +149,7 @@ class ProfileRepository:
         await self.db.delete(profile)
         await self.db.commit()
 
-    async def update_avatar(self, profile: ProfileModel, avatar_file: UploadFile, user_id: int) -> ProfileModel:
+    async def update_avatar(self, profile: ProfileModel, avatar_file: UploadFile, user_id: int) -> ProfileModel | None:
         allowed_types = {"image/jpeg", "image/png"}
         max_size_mb = 8
         max_size_bytes = max_size_mb * 1024 * 1024
