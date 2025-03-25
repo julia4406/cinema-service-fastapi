@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models.movies import GenreModel
+from src.database.models.movies import GenreModel
 from movies.repository.genres import GenresRepository
 from movies.schemas.genres import GenreSchema, GenreCreateSchema
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.session_postgresql import get_postgresql_db as get_db
+from src.database.session_postgresql import get_postgresql_db as get_db
 from movies.schemas.stars import StarsResponseSchema, StarSchema, StarCreateSchema
 from movies.service.stars import StarsService
 

@@ -1,8 +1,8 @@
 from fastapi import Depends, HTTPException
 
 from accounts.dependencies import get_current_user
-from database.exceptions.shopping_cart import CreateCartError, CartItemError
-from database.models import UserModel
+from src.database.exceptions.shopping_cart import CreateCartError, CartItemError
+from src.database.models import UserModel
 from shopping_carts.dependencies import get_cart_service
 from shopping_carts.interfaces.services import CartServiceInterface
 from shopping_carts.schemas.shopping_cart import (
