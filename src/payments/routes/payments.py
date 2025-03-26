@@ -233,7 +233,7 @@ async def cancel_payment() -> JSONResponse:
 @router.get("/history/{user_id}")
 async def get_payments_history(
         user_id: int,
-        current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
+        current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
         db: AsyncSession = Depends(get_postgresql_db),
 ):
     payment_history_res = await db.execute(
