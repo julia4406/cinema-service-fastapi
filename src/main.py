@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
-from src.payments.routes.payments import router as payment_router
 
+from src.payments.routes.payments import router as payment_router
 from src.shopping_carts.routes.shopping_cart import router as shopping_cart_router
 from src.shopping_carts.routes.admin import router as admin_shopping_cart_router
 from src.orders.routes.orders import router as orders_router

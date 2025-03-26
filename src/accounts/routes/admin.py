@@ -18,6 +18,7 @@ from src.database.models import UserGroupEnum
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+
 @router.get("/users/{user_email}", response_model=UserAdminResponse)
 async def get_user_by_email(
     user_email: EmailStr,
@@ -57,6 +58,7 @@ async def get_user_by_email(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.post("/users", response_model=UserAdminResponse)
 async def register_user(
     user_data: UserAdminCreateRequest,
@@ -71,6 +73,7 @@ async def register_user(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.patch("/users/{user_id}", response_model=UserAdminResponse)
 async def update_user(
     user_id: int,
@@ -83,6 +86,7 @@ async def update_user(
         return await service.update_user(user_id, user_data)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @router.patch("/profile/{user_id}", response_model=UserAdminResponse)
 async def update_profile(
@@ -126,6 +130,7 @@ async def update_profile(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @router.delete("/users/{user_id}", status_code=204)
 async def delete_user(

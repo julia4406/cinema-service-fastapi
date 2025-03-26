@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import ForeignKey, DateTime, DECIMAL, String
+from sqlalchemy import ForeignKey, DateTime, DECIMAL, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Enum as SQLAlchemyEnum
 from enum import Enum
@@ -28,8 +28,9 @@ class PaymentModel(Base):
         nullable=False,
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.now(timezone.utc),
+        DateTime(timezone=True),
+        server_default=func.now(),
+        default=func.now(),
     )
     status: Mapped[PaymentStatus] = mapped_column(
         SQLAlchemyEnum(PaymentStatus),

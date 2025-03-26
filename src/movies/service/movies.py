@@ -11,6 +11,7 @@ from src.movies.schemas.movies import (
     DetailMessageSchema,
 )
 
+
 class MoviesService:
     def __init__(self, db: AsyncSession):
         self.repository = MoviesRepository(db)
