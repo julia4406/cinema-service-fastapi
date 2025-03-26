@@ -5,12 +5,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from config import get_settings
+from src.config.dependencies import get_settings
 
 settings = get_settings()
 
-POSTGRESQL_DATABASE_URL = (f"postgresql+asyncpg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@"
-                           f"{settings.POSTGRES_HOST}:{settings.POSTGRES_DB_PORT}/{settings.POSTGRES_DB}")
+POSTGRESQL_DATABASE_URL = (
+    f"postgresql+asyncpg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@"
+    f"{settings.POSTGRES_HOST}:{settings.POSTGRES_DB_PORT}/{settings.POSTGRES_DB}"
+)
 postgresql_engine = create_async_engine(POSTGRESQL_DATABASE_URL, echo=False)
 AsyncPostgresqlSessionLocal = sessionmaker(  # type: ignore
     bind=postgresql_engine,
@@ -20,7 +22,10 @@ AsyncPostgresqlSessionLocal = sessionmaker(  # type: ignore
     expire_on_commit=False,
 )
 
-sync_database_url = POSTGRESQL_DATABASE_URL.replace("postgresql+asyncpg", "postgresql")
+sync_database_url = POSTGRESQL_DATABASE_URL.replace(
+    "postgresql+asyncpg",
+    "postgresql"
+)
 sync_postgresql_engine = create_engine(sync_database_url, echo=False)
 
 
@@ -37,8 +42,28 @@ async def get_postgresql_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
+async def get_transactional_db() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Provide an asynchronous database session with transaction management.
+
+    This function returns an async generator yielding a new database session.
+    It commits changes on success and rolls back on failure.
+
+    :return: An asynchronous generator yielding an AsyncSession instance.
+    """
+    async with AsyncPostgresqlSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+
+
 @asynccontextmanager
-async def get_postgresql_db_contextmanager() -> AsyncGenerator[AsyncSession, None]:
+async def get_postgresql_db_contextmanager() -> AsyncGenerator[
+    AsyncSession, None
+]:
     """
     Provide an asynchronous database session using a context manager.
 

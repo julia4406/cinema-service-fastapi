@@ -1,19 +1,14 @@
 import enum
-from typing import TYPE_CHECKING, List
+from typing import List
 from datetime import datetime, date
 
 from sqlalchemy import Enum, func, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database.models.base import Base
-from typing import Optional
+from src.accounts.utils import hash_password, check_password
 
-if TYPE_CHECKING:
-    from database.models.tokens import (
-        ActivationTokenModel,
-        PasswordResetTokenModel,
-        RefreshTokenModel,
-    )
+from src.database.models import Base
+from typing import Optional
 
 
 class GenderEnum(enum.Enum):
@@ -62,6 +57,17 @@ class UserModel(Base):
         nullable=False,
     )
 
+    @property
+    def password(self):
+        raise AttributeError("Password is not a readable attribute")
+
+    @password.setter
+    def password(self, password: str):
+        self._hashed_password = hash_password(password)
+
+    def verify_password(self, password: str) -> bool:
+        return check_password(password, self._hashed_password)
+
     group: Mapped["UserGroupModel"] = relationship(
         "UserGroupModel",
         back_populates="users",
@@ -99,6 +105,20 @@ class UserModel(Base):
         "PurchasedModel",
         back_populates="user",
         cascade="all, delete-orphan"
+    )
+
+    favorites: Mapped[List["UserFavoriteModel"]] = relationship(
+        "UserFavoriteModel",
+        back_populates="user"
+    )
+    reactions: Mapped[List["UserReactionModel"]] = relationship(
+        "UserReactionModel",
+        back_populates="user"
+    )
+
+    orders: Mapped[List["OrderModel"]] = relationship(
+        "OrderModel",
+        back_populates="user",
     )
 
 
