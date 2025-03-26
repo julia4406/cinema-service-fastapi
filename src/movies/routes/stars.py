@@ -16,10 +16,10 @@ router = APIRouter()
     response_model=StarsResponseSchema,
 )
 async def get_stars_list(
-        db: AsyncSession = Depends(get_db),
-        page: int = Query(1, ge=1),
-        per_page: int = Query(10, ge=1, le=100),
-        current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
+    db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
 ):
     return await StarsService(db).get_stars(page, per_page)
 
@@ -29,9 +29,9 @@ async def get_stars_list(
     response_model=StarSchema,
 )
 async def get_star(
-        star_id: int,
-        db: AsyncSession = Depends(get_db),
-        current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
+    star_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
 ):
     return await StarsService(db).get_one_star(star_id)
 
@@ -42,9 +42,9 @@ async def get_star(
     response_model=StarSchema,
 )
 async def create_star(
-        star_data: StarCreateSchema,
-        db: AsyncSession = Depends(get_db),
-        current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
+    star_data: StarCreateSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
 ):
     return await StarsService(db).create_star(star_data)
 
@@ -54,18 +54,18 @@ async def create_star(
     status_code=200,
 )
 async def update_star(
-        star_id: int,
-        new_star: StarCreateSchema,
-        db: AsyncSession = Depends(get_db),
-        current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
+    star_id: int,
+    new_star: StarCreateSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
 ):
     return await StarsService(db).update_star(star_id, new_star)
 
 
 @router.delete("/stars/{star_id}/", status_code=204)
 async def delete_star(
-        star_id: int,
-        db: AsyncSession = Depends(get_db),
-        current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
+    star_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
 ):
     return await StarsService(db).delete_star(star_id)

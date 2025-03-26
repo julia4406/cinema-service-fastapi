@@ -125,7 +125,7 @@ class DetailMessageSchema(BaseModel):
 class MovieLikeResponseSchema(BaseModel):
     is_liked: bool
     created_at: datetime
-    user:  int
+    user: int
     movie: int
 
     model_config = ConfigDict(from_attributes=True)

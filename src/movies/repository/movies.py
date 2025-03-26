@@ -15,7 +15,10 @@ from src.database.models.movies import (
     GenreModel,
     MovieModel,
     StarModel,
-    UserReactionModel, UserFavoriteModel, MoviesStarsModel, MoviesDirectorsModel,
+    UserReactionModel,
+    UserFavoriteModel,
+    MoviesStarsModel,
+    MoviesDirectorsModel,
 )
 from src.database.models.shopping_carts import PurchasedModel
 from src.movies.schemas.movies import MovieCreateSchema, MovieSortEnum
@@ -26,7 +29,7 @@ class MoviesRepository:
         self.db = db
 
     async def get_movies_paginated(
-            self, page: int, per_page: int
+        self, page: int, per_page: int
     ) -> tuple[int, list[MovieModel]]:
         offset = (page - 1) * per_page
 
@@ -35,7 +38,8 @@ class MoviesRepository:
         query = (
             select(MovieModel)
             .order_by(MovieModel.id)
-            .offset(offset).limit(per_page)
+            .offset(offset)
+            .limit(per_page)
             .options(
                 joinedload(MovieModel.genres),
                 joinedload(MovieModel.stars),
@@ -60,10 +64,7 @@ class MoviesRepository:
         )
         return result.scalars().first()
 
-    async def get_detail_movies_by_id(
-            self,
-            movie_id: int
-    ) -> Optional[MovieModel]:
+    async def get_detail_movies_by_id(self, movie_id: int) -> Optional[MovieModel]:
         result = await self.db.execute(
             select(MovieModel)
             .options(
@@ -77,18 +78,14 @@ class MoviesRepository:
         return result.scalars().first()
 
     async def get_movie_by_name(
-            self,
-            movie_data: MovieCreateSchema
+        self, movie_data: MovieCreateSchema
     ) -> Optional[MovieModel]:
         result = await self.db.execute(
             select(MovieModel).filter(MovieModel.name == movie_data.name)
         )
         return result.scalars().first()
 
-    async def get_or_create_certification(
-            self,
-            name: str
-    ) -> CertificationModel:
+    async def get_or_create_certification(self, name: str) -> CertificationModel:
         result = await self.db.execute(select(CertificationModel).filter_by(name=name))
         certification = result.scalars().first()
         if not certification:
@@ -99,11 +96,7 @@ class MoviesRepository:
 
         return certification
 
-    async def get_or_create_entities(
-            self,
-            model,
-            names: list[str]
-    ) -> list[Any]:
+    async def get_or_create_entities(self, model, names: list[str]) -> list[Any]:
         objects = []
         for name in names:
             result = await self.db.execute(select(model).filter_by(name=name))
@@ -115,18 +108,14 @@ class MoviesRepository:
             objects.append(entity)
         return objects
 
-    async def create_movie_post(
-            self,
-            movie_data: MovieCreateSchema
-    ) -> MovieModel:
+    async def create_movie_post(self, movie_data: MovieCreateSchema) -> MovieModel:
         certification = await self.get_or_create_certification(
             movie_data.certifications
         )
         genres = await self.get_or_create_entities(GenreModel, movie_data.genres)
         stars = await self.get_or_create_entities(StarModel, movie_data.stars)
         directors = await self.get_or_create_entities(
-            DirectorModel,
-            movie_data.directors
+            DirectorModel, movie_data.directors
         )
 
         movie = MovieModel(
@@ -164,10 +153,11 @@ class MoviesRepository:
 
         return movie_with_relations
 
-    async def delete_instance(self, instance: Any) -> Result[tuple[PurchasedModel]] | None:
+    async def delete_instance(
+        self, instance: Any
+    ) -> Result[tuple[PurchasedModel]] | None:
         found_instance = await self.db.execute(
-            select(func.count(PurchasedModel.id))
-            .where(
+            select(func.count(PurchasedModel.id)).where(
                 PurchasedModel.movie_id == instance.id
             )
         )
@@ -185,11 +175,7 @@ class MoviesRepository:
         result = await self.db.execute(select(instance))
         return result.scalars().all()
 
-    async def get_or_create_model(
-            self,
-            instance: Any,
-            name: str
-    ) -> tuple[Any, bool]:
+    async def get_or_create_model(self, instance: Any, name: str) -> tuple[Any, bool]:
         result = await self.db.execute(select(instance).filter_by(name=name))
         model = result.scalars().first()
 
@@ -204,17 +190,15 @@ class MoviesRepository:
         return model, True
 
     async def get_instance_by_id(
-            self,
-            instance: Any,
-            instance_id: int
+        self, instance: Any, instance_id: int
     ) -> Optional[Any]:
         result = await self.db.execute(select(instance).filter_by(id=instance_id))
         return result.scalars().first()
 
     async def toggle_movie_like(
-            self,
-            movie: MovieModel,
-            user_id: int,
+        self,
+        movie: MovieModel,
+        user_id: int,
     ) -> UserReactionModel:
         result = await self.db.execute(
             select(UserReactionModel).filter_by(movie_id=movie.id, user_id=user_id)
@@ -225,9 +209,7 @@ class MoviesRepository:
             movie_like.created_at = now()
         else:
             movie_like = UserReactionModel(
-                user_id=user_id,
-                movie_id=movie.id,
-                is_liked=True
+                user_id=user_id, movie_id=movie.id, is_liked=True
             )
             self.db.add(movie_like)
 
@@ -236,9 +218,9 @@ class MoviesRepository:
         return movie_like
 
     async def toggle_movie_favorite(
-            self,
-            movie: MovieModel,
-            user_id: int,
+        self,
+        movie: MovieModel,
+        user_id: int,
     ) -> UserFavoriteModel:
         result = await self.db.execute(
             select(UserFavoriteModel).filter_by(movie_id=movie.id, user_id=user_id)
@@ -250,9 +232,7 @@ class MoviesRepository:
             movie_fav.created_at = now()
         else:
             movie_fav = UserFavoriteModel(
-                user_id=user_id,
-                movie_id=movie.id,
-                is_favorite=True
+                user_id=user_id, movie_id=movie.id, is_favorite=True
             )
             self.db.add(movie_fav)
 
@@ -261,17 +241,18 @@ class MoviesRepository:
         return movie_fav
 
     async def filter_movies(
-            self,
-            filters: dict[str, str],
-            sort_by: Optional[MovieSortEnum] = None,
-            user: UserModel = None,
+        self,
+        filters: dict[str, str],
+        sort_by: Optional[MovieSortEnum] = None,
+        user: UserModel = None,
     ) -> list[MovieModel]:
         if user:
-            query = (select(MovieModel)
+            query = (
+                select(MovieModel)
                 .join(UserFavoriteModel)
                 .filter(
                     UserFavoriteModel.user_id == user.id,
-                    UserFavoriteModel.is_favorite == True
+                    UserFavoriteModel.is_favorite is True,
                 )
             )
         else:
@@ -280,15 +261,15 @@ class MoviesRepository:
         if filters.get("name"):
             query = query.filter(MovieModel.name.ilike(f"%{filters["name"]}%"))
         if filters.get("search_person"):
-            query = (query
-                .join(MoviesStarsModel, isouter=True)
+            query = (
+                query.join(MoviesStarsModel, isouter=True)
                 .join(StarModel, isouter=True)
                 .join(MoviesDirectorsModel, isouter=True)
                 .join(DirectorModel, isouter=True)
                 .filter(
                     or_(
                         StarModel.name.ilike(f"%{filters['search_person']}%"),
-                        DirectorModel.name.ilike(f"%{filters['search_person']}%")
+                        DirectorModel.name.ilike(f"%{filters['search_person']}%"),
                     )
                 )
             )
@@ -330,7 +311,7 @@ class MoviesRepository:
             .join(UserFavoriteModel)
             .filter(
                 UserFavoriteModel.user_id == user_id,
-                UserFavoriteModel.is_favorite == True
+                UserFavoriteModel.is_favorite is True,
             )
         )
 

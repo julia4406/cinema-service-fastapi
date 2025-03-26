@@ -11,11 +11,7 @@ class GenresService:
     def __init__(self, db: AsyncSession):
         self.repository = GenresRepository(db)
 
-    async def get_genres(
-            self,
-            page: int = 1,
-            per_page: int = 10
-    ):
+    async def get_genres(self, page: int = 1, per_page: int = 10):
         offset = (page - 1) * per_page
         genres = await self.repository.get_genres(limit=per_page, offset=offset)
 
@@ -27,15 +23,21 @@ class GenresService:
         total_pages = (total_items + per_page - 1) // per_page
 
         base_url = "/theater/genres/"
-        prev_page_url = f"{base_url}?page={page - 1}&per_page={per_page}" if page > 1 else None
-        next_page_url = f"{base_url}?page={page + 1}&per_page={per_page}" if page < total_pages else None
+        prev_page_url = (
+            f"{base_url}?page={page - 1}&per_page={per_page}" if page > 1 else None
+        )
+        next_page_url = (
+            f"{base_url}?page={page + 1}&per_page={per_page}"
+            if page < total_pages
+            else None
+        )
 
         response_data = {
             "genres": genres,
             "prev_page": prev_page_url,
             "next_page": next_page_url,
             "total_pages": total_pages,
-            "total_items": total_items
+            "total_items": total_items,
         }
         return response_data
 
@@ -56,9 +58,7 @@ class GenresService:
         if created_genre is False:
             raise HTTPException(
                 status_code=409,
-                detail=(
-                    f"A genre with the name '{genre.name}' already exists."
-                ),
+                detail=(f"A genre with the name '{genre.name}' already exists."),
             )
         try:
             return GenreSchema.model_validate(created_genre)

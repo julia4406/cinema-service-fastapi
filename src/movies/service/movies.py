@@ -23,12 +23,12 @@ class MoviesService:
         self.repository = MoviesRepository(db)
 
     async def get_movies(
-            self,
-            filters: dict[str, str],
-            user: UserModel = None,
-            sort_by: Optional[MovieSortEnum] = None,
-            page: int = 1,
-            per_page: int = 10,
+        self,
+        filters: dict[str, str],
+        user: UserModel = None,
+        sort_by: Optional[MovieSortEnum] = None,
+        page: int = 1,
+        per_page: int = 10,
     ):
         filtered_movies = await self.repository.filter_movies(filters, sort_by, user)
 
@@ -45,16 +45,11 @@ class MoviesService:
 
         return MovieListResponseSchema(
             movies=[
-                MovieListItemSchema.model_validate(movie)
-                for movie in paginated_movies
+                MovieListItemSchema.model_validate(movie) for movie in paginated_movies
             ],
-            prev_page=(
-                f"/?page={page - 1}&per_page={per_page}"
-                if page > 1 else None
-            ),
+            prev_page=(f"/?page={page - 1}&per_page={per_page}" if page > 1 else None),
             next_page=(
-                f"/?page={page + 1}&per_page={per_page}"
-                if page < total_pages else None
+                f"/?page={page + 1}&per_page={per_page}" if page < total_pages else None
             ),
             total_pages=total_pages,
             total_items=total_items,
@@ -114,15 +109,12 @@ class MoviesService:
         return
 
     async def like_or_dislike_movie(
-            self,
-            movie_id: int,
-            user: UserModel
+        self, movie_id: int, user: UserModel
     ) -> MovieLikeResponseSchema:
         movie = await self.repository.get_movie_by_id(movie_id)
         if not movie:
             raise HTTPException(
-                status_code=404,
-                detail="Movie with the given ID was not found."
+                status_code=404, detail="Movie with the given ID was not found."
             )
 
         movie_like = await self.repository.toggle_movie_like(movie, user.id)
@@ -135,15 +127,12 @@ class MoviesService:
         )
 
     async def favorite_or_unfavorite(
-            self,
-            movie_id: int,
-            user: UserModel
+        self, movie_id: int, user: UserModel
     ) -> MovieFavoriteResponseSchema:
         movie = await self.repository.get_movie_by_id(movie_id)
         if not movie:
             raise HTTPException(
-                status_code=404,
-                detail="Movie with the given ID was not found."
+                status_code=404, detail="Movie with the given ID was not found."
             )
 
         movie_favorite = await self.repository.toggle_movie_favorite(movie, user.id)
