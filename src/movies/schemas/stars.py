@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from movies.schemas.examples.stars import star_schema_example
+from src.movies.schemas.examples.stars import star_schema_example
 
 
 class StarSchema(BaseModel):
