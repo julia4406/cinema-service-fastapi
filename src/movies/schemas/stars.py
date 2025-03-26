@@ -11,11 +11,7 @@ class StarSchema(BaseModel):
 
     model_config = {
         "from_attributes": True,
-        "json_schema_extra": {
-            "examples": [
-                star_schema_example
-            ]
-        }
+        "json_schema_extra": {"examples": [star_schema_example]},
     }
 
 
