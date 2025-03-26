@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models import UserModel
+from src.database.models import UserModel
 from src.movies.repository.movies import MoviesRepository
 from src.movies.schemas.movies import (
     MovieListResponseSchema,
