@@ -31,10 +31,9 @@ class MoviesRepository:
         total_items = await self.db.scalar(select(func.count()).select_from(MovieModel))
 
         query = (
-            select(MovieModel).
-            order_by(MovieModel.id).
-            offset(offset).
-            limit(per_page)
+            select(MovieModel)
+            .order_by(MovieModel.id)
+            .offset(offset).limit(per_page)
             .options(
                 joinedload(MovieModel.genres),
                 joinedload(MovieModel.stars),
