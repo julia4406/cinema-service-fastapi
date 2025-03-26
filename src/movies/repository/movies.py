@@ -259,7 +259,7 @@ class MoviesRepository:
             query = select(MovieModel)
 
         if filters.get("name"):
-            query = query.filter(MovieModel.name.ilike(f"%{filters.get("name")}%"))
+            query = query.filter(MovieModel.name.ilike(f"%{filters.get('name')}%"))
         if filters.get("search_person"):
             query = (
                 query.join(MoviesStarsModel, isouter=True)
@@ -268,8 +268,8 @@ class MoviesRepository:
                 .join(DirectorModel, isouter=True)
                 .filter(
                     or_(
-                        StarModel.name.ilike(f"%{filters.get("search_person")}%"),
-                        DirectorModel.name.ilike(f"%{filters.get("search_person")}%"),
+                        StarModel.name.ilike(f"%{filters.get('search_person')}%"),
+                        DirectorModel.name.ilike(f"%{filters.get('search_person')}%"),
                     )
                 )
             )
