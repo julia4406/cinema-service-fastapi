@@ -10,9 +10,13 @@ docker-compose -f docker-compose-local.yml down -v
 docker-compose -f docker-compose-local.yml up --build
 2.
 Після створення контейнера(він залишаеться запущений) в терміналі:
-alembic upgrade head
+    alembic upgrade head
 
 Мають завантажитись міграції.
+/// If we need a create new migrations
+    alembic revision --autogenerate -m "describe_changes"
+    alembic upgrade head
+
 3.
 Скопіювати налаштування в .env (з .env.sample + для пошти тут нижче є 
 налаштування)
@@ -58,3 +62,17 @@ SERVICE_URL=http://127.0.0.1:8000/
         current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
         db: AsyncSession = Depends(get_postgresql_db)
     ):
+
+
+STRIPE:
+stripe --version
+stripe login
+ 
+stripe listen --forward-to http://127.0.0.1:8000/api/v1/payments/webhook
+
+!put webhook secret key into .env
+
+start uvicorn from terminal:
+uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+

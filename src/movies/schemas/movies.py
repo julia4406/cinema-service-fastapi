@@ -1,3 +1,4 @@
+import enum
 from datetime import datetime
 from typing import List, Optional
 
@@ -119,3 +120,36 @@ class MovieUpdateSchema(BaseModel):
 
 class DetailMessageSchema(BaseModel):
     detail: str
+
+
+class MovieLikeResponseSchema(BaseModel):
+    is_liked: bool
+    created_at: datetime
+    user: int
+    movie: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MovieFavoriteResponseSchema(BaseModel):
+    is_favorite: bool
+    added_at: datetime
+    user: int
+    movie: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MovieSortEnum(str, enum.Enum):
+    PRICE_ASC = "price_asc"
+    PRICE_DESC = "price_desc"
+    RELEASE_YEAR_ASC = "release_year_asc"
+    RELEASE_YEAR_DESC = "release_year_desc"
+    VOTES_ASC = "votes_asc"
+    VOTES_DESC = "votes_desc"
+    IMDb_ASC = "imdb_asc"
+    IMDb_DESC = "imdb_desc"
+
+
+class FavoriteMoviesSchema(BaseModel):
+    movies: List[MovieListItemSchema]

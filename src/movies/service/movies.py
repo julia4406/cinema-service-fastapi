@@ -1,6 +1,9 @@
+from typing import Optional
+
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from database.models import UserModel
 from src.movies.repository.movies import MoviesRepository
 from src.movies.schemas.movies import (
     MovieListResponseSchema,
@@ -9,36 +12,44 @@ from src.movies.schemas.movies import (
     MovieCreateSchema,
     MovieUpdateSchema,
     DetailMessageSchema,
+    MovieLikeResponseSchema,
+    MovieFavoriteResponseSchema,
+    MovieSortEnum,
 )
+
 
 class MoviesService:
     def __init__(self, db: AsyncSession):
         self.repository = MoviesRepository(db)
 
     async def get_movies(
-            self,
-            page: int = 1,
-            per_page: int = 10
+        self,
+        filters: dict[str, str],
+        user: UserModel = None,
+        sort_by: Optional[MovieSortEnum] = None,
+        page: int = 1,
+        per_page: int = 10,
     ):
-        total_items, movies = await self.repository.get_movies_paginated(page=page, per_page=per_page)
+        filtered_movies = await self.repository.filter_movies(filters, sort_by, user)
 
+        total_items = len(filtered_movies)
         total_pages = (total_items + per_page - 1) // per_page
 
-        if not movies:
+        start = (page - 1) * per_page
+        end = start + per_page
+
+        paginated_movies = filtered_movies[start:end]
+
+        if not paginated_movies:
             raise HTTPException(status_code=404, detail="No movies found.")
 
         return MovieListResponseSchema(
             movies=[
-                MovieListItemSchema.model_validate(movie)
-                for movie in movies
+                MovieListItemSchema.model_validate(movie) for movie in paginated_movies
             ],
-            prev_page=(
-                f"/?page={page - 1}&per_page={per_page}"
-                if page > 1 else None
-            ),
+            prev_page=(f"/?page={page - 1}&per_page={per_page}" if page > 1 else None),
             next_page=(
-                f"/?page={page + 1}&per_page={per_page}"
-                if page < total_pages else None
+                f"/?page={page + 1}&per_page={per_page}" if page < total_pages else None
             ),
             total_pages=total_pages,
             total_items=total_items,
@@ -95,5 +106,40 @@ class MoviesService:
         result = await self.repository.delete_instance(movie)
         if result:
             raise HTTPException(status_code=404, detail="Movie was purchased.")
-
         return
+
+    async def like_or_dislike_movie(
+        self, movie_id: int, user: UserModel
+    ) -> MovieLikeResponseSchema:
+        movie = await self.repository.get_movie_by_id(movie_id)
+        if not movie:
+            raise HTTPException(
+                status_code=404, detail="Movie with the given ID was not found."
+            )
+
+        movie_like = await self.repository.toggle_movie_like(movie, user.id)
+
+        return MovieLikeResponseSchema(
+            is_liked=movie_like.is_liked,
+            created_at=movie_like.created_at,
+            user=user.id,
+            movie=movie.id,
+        )
+
+    async def favorite_or_unfavorite(
+        self, movie_id: int, user: UserModel
+    ) -> MovieFavoriteResponseSchema:
+        movie = await self.repository.get_movie_by_id(movie_id)
+        if not movie:
+            raise HTTPException(
+                status_code=404, detail="Movie with the given ID was not found."
+            )
+
+        movie_favorite = await self.repository.toggle_movie_favorite(movie, user.id)
+
+        return MovieFavoriteResponseSchema(
+            is_favorite=movie_favorite.is_favorite,
+            added_at=movie_favorite.added_at,
+            user=user.id,
+            movie=movie.id,
+        )

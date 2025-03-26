@@ -4,6 +4,7 @@ from pydantic import EmailStr
 
 settings = Settings()
 
+
 class EmailService:
     def __init__(self):
         self.conf = ConnectionConfig(
@@ -59,3 +60,47 @@ class EmailService:
         )
 
         await self.fm.send_message(message)
+
+    async def confirmation_payment_email(
+            self, recipient_email: EmailStr,
+            order_id: int
+    ) -> None:
+        subject = "Password Reset Request"
+
+        body = (
+            f"Hello!\n\n"
+            f"Your order #{order_id} has been successfully paid."
+        )
+
+        message = MessageSchema(
+            subject=subject,
+            recipients=[recipient_email],
+            body=body,
+            subtype=MessageType.plain
+        )
+
+        await self.fm.send_message(message)
+
+    async def cancellation_payment_email(
+            self, recipient_email: EmailStr,
+            order_id: int
+    ) -> None:
+        subject = "Password Reset Request"
+
+        body = (
+            f"Hello!\n\n"
+            f"Your order #{order_id} has been cancelled."
+        )
+
+        message = MessageSchema(
+            subject=subject,
+            recipients=[recipient_email],
+            body=body,
+            subtype=MessageType.plain
+        )
+
+        await self.fm.send_message(message)
+
+
+def get_email_service() -> EmailService:
+    return EmailService()

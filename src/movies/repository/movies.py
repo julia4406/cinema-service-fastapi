@@ -1,25 +1,27 @@
 from typing import Optional, Any
-
-from typing import Optional, Any, Coroutine
 from uuid import uuid4
 
-from pydantic import UUID4
-from sqlalchemy import Result
+from sqlalchemy import Result, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
+from sqlalchemy.sql.functions import now
 
+from database.models import UserModel
 from src.database.models.movies import (
-    MovieModel,
     CertificationModel,
     DirectorModel,
     GenreModel,
     MovieModel,
     StarModel,
+    UserReactionModel,
+    UserFavoriteModel,
+    MoviesStarsModel,
+    MoviesDirectorsModel,
 )
 from src.database.models.shopping_carts import PurchasedModel
-from src.movies.schemas.movies import MovieCreateSchema
+from src.movies.schemas.movies import MovieCreateSchema, MovieSortEnum
 
 
 class MoviesRepository:
@@ -27,15 +29,17 @@ class MoviesRepository:
         self.db = db
 
     async def get_movies_paginated(
-            self, page: int, per_page: int
+        self, page: int, per_page: int
     ) -> tuple[int, list[MovieModel]]:
         offset = (page - 1) * per_page
 
         total_items = await self.db.scalar(select(func.count()).select_from(MovieModel))
 
-        query = (select(MovieModel)
+        query = (
+            select(MovieModel)
             .order_by(MovieModel.id)
-            .offset(offset).limit(per_page)
+            .offset(offset)
+            .limit(per_page)
             .options(
                 joinedload(MovieModel.genres),
                 joinedload(MovieModel.stars),
@@ -60,10 +64,7 @@ class MoviesRepository:
         )
         return result.scalars().first()
 
-    async def get_detail_movies_by_id(
-            self,
-            movie_id: int
-    ) -> Optional[MovieModel]:
+    async def get_detail_movies_by_id(self, movie_id: int) -> Optional[MovieModel]:
         result = await self.db.execute(
             select(MovieModel)
             .options(
@@ -77,18 +78,14 @@ class MoviesRepository:
         return result.scalars().first()
 
     async def get_movie_by_name(
-            self,
-            movie_data: MovieCreateSchema
+        self, movie_data: MovieCreateSchema
     ) -> Optional[MovieModel]:
         result = await self.db.execute(
             select(MovieModel).filter(MovieModel.name == movie_data.name)
         )
         return result.scalars().first()
 
-    async def get_or_create_certification(
-            self,
-            name: str
-    ) -> CertificationModel:
+    async def get_or_create_certification(self, name: str) -> CertificationModel:
         result = await self.db.execute(select(CertificationModel).filter_by(name=name))
         certification = result.scalars().first()
         if not certification:
@@ -99,11 +96,7 @@ class MoviesRepository:
 
         return certification
 
-    async def get_or_create_entities(
-            self,
-            model,
-            names: list[str]
-    ) -> list[Any]:
+    async def get_or_create_entities(self, model, names: list[str]) -> list[Any]:
         objects = []
         for name in names:
             result = await self.db.execute(select(model).filter_by(name=name))
@@ -115,18 +108,14 @@ class MoviesRepository:
             objects.append(entity)
         return objects
 
-    async def create_movie_post(
-            self,
-            movie_data: MovieCreateSchema
-    ) -> MovieModel:
+    async def create_movie_post(self, movie_data: MovieCreateSchema) -> MovieModel:
         certification = await self.get_or_create_certification(
             movie_data.certifications
         )
         genres = await self.get_or_create_entities(GenreModel, movie_data.genres)
         stars = await self.get_or_create_entities(StarModel, movie_data.stars)
         directors = await self.get_or_create_entities(
-            DirectorModel,
-            movie_data.directors
+            DirectorModel, movie_data.directors
         )
 
         movie = MovieModel(
@@ -164,13 +153,14 @@ class MoviesRepository:
 
         return movie_with_relations
 
-    async def delete_instance(self, instance: Any) -> Result[tuple[PurchasedModel]] | None:
+    async def delete_instance(
+        self, instance: Any
+    ) -> Result[tuple[PurchasedModel]] | None:
         found_instance = await self.db.execute(
-            select(func.count(PurchasedModel.id))
-            .where(
+            select(func.count(PurchasedModel.id)).where(
                 PurchasedModel.movie_id == instance.id
+            )
         )
-    )
         if found_instance.scalar_one() > 0:
             return found_instance
 
@@ -185,11 +175,7 @@ class MoviesRepository:
         result = await self.db.execute(select(instance))
         return result.scalars().all()
 
-    async def get_or_create_model(
-            self,
-            instance: Any,
-            name: str
-    ) -> tuple[Any, bool]:
+    async def get_or_create_model(self, instance: Any, name: str) -> tuple[Any, bool]:
         result = await self.db.execute(select(instance).filter_by(name=name))
         model = result.scalars().first()
 
@@ -204,9 +190,132 @@ class MoviesRepository:
         return model, True
 
     async def get_instance_by_id(
-            self,
-            instance: Any,
-            instance_id: int
+        self, instance: Any, instance_id: int
     ) -> Optional[Any]:
         result = await self.db.execute(select(instance).filter_by(id=instance_id))
         return result.scalars().first()
+
+    async def toggle_movie_like(
+        self,
+        movie: MovieModel,
+        user_id: int,
+    ) -> UserReactionModel:
+        result = await self.db.execute(
+            select(UserReactionModel).filter_by(movie_id=movie.id, user_id=user_id)
+        )
+        movie_like = result.scalars().first()
+        if movie_like:
+            movie_like.is_liked = not movie_like.is_liked
+            movie_like.created_at = now()
+        else:
+            movie_like = UserReactionModel(
+                user_id=user_id, movie_id=movie.id, is_liked=True
+            )
+            self.db.add(movie_like)
+
+        await self.commit_instance(movie_like)
+
+        return movie_like
+
+    async def toggle_movie_favorite(
+        self,
+        movie: MovieModel,
+        user_id: int,
+    ) -> UserFavoriteModel:
+        result = await self.db.execute(
+            select(UserFavoriteModel).filter_by(movie_id=movie.id, user_id=user_id)
+        )
+        movie_fav = result.scalars().first()
+
+        if movie_fav:
+            movie_fav.is_favorite = not movie_fav.is_favorite
+            movie_fav.created_at = now()
+        else:
+            movie_fav = UserFavoriteModel(
+                user_id=user_id, movie_id=movie.id, is_favorite=True
+            )
+            self.db.add(movie_fav)
+
+        await self.commit_instance(movie_fav)
+
+        return movie_fav
+
+    async def filter_movies(
+        self,
+        filters: dict[str, str],
+        sort_by: Optional[MovieSortEnum] = None,
+        user: UserModel = None,
+    ) -> list[MovieModel]:
+        if user:
+            query = (
+                select(MovieModel)
+                .join(UserFavoriteModel)
+                .filter(
+                    UserFavoriteModel.user_id == user.id,
+                    UserFavoriteModel.is_favorite is True,
+                )
+            )
+        else:
+            query = select(MovieModel)
+
+        if filters.get("name"):
+            query = query.filter(MovieModel.name.ilike(f"%{filters.get('name')}%"))
+        if filters.get("search_person"):
+            query = (
+                query.join(MoviesStarsModel, isouter=True)
+                .join(StarModel, isouter=True)
+                .join(MoviesDirectorsModel, isouter=True)
+                .join(DirectorModel, isouter=True)
+                .filter(
+                    or_(
+                        StarModel.name.ilike(f"%{filters.get('search_person')}%"),
+                        DirectorModel.name.ilike(f"%{filters.get('search_person')}%"),
+                    )
+                )
+            )
+        if filters.get("year") is not None:
+            query = query.filter(MovieModel.year == filters["year"])
+        if filters.get("min_imdb") is not None:
+            query = query.filter(MovieModel.imdb >= float(filters["min_imdb"]))
+        if filters.get("max_imdb") is not None:
+            query = query.filter(MovieModel.imdb <= float(filters["max_imdb"]))
+        if filters.get("min_price") is not None:
+            query = query.filter(MovieModel.price >= float(filters["min_price"]))
+        if filters.get("max_price") is not None:
+            query = query.filter(MovieModel.price <= float(filters["max_price"]))
+
+        if sort_by:
+            if sort_by == MovieSortEnum.PRICE_ASC:
+                query = query.order_by(MovieModel.price)
+            elif sort_by == MovieSortEnum.PRICE_DESC:
+                query = query.order_by(MovieModel.price.desc())
+            elif sort_by == MovieSortEnum.RELEASE_YEAR_ASC:
+                query = query.order_by(MovieModel.year)
+            elif sort_by == MovieSortEnum.RELEASE_YEAR_DESC:
+                query = query.order_by(MovieModel.year.desc())
+            elif sort_by == MovieSortEnum.VOTES_ASC:
+                query = query.order_by(MovieModel.votes)
+            elif sort_by == MovieSortEnum.VOTES_DESC:
+                query = query.order_by(MovieModel.votes.desc())
+            elif sort_by == MovieSortEnum.IMDb_ASC:
+                query = query.order_by(MovieModel.imdb)
+            elif sort_by == MovieSortEnum.IMDb_DESC:
+                query = query.order_by(MovieModel.imdb.desc())
+
+        result = await self.db.execute(query)
+        return result.scalars().all()
+
+    async def get_user_favorite_movies(self, user_id: int):
+        query = (
+            select(MovieModel)
+            .join(UserFavoriteModel)
+            .filter(
+                UserFavoriteModel.user_id == user_id,
+                UserFavoriteModel.is_favorite is True,
+            )
+        )
+
+        result = await self.db.execute(query)
+        favorite_movies = result.scalars().all()
+
+        return favorite_movies

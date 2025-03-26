@@ -3,15 +3,10 @@ import enum
 from typing import List
 from uuid import UUID as UUIDType
 
-from sqlalchemy import String, Text, DECIMAL, UniqueConstraint, ForeignKey, DateTime, func, Enum
+from sqlalchemy import String, Text, DECIMAL, UniqueConstraint, ForeignKey, DateTime, func, Boolean
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from src.database.models import Base
-
-
-class ReactionType(str, enum.Enum):
-    LIKE = "like"
-    DISLIKE = "dislike"
 
 
 class StarModel(Base):
@@ -68,8 +63,7 @@ class CommentModel(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     text: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.utcnow)
-
+    created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now(datetime.UTC))
     movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
     movie: Mapped["MovieModel"] = relationship("MovieModel", back_populates="comments")
 
@@ -81,6 +75,7 @@ class UserFavoriteModel(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
     added_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), default=func.now())
+    is_favorite: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
     user: Mapped["UserModel"] = relationship("UserModel", back_populates="favorites")
     movie: Mapped["MovieModel"] = relationship("MovieModel", back_populates="favorites")
@@ -94,9 +89,11 @@ class UserReactionModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
-    reaction_type: Mapped[ReactionType] = mapped_column(Enum(ReactionType), nullable=False)
+    is_liked: Mapped[bool] = mapped_column(Boolean, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), default=func.now())
-    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), default=func.now(), onupdate=func.now()
+    )
 
     user: Mapped["UserModel"] = relationship("UserModel", back_populates="reactions")
     movie: Mapped["MovieModel"] = relationship("MovieModel", back_populates="reactions")
@@ -167,6 +164,7 @@ class MoviesDirectorsModel(Base):
 
     movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True)
     director_id: Mapped[int] = mapped_column(ForeignKey("directors.id", ondelete="CASCADE"), primary_key=True)
+
 
 class MoviesStarsModel(Base):
     __tablename__ = "movies_stars_association"
