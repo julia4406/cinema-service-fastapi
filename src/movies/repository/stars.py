@@ -10,9 +10,7 @@ class StarsRepository:
         self.db = db
 
     async def is_star_by_name(self, name: str):
-        existing_stmt = select(StarModel).where(
-            (StarModel.name == name)
-        )
+        existing_stmt = select(StarModel).where((StarModel.name == name))
 
         existing_result = await self.db.execute(existing_stmt)
         existing_genre = existing_result.scalars().first()

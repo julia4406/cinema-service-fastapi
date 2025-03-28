@@ -10,9 +10,7 @@ class GenresRepository:
         self.db = db
 
     async def is_genre_by_name(self, name: str):
-        existing_stmt = select(GenreModel).where(
-            (GenreModel.name == name)
-        )
+        existing_stmt = select(GenreModel).where((GenreModel.name == name))
 
         existing_result = await self.db.execute(existing_stmt)
         existing_genre = existing_result.scalars().first()

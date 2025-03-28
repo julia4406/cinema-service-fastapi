@@ -47,7 +47,8 @@ async def get_user_orders(
     # Returns:
     #     OrderListResponseSchema: List of user's orders.
     orders = await order_service.get_user_orders(user.id)
-    return OrderListResponseSchema(orders=orders)
+    total = len(orders)
+    return OrderListResponseSchema(orders=orders, total=total)
 
 
 async def get_order(

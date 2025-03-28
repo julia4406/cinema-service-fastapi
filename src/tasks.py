@@ -21,6 +21,7 @@ def delete_expired_activation_tokens():
     loop = asyncio.get_event_loop()
     loop.run_until_complete(async_task())
 
+
 @shared_task
 def delete_expired_refresh_tokens():
     async def async_task():
@@ -34,6 +35,7 @@ def delete_expired_refresh_tokens():
     import asyncio
     loop = asyncio.get_event_loop()
     loop.run_until_complete(async_task())
+
 
 @shared_task
 def delete_expired_password_reset_tokens():

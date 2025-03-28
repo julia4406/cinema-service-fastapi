@@ -7,6 +7,7 @@ from src.config.settings import Settings
 
 settings = Settings()
 
+
 def generate_rsa_keys(private_key_path: Path, public_key_path: Path):
     private_key = rsa.generate_private_key(
         public_exponent=65537,
