@@ -219,21 +219,21 @@ async def create_payment(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/success/")
+@router.get("/success")
 async def success_payment() -> JSONResponse:
     return JSONResponse(
         content={"message": "The payment has been successfully completed."}
     )
 
 
-@router.get("/cancel/")
+@router.get("/cancel")
 async def cancel_payment() -> JSONResponse:
     return JSONResponse(
         content={"message": "The payment has been canceled."}
     )
 
 
-@router.get("/history/")
+@router.get("/history")
 async def get_payments_history(
         current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
         db: AsyncSession = Depends(get_postgresql_db),
@@ -253,7 +253,7 @@ async def get_payments_history(
     ]
 
 
-@router.get("/history/staff/")
+@router.get("/history/staff")
 async def get_payments_history(
         current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
         db: AsyncSession = Depends(get_postgresql_db),
