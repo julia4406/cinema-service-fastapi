@@ -1,16 +1,19 @@
 import os
+from datetime import datetime
 from decimal import Decimal
+from typing import Optional
 
 import stripe
-from fastapi import APIRouter, HTTPException, Depends, Request, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, Request, BackgroundTasks, \
+    Query
 from fastapi.responses import JSONResponse
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
 from src.payments.schemas.payments import (
-    CreatePaymentSchema, EmailSchema, PaymentHistorySchema
+    CreatePaymentSchema, EmailSchema, PaymentHistorySchema, PaymentResponseSchema
 )
 from src.database.models import UserModel
 from src.database.models.payments import (
@@ -250,22 +253,46 @@ async def get_payments_history(
     ]
 
 
-# @router.get("/history/{user_id}")
-# async def get_payments_history(
-#         user_id: int,
-#         current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
-#         db: AsyncSession = Depends(get_postgresql_db),
-# ):
-#     payment_history_res = await db.execute(
-#         select(PaymentModel).filter_by(user_id=user_id)
-#     )
-#
-#     payment_history = payment_history_res.scalars().all()
-#
-#     return [
-#         PaymentHistorySchema(
-#             created_at=item.created_at,
-#             amount=Decimal(item.amount),
-#             status=item.status
-#         ) for item in payment_history
-#     ]
+@router.get("/history/staff/")
+async def get_payments_history(
+        current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
+        db: AsyncSession = Depends(get_postgresql_db),
+        user_id: int | None = Query(None, description="user ID for filtering."),
+        status: PaymentStatus | None = Query(
+            None,
+            description="Filter by status successful, refunded, canceled)."),
+        start_date: Optional[datetime] | None = Query(
+            None, description="Start date (YYYY-MM-DD)."
+        ),
+        end_date: Optional[datetime] | None = Query(
+            None, description="End date (YYYY-MM-DD)."
+        )
+):
+    payment_history_query = select(PaymentModel)
+
+    if user_id:
+        payment_history_query = payment_history_query.filter_by(user_id=user_id)
+
+    if status:
+        payment_history_query = payment_history_query.filter_by(status=status)
+
+    if start_date:
+        payment_history_query = payment_history_query.filter(PaymentModel.created_at >= start_date)
+
+    if end_date:
+        payment_history_query= payment_history_query.filter(PaymentModel.created_at <= end_date)
+
+    payment_history_res =  await db.execute(payment_history_query)
+    payment_history = payment_history_res.scalars().all()
+
+    return [
+        PaymentResponseSchema(
+            id=item.id,
+            user_id=item.user_id,
+            order_id=item.order_id,
+            amount=Decimal(item.amount),
+            status=item.status,
+            created_at=item.created_at,
+            external_payment_id=item.external_payment_id
+        ) for item in payment_history
+    ]
