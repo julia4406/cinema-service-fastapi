@@ -1,10 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import EmailStr
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from src.database.session_postgresql import get_postgresql_db
 from src.database.models import UserModel
 from src.accounts.schemas.accounts import (
     UserAdminCreateRequest,
@@ -13,7 +11,7 @@ from src.accounts.schemas.accounts import (
     UserAdminResponse
 )
 from src.accounts.services.accounts import AccountsService, ProfileService
-from src.accounts.dependencies import role_required
+from src.accounts.dependencies import role_required, get_accounts_service, get_profile_service
 from src.database.models import UserGroupEnum
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -23,13 +21,11 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 async def get_user_by_email(
     user_email: EmailStr,
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
-    db: AsyncSession = Depends(get_postgresql_db)
+    service: AccountsService = Depends(get_accounts_service)
 ):
-    service = AccountsService(db)
-
     try:
         user = await service.get_by_email(user_email)
-        result = await db.execute(
+        result = await service.db.execute(
             select(UserModel)
             .filter_by(id=user.id)
             .options(
@@ -63,9 +59,8 @@ async def get_user_by_email(
 async def register_user(
     user_data: UserAdminCreateRequest,
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
-    db: AsyncSession = Depends(get_postgresql_db)
+    service: AccountsService = Depends(get_accounts_service)
 ):
-    service = AccountsService(db)
     try:
         return await service.register_user_by_admin(user_data)
     except ValueError as e:
@@ -79,9 +74,8 @@ async def update_user(
     user_id: int,
     user_data: UserAdminUpdateRequest,
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
-    db: AsyncSession = Depends(get_postgresql_db)
+    service: AccountsService = Depends(get_accounts_service)
 ):
-    service = AccountsService(db)
     try:
         return await service.update_user(user_id, user_data)
     except ValueError as e:
@@ -93,10 +87,9 @@ async def update_profile(
     user_id: int,
     profile_data: ProfileUpdateRequest,
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
-    db: AsyncSession = Depends(get_postgresql_db)
+    account_service: AccountsService = Depends(get_accounts_service),
+    profile_service: ProfileService = Depends(get_profile_service)
 ):
-    profile_service = ProfileService(db)
-    account_service = AccountsService(db)
     try:
         user = await account_service.user_repo.get_by_id(user_id)
         if not user:
@@ -104,7 +97,7 @@ async def update_profile(
 
         await profile_service.update_profile(user, profile_data)
 
-        result = await db.execute(
+        result = await account_service.db.execute(
             select(UserModel)
             .filter_by(id=user.id)
             .options(
@@ -136,9 +129,8 @@ async def update_profile(
 async def delete_user(
     user_id: int,
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
-    db: AsyncSession = Depends(get_postgresql_db)
+    service: AccountsService = Depends(get_accounts_service)
 ):
-    service = AccountsService(db)
     try:
         await service.delete_user(user_id, current_user)
     except ValueError as e:

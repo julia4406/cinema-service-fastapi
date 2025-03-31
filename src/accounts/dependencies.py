@@ -4,9 +4,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from src.database.models import UserGroupEnum
+from src.accounts.services.email_service import EmailService
+from src.accounts.repositories.accounts import UserRepository, ProfileRepository
+from src.accounts.services.accounts import AccountsService, ProfileService
+from src.accounts.repositories.tokens import (
+    ActivationTokensRepository,
+    RefreshTokensRepository,
+    PasswordResetTokenRepository
+)
 from src.accounts.security.jwt import JWTAuthManager
-from src.database.models import UserModel
+from src.database.models import UserModel, UserGroupEnum
 from src.database.session_postgresql import get_postgresql_db
 
 
@@ -87,3 +94,39 @@ def role_required(required_role: UserGroupEnum):
                 detail="Invalid role specified"
             )
     return role_checker
+
+
+async def get_user_repository(db: AsyncSession = Depends(get_postgresql_db)):
+    return UserRepository(db)
+
+
+async def get_profile_repository(db: AsyncSession = Depends(get_postgresql_db)):
+    return ProfileRepository(db)
+
+
+async def get_activation_token_repository(db: AsyncSession = Depends(get_postgresql_db)):
+    return ActivationTokensRepository(db)
+
+
+async def get_password_reset_token_repository(db: AsyncSession = Depends(get_postgresql_db)):
+    return PasswordResetTokenRepository(db)
+
+
+async def get_refresh_token_repository(db: AsyncSession = Depends(get_postgresql_db)):
+    return RefreshTokensRepository(db)
+
+
+async def get_accounts_service(
+    user_repo: UserRepository = Depends(get_user_repository),
+    activation_token_repo: ActivationTokensRepository = Depends(get_activation_token_repository),
+    email_service: EmailService = Depends(lambda: EmailService()),
+    jwt_service: JWTAuthManager = Depends(lambda: JWTAuthManager()),
+    reset_token_repo: PasswordResetTokenRepository = Depends(get_password_reset_token_repository)
+):
+    return AccountsService(user_repo, activation_token_repo, email_service, jwt_service, reset_token_repo)
+
+
+async def get_profile_service(
+    profile_repo: ProfileRepository = Depends(get_profile_repository)
+):
+    return ProfileService(profile_repo)
