@@ -1,7 +1,7 @@
 from fastapi_mail import FastMail, MessageSchema, MessageType
 from pydantic import EmailStr
-from fastapi import Depends
-from src.email.config import email_config
+
+from src.email.config import get_fastmail
 from src.email.constants import (
     ACTIVATION_EMAIL_SUBJECT, ACTIVATION_EMAIL_BODY,
     RESET_PASSWORD_SUBJECT, RESET_PASSWORD_BODY,
@@ -14,7 +14,7 @@ settings = Settings()
 
 
 class EmailService:
-    def __init__(self, mail: FastMail = Depends(lambda: FastMail(email_config))):
+    def __init__(self, mail: FastMail = get_fastmail()):
         self.mail = mail
 
     async def send_email(self, recipient_email: EmailStr, subject: str, body: str) -> None:

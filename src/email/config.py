@@ -1,4 +1,4 @@
-from fastapi_mail import ConnectionConfig
+from fastapi_mail import ConnectionConfig, FastMail
 from src.config.settings import Settings
 
 settings = Settings()
@@ -15,3 +15,6 @@ email_config = ConnectionConfig(
     USE_CREDENTIALS=True,
     VALIDATE_CERTS=False
 )
+
+def get_fastmail() -> FastMail:
+    return FastMail(email_config)
