@@ -1,4 +1,3 @@
-import boto3
 from pydantic import EmailStr
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,16 +8,12 @@ from src.accounts.schemas.accounts import (
 )
 from src.database.models import UserModel, ProfileModel, UserGroupModel
 from src.database.models.accounts import UserGroupEnum
+from src.accounts.s3_service import S3Service
 from src.accounts.schemas import UserCreateRequest
 from src.config.settings import Settings
 
 
 settings = Settings()
-s3_client = boto3.client(
-    "s3",
-    aws_access_key_id=settings.AWS_ACCESS_KEY,
-    aws_secret_access_key=settings.AWS_SECRET_KEY
-)
 
 
 class UserRepository:
@@ -122,8 +117,9 @@ class UserRepository:
 
 
 class ProfileRepository:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, s3_service: S3Service):
         self.db = db
+        self.s3_service = s3_service
 
     async def get_by_user_id(self, user_id: int) -> ProfileModel | None:
         result = await self.db.execute(select(ProfileModel).filter_by(user_id=user_id))
@@ -166,18 +162,8 @@ class ProfileRepository:
         file_extension = avatar_file.filename.split(".")[-1]
         file_key = f"avatars/{user_id}/{user_id}_avatar.{file_extension}"
 
-        try:
-            s3_client.upload_fileobj(
-                avatar_file.file,
-                settings.S3_BUCKET,
-                file_key
-            )
-        except Exception as e:
-            raise ValueError(f"Failed to upload avatar to S3: {str(e)}")
-        finally:
-            await avatar_file.close()
+        avatar_url = await self.s3_service.upload_file(avatar_file, file_key)
 
-        avatar_url = f"https://{settings.S3_BUCKET}.s3.amazonaws.com/{file_key}"
         profile.avatar = avatar_url
         await self.db.commit()
         await self.db.refresh(profile)
