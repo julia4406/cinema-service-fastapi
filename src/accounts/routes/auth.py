@@ -36,8 +36,10 @@ async def activate(
 ):
     try:
         return await service.activate_user(token)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 
 @router.post("/resend-activation/")
@@ -47,8 +49,10 @@ async def resend_activation(
 ):
     try:
         return await service.resend_activation(email)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 
 @router.post("/login/")
@@ -58,8 +62,10 @@ async def login(
 ):
     try:
         return await service.login_user(request)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 
 @router.post("/logout/")
@@ -70,7 +76,9 @@ async def logout(
     try:
         return await service.logout_user(current_user)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Logout failed")
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 
 @router.post("/refresh/")
@@ -80,8 +88,10 @@ async def refresh_token(
 ):
     try:
         return await service.refresh_access_token(refresh_token)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 
 @router.post("/change-password/")
@@ -92,8 +102,10 @@ async def change_password(
 ):
     try:
         return await service.change_password(current_user, request.old_password, request.new_password)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 
 @router.post("/forgot-password/")
@@ -103,8 +115,10 @@ async def forgot_password(
 ):
     try:
         return await service.forgot_password(request.email)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 
 @router.post("/reset-password/{token}")
@@ -115,5 +129,7 @@ async def reset_password(
 ):
     try:
         return await service.reset_password(token, request.new_password)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
