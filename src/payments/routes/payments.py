@@ -230,14 +230,13 @@ async def cancel_payment() -> JSONResponse:
     )
 
 
-@router.get("/history/{user_id}")
+@router.get("/history/")
 async def get_payments_history(
-        user_id: int,
         current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
         db: AsyncSession = Depends(get_postgresql_db),
 ):
     payment_history_res = await db.execute(
-        select(PaymentModel).filter_by(user_id=user_id)
+        select(PaymentModel).filter_by(user_id=current_user.id)
     )
 
     payment_history = payment_history_res.scalars().all()
@@ -249,3 +248,24 @@ async def get_payments_history(
             status=item.status
         ) for item in payment_history
     ]
+
+
+# @router.get("/history/{user_id}")
+# async def get_payments_history(
+#         user_id: int,
+#         current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
+#         db: AsyncSession = Depends(get_postgresql_db),
+# ):
+#     payment_history_res = await db.execute(
+#         select(PaymentModel).filter_by(user_id=user_id)
+#     )
+#
+#     payment_history = payment_history_res.scalars().all()
+#
+#     return [
+#         PaymentHistorySchema(
+#             created_at=item.created_at,
+#             amount=Decimal(item.amount),
+#             status=item.status
+#         ) for item in payment_history
+#     ]
