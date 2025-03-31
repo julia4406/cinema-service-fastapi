@@ -16,5 +16,6 @@ email_config = ConnectionConfig(
     VALIDATE_CERTS=False
 )
 
+
 def get_fastmail() -> FastMail:
     return FastMail(email_config)
