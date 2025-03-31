@@ -125,6 +125,7 @@ async def get_accounts_service(
 ):
     return AccountsService(user_repo, activation_token_repo, email_service, jwt_service, reset_token_repo)
 
+
 async def get_profile_service(
     profile_repo: ProfileRepository = Depends(get_profile_repository)
 ):
