@@ -5,6 +5,7 @@ from src.database.models import RefreshTokenModel, PasswordResetTokenModel
 from src.database.session_postgresql import get_postgresql_db
 from src.database.models.tokens import ActivationTokenModel
 from datetime import datetime, timezone
+from src.config.logging_settings import logger
 
 
 @shared_task
@@ -16,6 +17,7 @@ def delete_expired_activation_tokens():
             )
             await db.execute(stmt)
             await db.commit()
+        logger.info("Expired activation tokens deleted.")
 
     import asyncio
     loop = asyncio.get_event_loop()
@@ -31,6 +33,7 @@ def delete_expired_refresh_tokens():
             )
             await db.execute(stmt)
             await db.commit()
+        logger.info("Expired refresh tokens deleted.")
 
     import asyncio
     loop = asyncio.get_event_loop()
@@ -46,6 +49,7 @@ def delete_expired_password_reset_tokens():
             )
             await db.execute(stmt)
             await db.commit()
+        logger.info("Expired password reset tokens deleted.")
 
     import asyncio
     loop = asyncio.get_event_loop()

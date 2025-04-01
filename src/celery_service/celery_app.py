@@ -1,4 +1,6 @@
 from celery import Celery
+
+from src.config.logging_settings import logger
 from src.config.settings import Settings
 
 settings = Settings()
@@ -9,6 +11,9 @@ celery_app = Celery(
     backend=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_BACKEND_DB}",
     include=["src.celery_service.tasks"]
 )
+
+logger.info(f"Celery app configured with broker {settings.REDIS_HOST}:{settings.REDIS_PORT} "
+            f"and backend {settings.REDIS_HOST}:{settings.REDIS_PORT}.")
 
 celery_app.conf.update(
     result_expires=3600,
@@ -28,3 +33,5 @@ celery_app.conf.update(
         },
     },
 )
+logger.info("Celery beat schedule updated with tasks for token expiry management.")
+
