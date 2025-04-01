@@ -4,6 +4,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 
 from src.config.settings import Settings
+from src.config.logging_settings import logger
 
 settings = Settings()
 
@@ -33,8 +34,8 @@ def generate_rsa_keys(private_key_path: Path, public_key_path: Path):
             )
         )
 
-    print(f"Private key saved to {private_key_path}")
-    print(f"Public key saved to {public_key_path}")
+    logger.info(f"Private key saved to {private_key_path}")
+    logger.info(f"Public key saved to {public_key_path}")
 
 
 if __name__ == "__main__":

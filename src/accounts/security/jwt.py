@@ -14,6 +14,7 @@ from src.accounts.security.jwt_config import (
     ACCESS_EXPIRE_MINUTES,
     REFRESH_EXPIRE_DAYS
 )
+from src.config.logging_settings import logger
 
 
 settings = Settings()
@@ -34,7 +35,9 @@ class JWTAuthManager:
             "group": user.group_id,
             "exp": datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(minutes=self.access_expire_minutes)
         }
-        return jwt.encode(payload, self.private_key, algorithm=self.algorithm)
+        token = jwt.encode(payload, self.private_key, algorithm=self.algorithm)
+        logger.info(f"Access token created for user {user.email} with expiration time {payload['exp']}")
+        return token
 
     async def create_refresh_token(self, user: UserModel, db: AsyncSession):
 
@@ -58,38 +61,47 @@ class JWTAuthManager:
         await db.commit()
         await db.refresh(db_token)
 
+        logger.info(f"Refresh token created for user {user.email} with expiration time {expires_at}")
         return token
 
     def decode_token(self, token: str):
         try:
             payload = jwt.decode(token, self.public_key, algorithms=[self.algorithm])
+            logger.info(f"Decoded token with payload: {payload}")
             return payload
         except jwt.ExpiredSignatureError:
+            logger.error("Token is expired")
             raise ValueError("Token is expired")
         except jwt.InvalidTokenError:
+            logger.error("Invalid token")
             raise ValueError("Invalid token")
 
     async def verify_access_token(self, token: str, db: AsyncSession):
         payload = self.decode_token(token)
         if payload.get("type") != "access":
+            logger.error("Token is not valid")
             raise ValueError("Token is not valid")
         email = payload.get("sub")
         user = await UserRepository(db).get_by_email(email=email)
         if not user:
+            logger.error(f"User not found for email: {email}")
             raise ValueError("User not found")
         return user
 
     async def verify_refresh_token(self, token: str, db: AsyncSession):
         payload = self.decode_token(token)
         if payload.get("type") != "refresh":
+            logger.error("Token is not valid")
             raise ValueError("Token is not valid")
         email = payload.get("sub")
         user = await UserRepository(db).get_by_email(email=email)
         if not user:
+            logger.error(f"User not found for email: {email}")
             raise ValueError("User not found")
 
         refresh_token = await RefreshTokensRepository(db).get_refresh_token(user_id=user.id, token=token)
         if not refresh_token or refresh_token.expires_at < datetime.now(timezone.utc).replace(tzinfo=None):
+            logger.error(f"Invalid refresh token for user {email}")
             raise ValueError("Refresh token is not valid")
         return user
 
