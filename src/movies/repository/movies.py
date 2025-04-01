@@ -8,6 +8,7 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 from sqlalchemy.sql.functions import now
 
+from src.config.logging_settings import logger
 from src.database.models import UserModel
 from src.database.models.movies import (
     CertificationModel,
@@ -27,10 +28,12 @@ from src.movies.schemas.movies import MovieCreateSchema, MovieSortEnum
 class MoviesRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
+        logger.info("MoviesRepository initialized")
 
     async def get_movies_paginated(
         self, page: int, per_page: int
     ) -> tuple[int, list[MovieModel]]:
+        logger.info(f"Fetching paginated movies: page={page}, per_page={per_page}")
         offset = (page - 1) * per_page
 
         total_items = await self.db.scalar(select(func.count()).select_from(MovieModel))
@@ -48,10 +51,11 @@ class MoviesRepository:
         )
         result = await self.db.execute(query)
         movies = result.unique().scalars().all()
-
+        logger.info(f"Total movies found: {total_items}, Movies returned: {len(movies)}")
         return total_items, movies
 
     async def get_movie_by_id(self, movie_id: int) -> Optional[MovieModel]:
+        logger.info(f"Fetching movie by ID: {movie_id}")
         result = await self.db.execute(
             select(MovieModel)
             .options(
@@ -62,7 +66,12 @@ class MoviesRepository:
             )
             .filter(MovieModel.id == movie_id)
         )
-        return result.scalars().first()
+        movie = result.scalars().first()
+        if movie:
+            logger.info(f"Movie found: {movie.name}")
+        else:
+            logger.warning(f"Movie with ID {movie_id} not found")
+        return movie
 
     async def get_detail_movies_by_id(self, movie_id: int) -> Optional[MovieModel]:
         result = await self.db.execute(
@@ -80,35 +89,45 @@ class MoviesRepository:
     async def get_movie_by_name(
         self, movie_data: MovieCreateSchema
     ) -> Optional[MovieModel]:
+        logger.info(f"Retrieving movie by name: {movie_data}")
         result = await self.db.execute(
             select(MovieModel).filter(MovieModel.name == movie_data.name)
         )
         return result.scalars().first()
 
     async def get_or_create_certification(self, name: str) -> CertificationModel:
+        logger.info(f"Fetching or creating certification: {name}")
         result = await self.db.execute(select(CertificationModel).filter_by(name=name))
         certification = result.scalars().first()
         if not certification:
+            logger.info(f"Creating new certification: {name}")
             certification = CertificationModel(name=name)
             self.db.add(certification)
             await self.db.commit()
             await self.db.refresh(certification)
+        else:
+            logger.info(f"Certification found: {certification.name}")
 
         return certification
 
     async def get_or_create_entities(self, model, names: list[str]) -> list[Any]:
+        logger.info(f"Fetching or creating entities: {model}, {names}")
         objects = []
         for name in names:
             result = await self.db.execute(select(model).filter_by(name=name))
             entity = result.scalars().first()
             if not entity:
+                logger.info(f"Creating new entity: {name}")
                 entity = model(name=name)
                 self.db.add(entity)
                 await self.db.flush()
+            else:
+                logger.info(f"Entity found: {entity.name}")
             objects.append(entity)
         return objects
 
     async def create_movie_post(self, movie_data: MovieCreateSchema) -> MovieModel:
+        logger.info(f"Creating new movie: {movie_data.name}")
         certification = await self.get_or_create_certification(
             movie_data.certifications
         )
@@ -150,38 +169,48 @@ class MoviesRepository:
             .filter(MovieModel.id == movie.id)
         )
         movie_with_relations = result.scalars().first()
-
+        logger.info(f"Movie created: {movie_with_relations.name}")
         return movie_with_relations
 
     async def delete_instance(
         self, instance: Any
     ) -> Result[tuple[PurchasedModel]] | None:
+        logger.info(f"Attempting to delete instance: {instance}")
         found_instance = await self.db.execute(
             select(func.count(PurchasedModel.id)).where(
                 PurchasedModel.movie_id == instance.id
             )
         )
         if found_instance.scalar_one() > 0:
+            logger.warning(
+                f"Instance cannot be deleted, associated "
+                f"purchases found: {found_instance.scalar_one()}"
+            )
             return found_instance
 
         await self.db.delete(instance)
         await self.db.commit()
+        logger.info(f"Instance deleted: {instance}")
+        return None
 
     async def commit_instance(self, instance: Any) -> None:
+        logger.info(f"Committing instance: {instance}")
         await self.db.commit()
         await self.db.refresh(instance)
 
     async def get_all_instances(self, instance: Any) -> list[Any]:
+        logger.info(f"Retrieving instance: {instance}")
         result = await self.db.execute(select(instance))
         return result.scalars().all()
 
     async def get_or_create_model(self, instance: Any, name: str) -> tuple[Any, bool]:
+        logger.info(f"Fetching or creating model: {name}")
         result = await self.db.execute(select(instance).filter_by(name=name))
         model = result.scalars().first()
 
         if model:
             return model, False
-
+        logger.info(f"Creating new model: {name}")
         model = instance(name=name)
         self.db.add(model)
         await self.db.commit()
@@ -200,6 +229,7 @@ class MoviesRepository:
         movie: MovieModel,
         user_id: int,
     ) -> UserReactionModel:
+        logger.info(f"Toggling like status for movie: {movie.name}, user_id: {user_id}")
         result = await self.db.execute(
             select(UserReactionModel).filter_by(movie_id=movie.id, user_id=user_id)
         )
@@ -214,7 +244,7 @@ class MoviesRepository:
             self.db.add(movie_like)
 
         await self.commit_instance(movie_like)
-
+        logger.info(f"Movie like status toggled for movie: {movie.name}")
         return movie_like
 
     async def toggle_movie_favorite(
@@ -222,6 +252,7 @@ class MoviesRepository:
         movie: MovieModel,
         user_id: int,
     ) -> UserFavoriteModel:
+        logger.info(f"Toggling favorite status for movie: {movie.name}, user_id: {user_id}")
         result = await self.db.execute(
             select(UserFavoriteModel).filter_by(movie_id=movie.id, user_id=user_id)
         )
@@ -237,7 +268,7 @@ class MoviesRepository:
             self.db.add(movie_fav)
 
         await self.commit_instance(movie_fav)
-
+        logger.info(f"Movie favorite status toggled for movie: {movie.name}")
         return movie_fav
 
     async def filter_movies(
@@ -246,6 +277,7 @@ class MoviesRepository:
         sort_by: Optional[MovieSortEnum] = None,
         user: UserModel = None,
     ) -> list[MovieModel]:
+        logger.info(f"Filtering movies with filters: {filters}, sort_by: {sort_by}")
         if user:
             query = (
                 select(MovieModel)
@@ -303,9 +335,11 @@ class MoviesRepository:
                 query = query.order_by(MovieModel.imdb.desc())
 
         result = await self.db.execute(query)
+        logger.info(f"Movies filtered, count: {len(result.scalars().all())}")
         return result.scalars().all()
 
     async def get_user_favorite_movies(self, user_id: int):
+        logger.info(f"Fetching favorite movies for user_id: {user_id}")
         query = (
             select(MovieModel)
             .join(UserFavoriteModel)
@@ -317,5 +351,5 @@ class MoviesRepository:
 
         result = await self.db.execute(query)
         favorite_movies = result.scalars().all()
-
+        logger.info(f"Favorite movies found: {len(favorite_movies)}")
         return favorite_movies
