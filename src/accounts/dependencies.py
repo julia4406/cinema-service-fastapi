@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
+from src.accounts.s3_service import S3Service, get_s3_service
 from src.email.email_service import get_email_service, EmailService
 from src.accounts.repositories.accounts import UserRepository, ProfileRepository
 from src.accounts.services.accounts import AccountsService, ProfileService
@@ -100,8 +101,11 @@ async def get_user_repository(db: AsyncSession = Depends(get_postgresql_db)):
     return UserRepository(db)
 
 
-async def get_profile_repository(db: AsyncSession = Depends(get_postgresql_db)):
-    return ProfileRepository(db)
+async def get_profile_repository(
+        db: AsyncSession = Depends(get_postgresql_db),
+        s3_service: S3Service = Depends(get_s3_service)
+):
+    return ProfileRepository(db, s3_service)
 
 
 async def get_activation_token_repository(db: AsyncSession = Depends(get_postgresql_db)):
