@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, List
 
 import stripe
 from fastapi import APIRouter, HTTPException, Depends, Request, BackgroundTasks, \
@@ -12,6 +12,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
+from src.payments.services.payments import service_get_payment_history
 from src.payments.schemas.payments import (
     CreatePaymentSchema, EmailSchema, PaymentHistorySchema, PaymentResponseSchema
 )
@@ -233,24 +234,31 @@ async def cancel_payment() -> JSONResponse:
     )
 
 
-@router.get("/history")
+# @router.get("/history")
+# async def get_payments_history(
+#         current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
+#         db: AsyncSession = Depends(get_postgresql_db),
+# ):
+#     payment_history_res = await db.execute(
+#         select(PaymentModel).filter_by(user_id=current_user.id)
+#     )
+#
+#     payment_history = payment_history_res.scalars().all()
+#
+#     return [
+#         PaymentHistorySchema(
+#             created_at=item.created_at,
+#             amount=Decimal(item.amount),
+#             status=item.status
+#         ) for item in payment_history
+#     ]
+
+@router.get("/history", response_model=PaymentHistorySchema)
 async def get_payments_history(
         current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
         db: AsyncSession = Depends(get_postgresql_db),
-):
-    payment_history_res = await db.execute(
-        select(PaymentModel).filter_by(user_id=current_user.id)
-    )
-
-    payment_history = payment_history_res.scalars().all()
-
-    return [
-        PaymentHistorySchema(
-            created_at=item.created_at,
-            amount=Decimal(item.amount),
-            status=item.status
-        ) for item in payment_history
-    ]
+) -> List[PaymentHistorySchema]:
+    return await service_get_payment_history(db, current_user.id)
 
 
 @router.get("/history/staff")
