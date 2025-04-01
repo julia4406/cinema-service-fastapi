@@ -1,5 +1,3 @@
-from pydantic import EmailStr
-
 from pydantic import BaseModel, Field
 from decimal import Decimal
 from datetime import datetime
@@ -16,21 +14,11 @@ class CreatePaymentSchema(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class EmailSchema(BaseModel):
-    email: EmailStr
-
-
-class PaymentResponseSchema(BaseModel):
+class PaymentResponseSchema(CreatePaymentSchema):
     id: int
-    user_id: int
-    order_id: int
-    amount: Decimal
-    status: PaymentStatus
     created_at: datetime
-    external_payment_id: str
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class PaymentHistorySchema(BaseModel):
@@ -61,9 +49,3 @@ class PaymentItemSchema(BaseModel):
     payment: PaymentSchema
 
     model_config = {"from_attributes": True}
-
-
-class StripeMetadataSchema(BaseModel):
-    order_id: int
-    payment_id: int
-    user_email: EmailStr

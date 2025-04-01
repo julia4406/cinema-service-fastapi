@@ -132,7 +132,7 @@ async def service_create_stripe_payment_session(
         order: OrderModel,
         user: UserModel,
         request: Request,
-) -> Dict[str, str]:
+) -> str | None:
     unit_amount = order.total_amount
     if unit_amount <= 0:
         raise HTTPException(status_code=400, detail="Invalid total sum.")
