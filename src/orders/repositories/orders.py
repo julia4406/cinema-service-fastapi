@@ -11,7 +11,7 @@ from src.database.utils import object_as_dict
 from src.orders.dto.orders import Order, OrderItem
 from src.orders.interfaces.repositories import OrderRepositoryInterface
 from src.shopping_carts.dto.shopping_cart import CartItem
-from src.config.logging_settings import logger  # Importing logger
+from src.config.logging_settings import logger
 
 
 class OrderRepository(OrderRepositoryInterface):
