@@ -51,6 +51,9 @@ class Settings(BaseAppSettings):
 
     SERVICE_URL: str = os.getenv("SERVICE_URL")
 
+    STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY")
+    STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET")
+
 
 class TestingSettings(BaseAppSettings):
     SECRET_KEY_ACCESS: str = "SECRET_KEY_ACCESS"
