@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from fastapi import UploadFile
 from pydantic import EmailStr
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from src.accounts.repositories.accounts import UserRepository, ProfileRepository
@@ -13,7 +12,7 @@ from src.accounts.repositories.tokens import (
     PasswordResetTokenRepository
 )
 from src.accounts.schemas.accounts import UserAdminCreateRequest, UserAdminResponse, UserAdminUpdateRequest
-from src.accounts.services.email_service import EmailService
+from src.email.email_service import EmailService
 from src.accounts.security.jwt import JWTAuthManager
 from src.database.models import UserModel, ProfileModel
 from src.accounts.validators.accounts import validate_password_strength
@@ -27,13 +26,20 @@ from src.accounts.schemas import (
 
 
 class AccountsService:
-    def __init__(self, db: AsyncSession):
-        self.db = db
-        self.user_repo = UserRepository(db)
-        self.activation_token_repo = ActivationTokensRepository(db)
-        self.email_service = EmailService()
-        self.jwt_service = JWTAuthManager()
-        self.reset_token_repo = PasswordResetTokenRepository(db)
+    def __init__(
+            self,
+            user_repo: UserRepository,
+            activation_token_repo: ActivationTokensRepository,
+            email_service: EmailService,
+            jwt_service: JWTAuthManager,
+            reset_token_repo: PasswordResetTokenRepository,
+    ):
+        self.db = user_repo.db
+        self.user_repo = user_repo
+        self.activation_token_repo = activation_token_repo
+        self.email_service = email_service
+        self.jwt_service = jwt_service
+        self.reset_token_repo = reset_token_repo
 
     async def get_by_email(self, email: EmailStr) -> UserModel:
         user = await self.user_repo.get_by_email(email)
@@ -223,9 +229,9 @@ class AccountsService:
 
 
 class ProfileService:
-    def __init__(self, db: AsyncSession):
-        self.db = db
-        self.profile_repo = ProfileRepository(db)
+    def __init__(self, profile_repo: ProfileRepository):
+        self.db = profile_repo.db
+        self.profile_repo = profile_repo
 
     async def get_profile(self, current_user: UserModel) -> ProfileModel:
         profile = await self.profile_repo.get_by_user_id(current_user.id)

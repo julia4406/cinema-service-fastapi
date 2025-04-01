@@ -13,15 +13,12 @@ services:
 
   celery:
     build: .
-    command: ["celery", "-A", "src.celery_app", "worker", "--loglevel=info", "-P", "solo"]
+    command: ["celery", "-A", "src.celery_service.celery_app", "worker", "--loglevel=info", "-P", "solo"]
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
-    environment:
-      - PYTHONPATH=/app/src
-      - CELERY_BROKER_URL=redis://redis:6379/0
     env_file: .env
     volumes:
       - .:/app
@@ -29,10 +26,6 @@ services:
   db:
     image: postgres:17
     restart: always
-    environment:
-      POSTGRES_DB: movies_db
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: some_password
     ports:
       - "5432:5432"
     healthcheck:
@@ -40,8 +33,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    env_file:
+      - .env
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    env_file:
+      - .env

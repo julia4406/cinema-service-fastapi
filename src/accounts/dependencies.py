@@ -4,9 +4,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from src.database.models import UserGroupEnum
-from src.accounts.security.jwt import JWTAuthManager
-from src.database.models import UserModel
+from src.accounts.s3_service import S3Service, get_s3_service
+from src.email.email_service import get_email_service, EmailService
+from src.accounts.repositories.accounts import UserRepository, ProfileRepository
+from src.accounts.services.accounts import AccountsService, ProfileService
+from src.accounts.repositories.tokens import (
+    ActivationTokensRepository,
+    RefreshTokensRepository,
+    PasswordResetTokenRepository
+)
+from src.accounts.security.jwt import get_jwt_service, JWTAuthManager
+from src.database.models import UserModel, UserGroupEnum
 from src.database.session_postgresql import get_postgresql_db
 
 
@@ -15,10 +23,10 @@ bearer_scheme = HTTPBearer()
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    db: AsyncSession = Depends(get_postgresql_db)
+    db: AsyncSession = Depends(get_postgresql_db),
+    jwt_manager: JWTAuthManager = Depends(get_jwt_service),
 ) -> UserModel:
     token = credentials.credentials
-    jwt_manager = JWTAuthManager()
     try:
         user = await jwt_manager.verify_access_token(token, db)
         if not user:
@@ -87,3 +95,42 @@ def role_required(required_role: UserGroupEnum):
                 detail="Invalid role specified"
             )
     return role_checker
+
+
+async def get_user_repository(db: AsyncSession = Depends(get_postgresql_db)):
+    return UserRepository(db)
+
+
+async def get_profile_repository(
+        db: AsyncSession = Depends(get_postgresql_db),
+        s3_service: S3Service = Depends(get_s3_service)
+):
+    return ProfileRepository(db, s3_service)
+
+
+async def get_activation_token_repository(db: AsyncSession = Depends(get_postgresql_db)):
+    return ActivationTokensRepository(db)
+
+
+async def get_password_reset_token_repository(db: AsyncSession = Depends(get_postgresql_db)):
+    return PasswordResetTokenRepository(db)
+
+
+async def get_refresh_token_repository(db: AsyncSession = Depends(get_postgresql_db)):
+    return RefreshTokensRepository(db)
+
+
+async def get_accounts_service(
+    user_repo: UserRepository = Depends(get_user_repository),
+    activation_token_repo: ActivationTokensRepository = Depends(get_activation_token_repository),
+    email_service: EmailService = Depends(get_email_service),
+    jwt_service: JWTAuthManager = Depends(get_jwt_service),
+    reset_token_repo: PasswordResetTokenRepository = Depends(get_password_reset_token_repository)
+):
+    return AccountsService(user_repo, activation_token_repo, email_service, jwt_service, reset_token_repo)
+
+
+async def get_profile_service(
+    profile_repo: ProfileRepository = Depends(get_profile_repository)
+):
+    return ProfileService(profile_repo)
