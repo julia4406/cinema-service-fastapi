@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List, Optional, Sequence
 
+from src.config.logging_settings import logger
 from src.database.models.orders import OrderModel, StatusEnum, OrderItemModel
 from src.database.models.payments import (
     PaymentModel, PaymentStatus, PaymentItemModel
@@ -13,9 +14,15 @@ from src.database.models.payments import (
 async def repo_get_payment_history(
         db: AsyncSession, user_id: int
 ) -> Sequence[PaymentModel]:
-    payment_history_res = await db.execute(select(
-        PaymentModel).filter_by(user_id=user_id))
-    return payment_history_res.scalars().all()
+    logger.info(f"Fetching payment history for user_id={user_id}")
+    payment_history_res = await db.execute(
+        select(PaymentModel).filter_by(user_id=user_id))
+    payments = payment_history_res.scalars().all()
+
+    if not payments:
+        logger.warning(f"No payment history found for user_id={user_id}")
+
+    return payments
 
 
 async def repo_get_payment_history_admin(
@@ -25,6 +32,9 @@ async def repo_get_payment_history_admin(
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None
 ) -> Sequence[PaymentModel]:
+    logger.info(f"Fetching admin payment history with filters: "
+                f"user_id={user_id}, status={status}, start_date={start_date}, end_date={end_date}")
+
     payment_history_query = select(PaymentModel)
 
     if user_id:
@@ -42,44 +52,85 @@ async def repo_get_payment_history_admin(
             PaymentModel.created_at <= end_date)
 
     result = await db.execute(payment_history_query)
-    return result.scalars().all()
+    payments = result.scalars().all()
+
+    if not payments:
+        logger.warning("No payment records found with the given filters.")
+
+    return payments
 
 
 async def repo_create_payment_record(
         db: AsyncSession, payment_data: dict
 ) -> PaymentModel:
+    logger.info("Creating a new payment record.")
     new_payment = PaymentModel(**payment_data)
     db.add(new_payment)
-    await db.flush()
+
+    try:
+        await db.flush()
+        logger.info(f"Payment record created successfully (id={new_payment.id}).")
+    except Exception as e:
+        logger.error(f"Failed to create payment record: {e}")
+        raise
+
     return new_payment
 
 
 async def repo_get_order_by_id(
         db: AsyncSession, order_id: int
 ) -> Optional[OrderModel]:
+    logger.info(f"Fetching order by id={order_id}")
     result = await db.execute(select(OrderModel).filter_by(id=order_id))
-    return result.scalars().first()
+    order = result.scalars().first()
+
+    if not order:
+        logger.warning(f"Order not found (id={order_id})")
+
+    return order
 
 
 async def repo_update_order_status(
         db: AsyncSession, order: OrderModel, status: StatusEnum
 ) -> None:
+    logger.info(f"Updating order status (id={order.id}) to {status}")
     order.status = status
-    await db.commit()
-    await db.refresh(order)
+
+    try:
+        await db.commit()
+        await db.refresh(order)
+        logger.info(
+            f"Order status updated successfully (id={order.id}, new_status={status})"
+        )
+    except Exception as e:
+        logger.error(f"Failed to update order status (id={order.id}): {e}")
+        raise
 
 
 async def repo_create_payment_items(
         db: AsyncSession, order_items: list[OrderItemModel], payment_id: int
 ) -> List[PaymentItemModel]:
+    logger.info(f"Creating payment items for payment_id={payment_id}")
     payment_items = []
-    for item in order_items:
-        new_payment_item = PaymentItemModel(
-            payment_id=payment_id,
-            order_item_id=item.id,
-            price_at_payment=item.price_at_order
+
+    try:
+        for item in order_items:
+            new_payment_item = PaymentItemModel(
+                payment_id=payment_id,
+                order_item_id=item.id,
+                price_at_payment=item.price_at_order
+            )
+            payment_items.append(new_payment_item)
+            db.add(new_payment_item)
+            await db.flush()
+
+        logger.info(
+            f"Created {len(payment_items)} payment items for payment_id={payment_id}"
         )
-        payment_items.append(new_payment_item)
-        db.add(new_payment_item)
-        await db.flush()
+    except Exception as e:
+        logger.error(
+            f"Failed to create payment items for payment_id={payment_id}: {e}"
+        )
+        raise
+
     return payment_items
