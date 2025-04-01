@@ -19,8 +19,10 @@ async def get_profile(
     try:
         profile = await service.get_profile(current_user)
         return profile
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 
 @router.patch("/profile/", response_model=ProfileResponse)
@@ -32,8 +34,10 @@ async def update_profile(
     try:
         updated_profile = await service.update_profile(current_user, profile_data)
         return updated_profile
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 
 @router.post("/profile/avatar/", response_model=ProfileResponse)
@@ -45,9 +49,7 @@ async def upload_avatar(
     try:
         updated_profile = await service.upload_avatar(current_user, avatar_file)
         return updated_profile
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except botocore.exceptions.ClientError as e:
-        raise HTTPException(status_code=500, detail=f"S3 error: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")

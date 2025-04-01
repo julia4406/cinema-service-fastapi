@@ -1,34 +1,31 @@
 import jwt
 from datetime import datetime, timedelta, timezone
 
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.backends import default_backend
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.settings import Settings
 from src.database.models import UserModel, RefreshTokenModel
 from src.accounts.repositories.accounts import UserRepository
 from src.accounts.repositories.tokens import RefreshTokensRepository
+from src.accounts.security.jwt_config import (
+    private_key,
+    public_key,
+    JWT_ALGORITHM,
+    ACCESS_EXPIRE_MINUTES,
+    REFRESH_EXPIRE_DAYS
+)
+
 
 settings = Settings()
 
 
 class JWTAuthManager:
     def __init__(self):
-        with open(settings.PRIVATE_KEY_PATH, "rb") as key_file:
-            self.private_key = serialization.load_pem_private_key(
-                key_file.read(),
-                password=None,
-                backend=default_backend()
-            )
-        with open(settings.PUBLIC_KEY_PATH, "rb") as key_file:
-            self.public_key = serialization.load_pem_public_key(
-                key_file.read(),
-                backend=default_backend()
-            )
-        self.algorithm = settings.JWT_ALGORITHM
-        self.access_expire_minutes = settings.ACCESS_TOKEN_EXPIRE_MINUTES
-        self.refresh_expire_days = settings.REFRESH_TOKEN_EXPIRE_DAYS
+        self.private_key = private_key
+        self.public_key = public_key
+        self.algorithm = JWT_ALGORITHM
+        self.access_expire_minutes = ACCESS_EXPIRE_MINUTES
+        self.refresh_expire_days = REFRESH_EXPIRE_DAYS
 
     def create_access_token(self, user: UserModel):
         payload = {
@@ -95,3 +92,7 @@ class JWTAuthManager:
         if not refresh_token or refresh_token.expires_at < datetime.now(timezone.utc).replace(tzinfo=None):
             raise ValueError("Refresh token is not valid")
         return user
+
+
+def get_jwt_service():
+    return JWTAuthManager()

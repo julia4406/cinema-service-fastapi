@@ -12,7 +12,7 @@ from src.accounts.repositories.tokens import (
     PasswordResetTokenRepository
 )
 from src.accounts.schemas.accounts import UserAdminCreateRequest, UserAdminResponse, UserAdminUpdateRequest
-from src.accounts.services.email_service import EmailService
+from src.email.email_service import EmailService
 from src.accounts.security.jwt import JWTAuthManager
 from src.database.models import UserModel, ProfileModel
 from src.accounts.validators.accounts import validate_password_strength

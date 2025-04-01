@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from src.accounts.services.email_service import EmailService
+from src.email.email_service import get_email_service, EmailService
 from src.accounts.repositories.accounts import UserRepository, ProfileRepository
 from src.accounts.services.accounts import AccountsService, ProfileService
 from src.accounts.repositories.tokens import (
@@ -12,7 +12,7 @@ from src.accounts.repositories.tokens import (
     RefreshTokensRepository,
     PasswordResetTokenRepository
 )
-from src.accounts.security.jwt import JWTAuthManager
+from src.accounts.security.jwt import get_jwt_service, JWTAuthManager
 from src.database.models import UserModel, UserGroupEnum
 from src.database.session_postgresql import get_postgresql_db
 
@@ -22,10 +22,10 @@ bearer_scheme = HTTPBearer()
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    db: AsyncSession = Depends(get_postgresql_db)
+    db: AsyncSession = Depends(get_postgresql_db),
+    jwt_manager: JWTAuthManager = Depends(get_jwt_service),
 ) -> UserModel:
     token = credentials.credentials
-    jwt_manager = JWTAuthManager()
     try:
         user = await jwt_manager.verify_access_token(token, db)
         if not user:
@@ -119,8 +119,8 @@ async def get_refresh_token_repository(db: AsyncSession = Depends(get_postgresql
 async def get_accounts_service(
     user_repo: UserRepository = Depends(get_user_repository),
     activation_token_repo: ActivationTokensRepository = Depends(get_activation_token_repository),
-    email_service: EmailService = Depends(lambda: EmailService()),
-    jwt_service: JWTAuthManager = Depends(lambda: JWTAuthManager()),
+    email_service: EmailService = Depends(get_email_service),
+    jwt_service: JWTAuthManager = Depends(get_jwt_service),
     reset_token_repo: PasswordResetTokenRepository = Depends(get_password_reset_token_repository)
 ):
     return AccountsService(user_repo, activation_token_repo, email_service, jwt_service, reset_token_repo)

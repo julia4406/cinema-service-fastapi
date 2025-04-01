@@ -19,7 +19,7 @@ from src.database.models.payments import (
 from src.database.models.orders import OrderModel, StatusEnum, OrderItemModel
 from src.database.session_postgresql import get_postgresql_db
 from src.database.models.accounts import UserGroupEnum
-from src.accounts.services.email_service import EmailService, get_email_service
+from src.email.email_service import EmailService, get_email_service
 from src.accounts.dependencies import role_required
 
 STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY")
@@ -98,7 +98,7 @@ async def stripe_webhook(
 
         user_email = EmailSchema(email=session["metadata"]["user_email"]).email
         background_tasks.add_task(
-            email_service.confirmation_payment_email,
+            email_service.send_payment_confirmation_email,
             recipient_email=user_email,
             order_id=session["metadata"]["order_id"]
         )
@@ -126,7 +126,7 @@ async def stripe_webhook(
 
         user_email = EmailSchema(email=session["metadata"]["user_email"]).email
         background_tasks.add_task(
-            email_service.cancellation_payment_email,
+            email_service.send_payment_cancellation_email,
             recipient_email=user_email,
             order_id=session["metadata"]["order_id"]
         )

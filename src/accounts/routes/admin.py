@@ -49,10 +49,10 @@ async def get_user_by_email(
             date_of_birth=user_with_data.profile.date_of_birth if user_with_data.profile else None,
             info=user_with_data.profile.info if user_with_data.profile else None
         )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 
 @router.post("/users", response_model=UserAdminResponse)
@@ -63,10 +63,10 @@ async def register_user(
 ):
     try:
         return await service.register_user_by_admin(user_data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 
 @router.patch("/users/{user_id}", response_model=UserAdminResponse)
@@ -78,8 +78,10 @@ async def update_user(
 ):
     try:
         return await service.update_user(user_id, user_data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 
 @router.patch("/profile/{user_id}", response_model=UserAdminResponse)
@@ -93,7 +95,7 @@ async def update_profile(
     try:
         user = await account_service.user_repo.get_by_id(user_id)
         if not user:
-            raise ValueError("User not found")
+            raise HTTPException(status_code=404, detail="User not found")
 
         await profile_service.update_profile(user, profile_data)
 
@@ -107,7 +109,7 @@ async def update_profile(
         )
         user_with_data = result.scalar_one_or_none()
         if not user_with_data:
-            raise ValueError("User not found after update")
+            raise HTTPException(status_code=404, detail="User not found")
 
         return UserAdminResponse(
             id=user_with_data.id,
@@ -121,8 +123,10 @@ async def update_profile(
             date_of_birth=user_with_data.profile.date_of_birth if user_with_data.profile else None,
             info=user_with_data.profile.info if user_with_data.profile else None
         )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
 
 
 @router.delete("/users/{user_id}", status_code=204)
@@ -133,6 +137,8 @@ async def delete_user(
 ):
     try:
         await service.delete_user(user_id, current_user)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid data")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong")
     return None
