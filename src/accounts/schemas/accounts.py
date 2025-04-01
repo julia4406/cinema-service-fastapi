@@ -15,7 +15,7 @@ from src.accounts.validators import (
 )
 
 
-class UserCreateRequest(BaseModel):
+class BaseUserRequest(BaseModel):
     email: EmailStr
     password: str
 
@@ -33,66 +33,7 @@ class UserCreateRequest(BaseModel):
         return password
 
 
-class UserAdminCreateRequest(BaseModel):
-    email: EmailStr
-    password: str
-    is_active: Optional[bool] = False
-    group: Optional[UserGroupEnum] = UserGroupEnum.USER
-
-    @field_validator("email")
-    def check_email(cls, email: str) -> str:
-        try:
-            validate_email(email)
-        except EmailNotValidError:
-            raise ValueError("The email field is not valid")
-        return email
-
-    @field_validator("password")
-    def check_password(cls, password: str):
-        validate_password_strength(password)
-        return password
-
-
-class UserCreateResponse(BaseModel):
-    id: int
-    email: str
-    is_active: bool
-    created_at: datetime
-    message: str
-
-    model_config = {
-        "from_attributes": True
-    }
-
-
-class UserAdminUpdateRequest(BaseModel):
-    email: Optional[EmailStr] = None
-    is_active: Optional[bool] = None
-    group: Optional[UserGroupEnum] = None
-
-
-class UserLoginRequest(BaseModel):
-    email: EmailStr
-    password: str
-
-
-class UserAdminResponse(BaseModel):
-    id: int
-    email: str
-    is_active: bool
-    group: UserGroupEnum
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    avatar: Optional[str] = None
-    gender: Optional[str] = None
-    date_of_birth: Optional[date] = None
-    info: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-
-class ProfileResponse(BaseModel):
+class BaseProfileResponse(BaseModel):
     id: int
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -102,8 +43,57 @@ class ProfileResponse(BaseModel):
     info: Optional[str] = None
     user_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
+
+
+class BaseUserResponse(BaseModel):
+    id: int
+    email: str
+    is_active: bool
+
+    model_config = {
+        "from_attributes": True
+    }
+
+
+class UserCreateRequest(BaseUserRequest):
+    pass
+
+
+class UserLoginRequest(BaseUserRequest):
+    pass
+
+
+class UserAdminCreateRequest(BaseUserRequest):
+    is_active: Optional[bool] = False
+    group: Optional[UserGroupEnum] = UserGroupEnum.USER
+
+
+class UserCreateResponse(BaseUserResponse):
+    created_at: datetime
+    message: str
+
+
+class UserAdminUpdateRequest(BaseModel):
+    email: Optional[EmailStr] = None
+    is_active: Optional[bool] = None
+    group: Optional[UserGroupEnum] = None
+
+
+class UserAdminResponse(BaseUserResponse):
+    group: UserGroupEnum
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    avatar: Optional[str] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    info: Optional[str] = None
+
+
+class ProfileResponse(BaseProfileResponse):
+    pass
 
 
 class ProfileUpdateRequest(BaseModel):
