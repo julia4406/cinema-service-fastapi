@@ -1,15 +1,14 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models.movies import StarModel
-from src.movies.repository.stars import StarsRepository
+from src.movies.repository.stars import StarsRepository, get_stars_repository
 from src.movies.schemas.stars import StarSchema, StarCreateSchema
 
 
 class StarsService:
-    def __init__(self, db: AsyncSession):
-        self.repository = StarsRepository(db)
+    def __init__(self, repository: StarsRepository):
+        self.repository = repository
 
     async def get_stars(self, page: int = 1, per_page: int = 10):
         offset = (page - 1) * per_page
@@ -84,3 +83,9 @@ class StarsService:
                 status_code=404,
                 detail="Star with the given ID was not found.",
             )
+
+
+def get_stars_service(
+    repository: StarsRepository = Depends(get_stars_repository)
+) -> StarsService:
+    return StarsService(repository)

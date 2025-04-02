@@ -1,7 +1,9 @@
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from src.database.models.movies import StarModel
+from src.database.session_postgresql import get_postgresql_db as get_db
 from src.movies.schemas.stars import StarCreateSchema
 
 
@@ -58,3 +60,7 @@ class StarsRepository:
             return True
 
         return False
+
+
+def get_stars_repository(db: AsyncSession = Depends(get_db)):
+    return StarsRepository(db)
