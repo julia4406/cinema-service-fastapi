@@ -8,8 +8,9 @@ from src.database.session_postgresql import get_transactional_db
 from src.shopping_carts.repositories.shopping_cart import CartRepository
 
 
-async def get_cart_repository() -> AbstractCartRepository:
-    db: AsyncSession = await get_transactional_db()
+async def get_cart_repository(
+        db: AsyncSession = Depends(get_transactional_db)
+) -> AbstractCartRepository:
     return CartRepository(db)
 
 
