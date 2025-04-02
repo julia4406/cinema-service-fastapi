@@ -13,8 +13,9 @@ class CartItemResponseSchema(BaseModel):
     genres: Optional[List[str]] = None
     year: int
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 
 class CartResponseSchema(BaseModel):
@@ -22,8 +23,9 @@ class CartResponseSchema(BaseModel):
     user_id: int
     items: List[CartItemResponseSchema]
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 
 class MessageResponseSchema(BaseModel):

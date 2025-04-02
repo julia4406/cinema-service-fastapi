@@ -1,13 +1,11 @@
+from database.exceptions.shopping_cart import CartItemError
 from src.shopping_carts.dto.shopping_cart import ShoppingCart, CartItem
-from src.shopping_carts.interfaces.repositories import CartRepositoryInterface
-from src.shopping_carts.interfaces.services import (
-    CartServiceInterface,
-    AdminCartServiceInterface
-)
+from src.shopping_carts.interfaces.repositories import AbstractCartRepository
+from src.shopping_carts.interfaces.services import AbstractCartService
 
 
-class CartService(CartServiceInterface):
-    def __init__(self, cart_repository: CartRepositoryInterface):
+class CartService(AbstractCartService):
+    def __init__(self, cart_repository: AbstractCartRepository):
         self._cart_repository = cart_repository
 
     async def get_cart(self, user_id: int) -> ShoppingCart:
@@ -31,20 +29,15 @@ class CartService(CartServiceInterface):
     async def clear_cart(self, user_id: int) -> None:
         cart = await self._cart_repository.get_cart_by_user_id(user_id)
         if not cart or not cart.items:
-            raise ValueError("Cart is empty or does not exist")
+            raise CartItemError("Cart is empty or does not exist")
         await self._cart_repository.clear_cart(cart.id)
-
-
-class AdminCartService(AdminCartServiceInterface):
-    def __init__(self, cart_repository: CartRepositoryInterface):
-        self._cart_repository = cart_repository
 
     async def get_or_create_cart(self, user_id: int) -> ShoppingCart:
         return await self._cart_repository.get_or_create_cart_by_user_id(
             user_id
         )
 
-    async def add_item_to_cart(
+    async def add_item_to_cart_admin(
             self,
             user_id: int,
             movie_id: int
@@ -54,11 +47,11 @@ class AdminCartService(AdminCartServiceInterface):
         )
 
         if any(item.movie_id == movie_id for item in cart.items):
-            raise ValueError(f"Movie with ID {movie_id} is already in cart")
+            raise CartItemError(f"Movie with ID {movie_id} is already in cart")
         await self._cart_repository.add_item_to_cart(cart.id, movie_id)
         return await self._cart_repository.get_cart_by_user_id(user_id)
 
-    async def remove_item_from_cart(
+    async def remove_item_from_cart_admin(
             self,
             user_id: int,
             movie_id: int
@@ -73,7 +66,7 @@ class AdminCartService(AdminCartServiceInterface):
                 break
         return await self._cart_repository.get_cart_by_user_id(user_id)
 
-    async def clear_cart(self, user_id: int) -> ShoppingCart:
+    async def clear_cart_admin(self, user_id: int) -> ShoppingCart:
         cart = await self._cart_repository.get_or_create_cart_by_user_id(
             user_id
         )
