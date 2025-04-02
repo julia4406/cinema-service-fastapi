@@ -1,4 +1,4 @@
-from typing import Optional, Any, Coroutine, Sequence
+from typing import Optional, Any, Sequence
 from uuid import uuid4
 
 from sqlalchemy import Result, or_, Select
@@ -8,7 +8,6 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
 from sqlalchemy.sql.functions import now
 
-from database.models import MovieModel
 from src.database.models import UserModel
 from src.database.models.movies import (
     CertificationModel,
