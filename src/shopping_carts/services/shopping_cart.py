@@ -1,21 +1,22 @@
+from database.exceptions.shopping_cart import CartItemError
+from shopping_carts.interfaces.repositories import AbstractCartRepository
+from shopping_carts.interfaces.services import AbstractCartService
 from src.shopping_carts.dto.shopping_cart import ShoppingCart, CartItem
-from src.shopping_carts.interfaces.repositories import CartRepositoryInterface
-from src.shopping_carts.interfaces.services import (
-    CartServiceInterface,
-    AdminCartServiceInterface
-)
+
 from src.config.logging_settings import logger
 
 
-class CartService(CartServiceInterface):
-    def __init__(self, cart_repository: CartRepositoryInterface):
+class CartService(AbstractCartService):
+    def __init__(self, cart_repository: AbstractCartRepository):
         self._cart_repository = cart_repository
 
     async def get_cart(self, user_id: int) -> ShoppingCart:
         logger.info(f"Getting cart for user_id: {user_id}")
         cart = await self._cart_repository.get_cart_by_user_id(user_id)
         if not cart:
-            logger.info(f"Cart for user_id {user_id} does not exist, creating a new one.")
+            logger.info(
+                f"Cart for user_id {user_id} does not exist, creating a new one."
+            )
             cart = await self._cart_repository.create_cart(user_id)
         logger.info(f"Returning cart for user_id: {user_id}")
         return cart
@@ -25,13 +26,22 @@ class CartService(CartServiceInterface):
         return await self._cart_repository.create_cart(user_id)
 
     async def add_item_to_cart(self, user_id: int, movie_id: int) -> CartItem:
-        logger.info(f"Adding movie_id {movie_id} to cart for user_id: {user_id}")
+        logger.info(
+            f"Adding movie_id {movie_id} to cart for user_id: {user_id}"
+        )
         cart = await self._cart_repository.get_cart_by_user_id(user_id)
         if not cart:
-            logger.info(f"Cart for user_id {user_id} does not exist, creating a new one.")
+            logger.info(
+                f"Cart for user_id {user_id} does not exist, creating a new one."
+            )
             cart = await self._cart_repository.create_cart(user_id)
-        cart_item = await self._cart_repository.add_item_to_cart(cart.id, movie_id)
-        logger.info(f"Movie with ID {movie_id} added to cart for user_id: {user_id}")
+        cart_item = await self._cart_repository.add_item_to_cart(
+            cart.id,
+            movie_id
+        )
+        logger.info(
+            f"Movie with ID {movie_id} added to cart for user_id: {user_id}"
+        )
         return cart_item
 
     async def remove_item_from_cart(self, item_id: int) -> None:
@@ -43,48 +53,71 @@ class CartService(CartServiceInterface):
         logger.info(f"Clearing cart for user_id: {user_id}")
         cart = await self._cart_repository.get_cart_by_user_id(user_id)
         if not cart or not cart.items:
-            logger.warning(f"Cart is empty or does not exist for user_id: {user_id}")
-            raise ValueError("Cart is empty or does not exist")
+            logger.warning(
+                f"Cart is empty or does not exist for user_id: {user_id}"
+            )
+            raise CartItemError("Cart is empty or does not exist")
         await self._cart_repository.clear_cart(cart.id)
         logger.info(f"Cart for user_id: {user_id} has been cleared.")
 
-
-class AdminCartService(AdminCartServiceInterface):
-    def __init__(self, cart_repository: CartRepositoryInterface):
-        self._cart_repository = cart_repository
-
     async def get_or_create_cart(self, user_id: int) -> ShoppingCart:
         logger.info(f"Fetching or creating cart for user_id: {user_id}")
-        return await self._cart_repository.get_or_create_cart_by_user_id(user_id)
+        return await self._cart_repository.get_or_create_cart_by_user_id(
+            user_id
+        )
 
-    async def add_item_to_cart(self, user_id: int, movie_id: int) -> ShoppingCart:
-        logger.info(f"Adding movie_id {movie_id} to cart for user_id: {user_id}")
-        cart = await self._cart_repository.get_or_create_cart_by_user_id(user_id)
+    async def add_item_to_cart_admin(
+            self,
+            user_id: int,
+            movie_id: int
+    ) -> ShoppingCart:
+        logger.info(
+            f"Adding movie_id {movie_id} to cart for user_id: {user_id}"
+        )
+        cart = await self._cart_repository.get_or_create_cart_by_user_id(
+            user_id
+        )
 
         if any(item.movie_id == movie_id for item in cart.items):
-            logger.warning(f"Movie with ID {movie_id} is already in cart for user_id: {user_id}")
-            raise ValueError(f"Movie with ID {movie_id} is already in cart")
+            logger.warning(
+                f"Movie with ID {movie_id} is already in cart for user_id: {user_id}"
+            )
+            raise CartItemError(f"Movie with ID {movie_id} is already in cart")
 
         await self._cart_repository.add_item_to_cart(cart.id, movie_id)
         updated_cart = await self._cart_repository.get_cart_by_user_id(user_id)
-        logger.info(f"Movie with ID {movie_id} added to cart for user_id: {user_id}")
+        logger.info(
+            f"Movie with ID {movie_id} added to cart for user_id: {user_id}"
+        )
         return updated_cart
 
-    async def remove_item_from_cart(self, user_id: int, movie_id: int) -> ShoppingCart:
-        logger.info(f"Removing movie_id {movie_id} from cart for user_id: {user_id}")
-        cart = await self._cart_repository.get_or_create_cart_by_user_id(user_id)
+    async def remove_item_from_cart_admin(
+            self,
+            user_id: int,
+            movie_id: int
+    ) -> ShoppingCart:
+        logger.info(
+            f"Removing movie_id {movie_id} from cart for user_id: {user_id}"
+        )
+        cart = await self._cart_repository.get_or_create_cart_by_user_id(
+            user_id
+        )
 
         for item in cart.items:
             if item.movie_id == movie_id:
                 await self._cart_repository.remove_item_from_cart(item.id)
-                logger.info(f"Movie with ID {movie_id} removed from cart for user_id: {user_id}")
+                logger.info(
+                    f"Movie with ID {movie_id} removed from cart for user_id: {user_id}"
+                )
                 break
         updated_cart = await self._cart_repository.get_cart_by_user_id(user_id)
         return updated_cart
 
-    async def clear_cart(self, user_id: int) -> ShoppingCart:
+    async def clear_cart_admin(self, user_id: int) -> ShoppingCart:
         logger.info(f"Clearing cart for user_id: {user_id}")
-        cart = await self._cart_repository.get_or_create_cart_by_user_id(user_id)
+        cart = await self._cart_repository.get_or_create_cart_by_user_id(
+            user_id
+        )
         await self._cart_repository.clear_cart(cart.id)
         updated_cart = await self._cart_repository.get_cart_by_user_id(user_id)
         logger.info(f"Cart for user_id: {user_id} has been cleared.")
