@@ -1,7 +1,7 @@
-from fastapi import HTTPException, Depends
+from fastapi import Depends
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.database.exceptions.genres import CreateGenreError, GenreNotFoundError, UpdateGenreError
 from src.database.models.movies import GenreModel
 from src.movies.repository.genres import GenresRepository, get_genres_repository
 from src.movies.schemas.genres import GenreSchema, GenreCreateSchema
@@ -18,7 +18,7 @@ class GenresService:
         total_items = len(genres) or 0
 
         if not genres and total_items == 0:
-            raise HTTPException(status_code=404, detail="No genres found.")
+            raise GenreNotFoundError("No genres found.")
 
         total_pages = (total_items + per_page - 1) // per_page
 
@@ -44,7 +44,7 @@ class GenresService:
     async def get_one_genre(self, genre_id: int):
         genre = await self.repository.get_genre(genre_id)
         if not genre:
-            raise HTTPException(status_code=404, detail="No genre found.")
+            raise GenreNotFoundError("No genre found.")
 
         return genre
 
@@ -56,23 +56,20 @@ class GenresService:
         created_genre = await self.repository.add_genre(new_genre)
 
         if created_genre is False:
-            raise HTTPException(
-                status_code=409,
-                detail=(f"A genre with the name '{genre.name}' already exists."),
-            )
+            raise CreateGenreError(f"A genre with the name '{genre.name}' already exists.")
         try:
             return GenreSchema.model_validate(created_genre)
 
         except IntegrityError:
-            raise HTTPException(status_code=400, detail="Invalid input data.")
+            raise CreateGenreError("Invalid input data.")
 
     async def update_genre(self, genre_id: int, genre: GenreCreateSchema):
         result = await self.repository.update_genre(genre_id, genre)
         if result:
             return {"detail": "Genre updated successfully."}
         else:
-            raise HTTPException(
-                status_code=404, detail="Genre with the given ID was not found."
+            raise UpdateGenreError(
+                "Genre with the given ID was not found."
             )
 
     async def delete_genre(self, genre_id: int):
@@ -81,9 +78,8 @@ class GenresService:
         if result:
             return
         else:
-            raise HTTPException(
-                status_code=404,
-                detail="Genre with the given ID was not found.",
+            raise GenreNotFoundError(
+                "Genre with the given ID was not found.",
             )
 
 
