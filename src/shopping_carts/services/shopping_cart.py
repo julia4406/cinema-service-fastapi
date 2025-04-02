@@ -1,4 +1,4 @@
-from database.exceptions.shopping_cart import CartItemError
+from src.database.exceptions.shopping_cart import CartItemError
 from src.shopping_carts.dto.shopping_cart import ShoppingCart, CartItem
 from src.shopping_carts.interfaces.repositories import AbstractCartRepository
 from src.shopping_carts.interfaces.services import AbstractCartService

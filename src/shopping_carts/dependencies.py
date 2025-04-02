@@ -1,7 +1,7 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from shopping_carts.interfaces.repositories import AbstractCartRepository
+from src.shopping_carts.interfaces.repositories import AbstractCartRepository
 from src.database.session_postgresql import get_transactional_db
 from src.shopping_carts.interfaces.services import (
     AbstractCartService
