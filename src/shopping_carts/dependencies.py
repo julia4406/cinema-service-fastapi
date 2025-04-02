@@ -12,8 +12,9 @@ from src.shopping_carts.services.shopping_cart import (
 )
 
 
-async def get_cart_repository() -> AbstractCartRepository:
-    db: AsyncSession = await get_transactional_db()
+async def get_cart_repository(
+        db: AsyncSession = Depends(get_transactional_db)
+) -> AbstractCartRepository:
     return CartRepository(db)
 
 
