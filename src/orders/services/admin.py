@@ -5,7 +5,7 @@ from src.database.models import StatusEnum
 from src.orders.dto.orders import Order
 from src.orders.interfaces.repositories import OrderRepositoryInterface
 from src.orders.interfaces.services import AdminOrderServiceInterface
-from src.shopping_carts.interfaces.repositories import CartRepositoryInterface
+from src.shopping_carts.interfaces.repositories import AbstractCartRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -13,7 +13,7 @@ class AdminOrderService(AdminOrderServiceInterface):
     def __init__(
             self,
             order_repository: OrderRepositoryInterface,
-            cart_repository: CartRepositoryInterface,
+            cart_repository: AbstractCartRepository,
             session: AsyncSession
     ):
         self._order_repository = order_repository
