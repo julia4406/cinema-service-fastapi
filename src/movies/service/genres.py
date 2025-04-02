@@ -1,15 +1,15 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models.movies import GenreModel
-from src.movies.repository.genres import GenresRepository
+from src.movies.repository.genres import GenresRepository, get_genres_repository
 from src.movies.schemas.genres import GenreSchema, GenreCreateSchema
 
 
 class GenresService:
-    def __init__(self, db: AsyncSession):
-        self.repository = GenresRepository(db)
+    def __init__(self, repository: GenresRepository):
+        self.repository = repository
 
     async def get_genres(self, page: int = 1, per_page: int = 10):
         offset = (page - 1) * per_page
@@ -85,3 +85,9 @@ class GenresService:
                 status_code=404,
                 detail="Genre with the given ID was not found.",
             )
+
+
+def get_movies_service(
+    repository: GenresRepository = Depends(get_genres_repository)
+) -> GenresService:
+    return GenresService(repository)
