@@ -1,8 +1,6 @@
 import os
 
-from fastapi import Depends
-
-from src.config.settings import TestingSettings, Settings, BaseAppSettings
+from src.config.settings import Settings, BaseAppSettings
 
 
 def get_settings() -> BaseAppSettings:
@@ -16,7 +14,5 @@ def get_settings() -> BaseAppSettings:
     Returns:
         BaseAppSettings: The settings instance appropriate for the current environment.
     """
-    environment = os.getenv("ENVIRONMENT", "developing")
-    if environment == "testing":
-        return TestingSettings()
+    os.getenv("ENVIRONMENT", "developing")
     return Settings()
