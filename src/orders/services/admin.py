@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple
 from datetime import datetime
 
-from shopping_carts.interfaces.repositories import AbstractCartRepository
+from src.shopping_carts.interfaces.repositories import AbstractCartRepository
 from src.database.models import StatusEnum
 from src.orders.dto.orders import Order
 from src.orders.interfaces.repositories import OrderRepositoryInterface

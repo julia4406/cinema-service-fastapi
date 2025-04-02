@@ -1,7 +1,7 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from orders.services.admin import AdminOrderService
+from src.orders.services.admin import AdminOrderService
 from src.database.session_postgresql import get_transactional_db
 from src.orders.interfaces.services import (
     OrderServiceInterface,

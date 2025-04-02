@@ -138,7 +138,9 @@ async def admin_get_all_orders(
 async def admin_update_order_status(
         order_id: int,
         update_data: OrderStatusUpdateSchema,
-        order_service: get_admin_order_service = Depends(get_order_service),
+        order_service: AdminOrderServiceInterface = Depends(
+            get_admin_order_service
+        ),
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN))
 ):
     """Update the status of a specific order manually by an admin.

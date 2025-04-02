@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from shopping_carts.interfaces.repositories import AbstractCartRepository
+from src.shopping_carts.interfaces.repositories import AbstractCartRepository
 from src.config.logging_settings import logger
 from src.database.exceptions.shopping_cart import (
     CreateCartError,
