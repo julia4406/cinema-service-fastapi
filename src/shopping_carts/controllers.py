@@ -12,8 +12,7 @@ from src.shopping_carts.dependencies import (
     get_admin_cart_service
 )
 from src.shopping_carts.interfaces.services import (
-    CartServiceInterface,
-    AdminCartServiceInterface
+    AbstractCartService
 )
 from src.shopping_carts.schemas.shopping_cart import (
     CartResponseSchema,
@@ -24,7 +23,7 @@ from src.shopping_carts.schemas.shopping_cart import (
 
 async def get_cart(
         user: UserModel = Depends(get_current_user),
-        cart_service: CartServiceInterface = Depends(get_cart_service),
+        cart_service: AbstractCartService = Depends(get_cart_service),
 ) -> CartResponseSchema:
     """
     Retrieve the user's cart.
@@ -40,7 +39,7 @@ async def get_cart(
 
 async def create_cart(
         user: UserModel = Depends(get_current_user),
-        cart_service: CartServiceInterface = Depends(get_cart_service),
+        cart_service: AbstractCartService = Depends(get_cart_service),
 ) -> CartResponseSchema:
     """
     Create a new cart for the user.
@@ -60,7 +59,7 @@ async def create_cart(
 async def add_item_to_cart(
         movie_id: int,
         user: UserModel = Depends(get_current_user),
-        cart_service: CartServiceInterface = Depends(get_cart_service),
+        cart_service: AbstractCartService = Depends(get_cart_service),
 ) -> CartItemResponseSchema:
     """
     Add an item to the user's cart.
@@ -80,7 +79,7 @@ async def add_item_to_cart(
 
 async def remove_item_from_cart(
         item_id: int,
-        cart_service: CartServiceInterface = Depends(get_cart_service),
+        cart_service: AbstractCartService = Depends(get_cart_service),
 ) -> MessageResponseSchema:
     """
     Remove an item from the user's cart.
@@ -99,7 +98,7 @@ async def remove_item_from_cart(
 
 async def clear_cart(
         user: UserModel = Depends(get_current_user),
-        cart_service: CartServiceInterface = Depends(get_cart_service),
+        cart_service: AbstractCartService = Depends(get_cart_service),
 ) -> MessageResponseSchema:
     """
     Clear all items from the user's cart.
@@ -121,7 +120,7 @@ async def clear_cart(
 async def admin_get_user_cart(
         user_id: int,
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
-        cart_service: AdminCartServiceInterface = Depends(
+        cart_service: AbstractCartService = Depends(
             get_admin_cart_service
         ),
 ) -> CartResponseSchema:
@@ -133,12 +132,12 @@ async def admin_add_movie_to_cart(
         user_id: int,
         movie_id: int,
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
-        cart_service: AdminCartServiceInterface = Depends(
+        cart_service: AbstractCartService = Depends(
             get_admin_cart_service
         ),
 ) -> CartResponseSchema:
     try:
-        cart = await cart_service.add_item_to_cart(user_id, movie_id)
+        cart = await cart_service.add_item_to_cart_admin(user_id, movie_id)
         return CartResponseSchema(**cart.__dict__)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -148,20 +147,20 @@ async def admin_remove_movie_from_cart(
         user_id: int,
         movie_id: int,
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
-        cart_service: AdminCartServiceInterface = Depends(
+        cart_service: AbstractCartService = Depends(
             get_admin_cart_service
         ),
 ) -> MessageResponseSchema:
-    await cart_service.remove_item_from_cart(user_id, movie_id)
+    await cart_service.remove_item_from_cart_admin(user_id, movie_id)
     return MessageResponseSchema(message="Item removed successfully")
 
 
 async def admin_clear_user_cart(
         user_id: int,
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
-        cart_service: AdminCartServiceInterface = Depends(
+        cart_service: AbstractCartService = Depends(
             get_admin_cart_service
         ),
 ) -> MessageResponseSchema:
-    await cart_service.clear_cart(user_id)
+    await cart_service.clear_cart_admin(user_id)
     return MessageResponseSchema(message="Cart cleared successfully")

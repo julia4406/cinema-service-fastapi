@@ -8,23 +8,22 @@ from src.shopping_carts.dto.shopping_cart import (
 )
 
 
-class CartRepositoryInterface(ABC):
+class AbstractCartRepository(ABC):
 
     @abstractmethod
     async def create_cart(self, user_id: int) -> ShoppingCart:
         pass
 
     @abstractmethod
-    async def get_cart_by_user_id(
-            self,
-            user_id: int
-    ) -> Optional[ShoppingCart]:
+    async def get_cart_by_user_id(self, user_id: int) -> Optional[
+        ShoppingCart]:
         pass
 
+    @abstractmethod
     async def get_or_create_cart_by_user_id(
             self,
             user_id: int
-    ) -> ShoppingCart:
+            ) -> ShoppingCart:
         pass
 
     @abstractmethod

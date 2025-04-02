@@ -21,10 +21,10 @@ from src.shopping_carts.dto.shopping_cart import (
     ShoppingCart,
     Purchase
 )
-from src.shopping_carts.interfaces.repositories import CartRepositoryInterface
+from src.shopping_carts.interfaces.repositories import AbstractCartRepository
 
 
-class CartRepository(CartRepositoryInterface):
+class CartRepository(AbstractCartRepository):
     def __init__(self, session: AsyncSession):
         self._session = session
 
