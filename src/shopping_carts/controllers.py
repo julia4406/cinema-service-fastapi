@@ -111,8 +111,6 @@ async def clear_cart(
     try:
         await cart_service.clear_cart(user.id)
         return MessageResponseSchema(message="Cart cleared successfully")
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
     except CartItemError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -139,7 +137,7 @@ async def admin_add_movie_to_cart(
     try:
         cart = await cart_service.add_item_to_cart_admin(user_id, movie_id)
         return CartResponseSchema(**cart.__dict__)
-    except ValueError as e:
+    except CartItemError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -151,8 +149,11 @@ async def admin_remove_movie_from_cart(
             get_admin_cart_service
         ),
 ) -> MessageResponseSchema:
-    await cart_service.remove_item_from_cart_admin(user_id, movie_id)
-    return MessageResponseSchema(message="Item removed successfully")
+    try:
+        await cart_service.remove_item_from_cart_admin(user_id, movie_id)
+        return MessageResponseSchema(message="Item removed successfully")
+    except CartItemError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 async def admin_clear_user_cart(
@@ -162,5 +163,8 @@ async def admin_clear_user_cart(
             get_admin_cart_service
         ),
 ) -> MessageResponseSchema:
-    await cart_service.clear_cart_admin(user_id)
-    return MessageResponseSchema(message="Cart cleared successfully")
+    try:
+        await cart_service.clear_cart_admin(user_id)
+        return MessageResponseSchema(message="Cart cleared successfully")
+    except CartItemError as e:
+        raise HTTPException(status_code=400, detail=str(e))

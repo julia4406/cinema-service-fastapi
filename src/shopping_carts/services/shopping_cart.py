@@ -1,3 +1,4 @@
+from database.exceptions.shopping_cart import CartItemError
 from src.shopping_carts.dto.shopping_cart import ShoppingCart, CartItem
 from src.shopping_carts.interfaces.repositories import AbstractCartRepository
 from src.shopping_carts.interfaces.services import AbstractCartService
@@ -28,7 +29,7 @@ class CartService(AbstractCartService):
     async def clear_cart(self, user_id: int) -> None:
         cart = await self._cart_repository.get_cart_by_user_id(user_id)
         if not cart or not cart.items:
-            raise ValueError("Cart is empty or does not exist")
+            raise CartItemError("Cart is empty or does not exist")
         await self._cart_repository.clear_cart(cart.id)
 
     async def get_or_create_cart(self, user_id: int) -> ShoppingCart:
@@ -46,7 +47,7 @@ class CartService(AbstractCartService):
         )
 
         if any(item.movie_id == movie_id for item in cart.items):
-            raise ValueError(f"Movie with ID {movie_id} is already in cart")
+            raise CartItemError(f"Movie with ID {movie_id} is already in cart")
         await self._cart_repository.add_item_to_cart(cart.id, movie_id)
         return await self._cart_repository.get_cart_by_user_id(user_id)
 
