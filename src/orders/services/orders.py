@@ -66,11 +66,11 @@ class OrderService(OrderServiceInterface):
         if not order or order.user_id != user_id:
             raise OrderUpdateError(
                 "Order not found or does not belong to user"
-                )
+            )
         if order.status != StatusEnum.PENDING:
             raise OrderUpdateError(
                 "Only pending orders can be cancelled by user"
-                )
+            )
         await self._order_repository.update_order_status(
             order_id,
             StatusEnum.CANCELLED
@@ -81,7 +81,7 @@ class OrderService(OrderServiceInterface):
         if not order or order.user_id != user_id:
             raise OrderUpdateError(
                 "Order not found or does not belong to user"
-                )
+            )
         if order.status != StatusEnum.PENDING:
             raise OrderUpdateError("Only pending orders can be confirmed")
 

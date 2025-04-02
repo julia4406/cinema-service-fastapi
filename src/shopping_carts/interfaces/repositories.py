@@ -15,15 +15,17 @@ class AbstractCartRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_cart_by_user_id(self, user_id: int) -> Optional[
-        ShoppingCart]:
+    async def get_cart_by_user_id(
+            self,
+            user_id: int
+    ) -> Optional[ShoppingCart]:
         pass
 
     @abstractmethod
     async def get_or_create_cart_by_user_id(
             self,
             user_id: int
-            ) -> ShoppingCart:
+    ) -> ShoppingCart:
         pass
 
     @abstractmethod

@@ -34,7 +34,7 @@ class AbstractCartService(ABC):
             self,
             user_id: int,
             movie_id: int
-            ) -> ShoppingCart:
+    ) -> ShoppingCart:
         pass
 
     @abstractmethod
@@ -42,7 +42,7 @@ class AbstractCartService(ABC):
             self,
             user_id: int,
             movie_id: int
-            ) -> ShoppingCart:
+    ) -> ShoppingCart:
         pass
 
     @abstractmethod
