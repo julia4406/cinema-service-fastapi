@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.exceptions.orders import CreateOrderError, OrderUpdateError
+from src.database.exceptions.orders import CreateOrderError, OrderUpdateError
 from src.database.models import StatusEnum
 from src.database.models.movies import MovieModel
 from src.orders.dto.orders import Order
