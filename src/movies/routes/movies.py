@@ -1,10 +1,8 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.accounts.dependencies import get_current_user, role_required
-from src.database.session_postgresql import get_postgresql_db as get_db
 from src.database.models.accounts import UserModel, UserGroupEnum
 from src.movies.schemas.movies import (
     MovieListResponseSchema,
@@ -17,14 +15,14 @@ from src.movies.schemas.movies import (
     MovieSortEnum,
     FavoriteMoviesSchema,
 )
-from src.movies.service.movies import MoviesService
+from src.movies.service.movies import MoviesService, get_movies_service
 
 router = APIRouter()
 
 
 @router.get("/", response_model=MovieListResponseSchema, summary="Get list of movies")
 async def get_movies(
-    db: AsyncSession = Depends(get_db),
+    service: MoviesService = Depends(get_movies_service),
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=100),
     current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
@@ -57,7 +55,7 @@ async def get_movies(
         "max_price": max_price,
     }
 
-    return await MoviesService(db).get_movies(
+    return await service.get_movies(
         page=page, per_page=per_page, filters=filters, sort_by=sort_by
     )
 
@@ -68,10 +66,10 @@ async def get_movies(
 )
 async def get_movie(
     movie_id: int,
-    db: AsyncSession = Depends(get_db),
+    service: MoviesService = Depends(get_movies_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
 ):
-    return await MoviesService(db).get_movie_by_id(movie_id)
+    return await service.get_movie_by_id(movie_id)
 
 
 @router.post(
@@ -82,10 +80,10 @@ async def get_movie(
 )
 async def create_movie(
     movie_data: MovieCreateSchema,
-    db: AsyncSession = Depends(get_db),
+    service: MoviesService = Depends(get_movies_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
 ):
-    return await MoviesService(db).create_movie(movie_data)
+    return await service.create_movie(movie_data)
 
 
 @router.patch(
@@ -119,10 +117,10 @@ async def create_movie(
 async def update_movie(
     movie_id: int,
     movie_data: MovieUpdateSchema,
-    db: AsyncSession = Depends(get_db),
+    service: MoviesService = Depends(get_movies_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
 ) -> DetailMessageSchema:
-    return await MoviesService(db).update_movie(movie_id, movie_data)
+    return await service.update_movie(movie_id, movie_data)
 
 
 @router.delete(
@@ -143,10 +141,10 @@ async def update_movie(
 )
 async def delete_movie(
     movie_id: int,
-    db: AsyncSession = Depends(get_db),
+    service: MoviesService = Depends(get_movies_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
 ) -> None:
-    return await MoviesService(db).delete_movie(movie_id)
+    return await service.delete_movie(movie_id)
 
 
 @router.post(
@@ -173,11 +171,11 @@ async def delete_movie(
 )
 async def like_or_dislike(
     movie_id: int,
-    db: AsyncSession = Depends(get_db),
+    service: MoviesService = Depends(get_movies_service),
     user: UserModel = Depends(get_current_user),
     current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
 ) -> MovieLikeResponseSchema:
-    return await MoviesService(db).like_or_dislike_movie(movie_id, user)
+    return await service.like_or_dislike_movie(movie_id, user)
 
 
 @router.post(
@@ -204,11 +202,11 @@ async def like_or_dislike(
 )
 async def favorite_or_unfavorite(
     movie_id: int,
-    db: AsyncSession = Depends(get_db),
+    service: MoviesService = Depends(get_movies_service),
     user: UserModel = Depends(get_current_user),
     current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
 ) -> MovieFavoriteResponseSchema:
-    return await MoviesService(db).favorite_or_unfavorite(movie_id, user)
+    return await service.favorite_or_unfavorite(movie_id, user)
 
 
 @router.get(
@@ -236,7 +234,7 @@ async def favorites(
     sort_by: Optional[MovieSortEnum] = Query(
         None, description="Sort movies by criteria"
     ),
-    db: AsyncSession = Depends(get_db),
+    service: MoviesService = Depends(get_movies_service),
     user: UserModel = Depends(get_current_user),
     current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
 ) -> FavoriteMoviesSchema:
@@ -250,6 +248,6 @@ async def favorites(
         "max_price": max_price,
     }
 
-    return await MoviesService(db).get_user_favorite_movies(
+    return await service.get_user_favorite_movies(
         page=page, per_page=per_page, filters=filters, sort_by=sort_by, user=user
     )

@@ -1,6 +1,7 @@
 from typing import Optional, Any, Sequence
 from uuid import uuid4
 
+from fastapi import Depends
 from sqlalchemy import Result, or_, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -21,6 +22,7 @@ from src.database.models.movies import (
     MoviesDirectorsModel,
 )
 from src.database.models.shopping_carts import PurchasedModel
+from src.database.session_postgresql import get_postgresql_db as get_db
 from src.movies.schemas.movies import MovieCreateSchema, MovieSortEnum
 
 
@@ -322,3 +324,7 @@ class MoviesRepository:
         query = self.get_filters_data(filters=filters, sort_by=sort_by, user=user)
         result = await self.db.execute(query)
         return result.scalars().all()
+
+
+def get_movies_repository(db: AsyncSession = Depends(get_db)) -> MoviesRepository:
+    return MoviesRepository(db)

@@ -1,10 +1,9 @@
 from typing import Optional
 
-from fastapi import HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException, Depends
 
 from src.database.models import UserModel
-from src.movies.repository.movies import MoviesRepository
+from src.movies.repository.movies import MoviesRepository, get_movies_repository
 from src.movies.schemas.movies import (
     MovieListResponseSchema,
     MovieListItemSchema,
@@ -19,8 +18,8 @@ from src.movies.schemas.movies import (
 
 
 class MoviesService:
-    def __init__(self, db: AsyncSession):
-        self.repository = MoviesRepository(db)
+    def __init__(self, repository: MoviesRepository):
+        self.repository = repository
 
     async def get_movies(
         self,
@@ -179,3 +178,9 @@ class MoviesService:
             total_pages=total_pages,
             total_items=total_items,
         )
+
+
+def get_movies_service(
+        repository: MoviesRepository = Depends(get_movies_repository),
+) -> MoviesService:
+    return MoviesService(repository)
