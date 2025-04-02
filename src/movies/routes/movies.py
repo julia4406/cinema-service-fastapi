@@ -250,6 +250,6 @@ async def favorites(
         "max_price": max_price,
     }
 
-    return await MoviesService(db).get_movies(
+    return await MoviesService(db).get_user_favorite_movies(
         page=page, per_page=per_page, filters=filters, sort_by=sort_by, user=user
     )

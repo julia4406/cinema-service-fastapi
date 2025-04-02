@@ -25,12 +25,13 @@ class MoviesService:
     async def get_movies(
         self,
         filters: dict[str, str],
-        user: UserModel = None,
         sort_by: Optional[MovieSortEnum] = None,
         page: int = 1,
         per_page: int = 10,
     ):
-        filtered_movies = await self.repository.filter_movies(filters, sort_by, user)
+        filtered_movies = await self.repository.filter_movies(
+            filters=filters, sort_by=sort_by
+        )
 
         total_items = len(filtered_movies)
         total_pages = (total_items + per_page - 1) // per_page
@@ -142,4 +143,39 @@ class MoviesService:
             added_at=movie_favorite.added_at,
             user=user.id,
             movie=movie.id,
+        )
+
+    async def get_user_favorite_movies(
+            self,
+            filters: dict[str, str],
+            user: UserModel = None,
+            sort_by: Optional[MovieSortEnum] = None,
+            page: int = 1,
+            per_page: int = 10,
+    ):
+        filtered_movies = await self.repository.get_user_favorite_movies(
+            filters=filters, sort_by=sort_by, user=user
+        )
+
+        total_items = len(filtered_movies)
+        total_pages = (total_items + per_page - 1) // per_page
+
+        start = (page - 1) * per_page
+        end = start + per_page
+
+        paginated_movies = filtered_movies[start:end]
+
+        if not paginated_movies:
+            raise HTTPException(status_code=404, detail="No movies found.")
+
+        return MovieListResponseSchema(
+            movies=[
+                MovieListItemSchema.model_validate(movie) for movie in paginated_movies
+            ],
+            prev_page=(f"/?page={page - 1}&per_page={per_page}" if page > 1 else None),
+            next_page=(
+                f"/?page={page + 1}&per_page={per_page}" if page < total_pages else None
+            ),
+            total_pages=total_pages,
+            total_items=total_items,
         )
