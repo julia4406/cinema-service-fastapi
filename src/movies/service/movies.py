@@ -114,9 +114,7 @@ class MoviesService:
     ) -> MovieLikeResponseSchema:
         movie = await self.repository.get_movie_by_id(movie_id)
         if not movie:
-            raise MovieNotFoundError(
-               "Movie with the given ID was not found."
-            )
+            raise MovieNotFoundError("Movie with the given ID was not found.")
 
         movie_like = await self.repository.toggle_movie_like(movie, user.id)
 
