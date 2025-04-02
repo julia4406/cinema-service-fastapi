@@ -87,7 +87,7 @@ class GenresService:
             )
 
 
-def get_movies_service(
+def get_genres_service(
     repository: GenresRepository = Depends(get_genres_repository)
 ) -> GenresService:
     return GenresService(repository)

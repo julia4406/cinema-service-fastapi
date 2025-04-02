@@ -254,7 +254,7 @@ class MoviesRepository:
                 .join(UserFavoriteModel)
                 .filter(
                     UserFavoriteModel.user_id == user.id,
-                    UserFavoriteModel.is_favorite == True,
+                    UserFavoriteModel.is_favorite is True,
                 )
             )
         else:

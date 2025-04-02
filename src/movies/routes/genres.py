@@ -8,7 +8,7 @@ from src.movies.schemas.genres import (
     GenresResponseSchema,
     GenreCreateSchema,
 )
-from src.movies.service.genres import GenresService, get_movies_service
+from src.movies.service.genres import GenresService, get_genres_service
 
 router = APIRouter()
 
@@ -20,7 +20,7 @@ router = APIRouter()
 async def get_genres_list(
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=100),
-    service: GenresService = Depends(get_movies_service),
+    service: GenresService = Depends(get_genres_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
 ):
     return await service.get_genres(page, per_page)
@@ -32,7 +32,7 @@ async def get_genres_list(
 )
 async def get_genre(
     genre_id: int,
-    service: GenresService = Depends(get_movies_service),
+    service: GenresService = Depends(get_genres_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
 ):
     return await service.get_one_genre(genre_id)
@@ -45,7 +45,7 @@ async def get_genre(
 )
 async def create_genre(
     genre_data: GenreCreateSchema,
-    service: GenresService = Depends(get_movies_service),
+    service: GenresService = Depends(get_genres_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
 ):
     return await service.create_genre(genre_data)
@@ -58,7 +58,7 @@ async def create_genre(
 async def update_genre(
     genre_id: int,
     new_genre: GenreCreateSchema,
-    service: GenresService = Depends(get_movies_service),
+    service: GenresService = Depends(get_genres_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
 ):
     return await service.update_genre(genre_id, new_genre)
@@ -67,7 +67,7 @@ async def update_genre(
 @router.delete("/genres/{genre_id}/", status_code=204)
 async def delete_genre(
     genre_id: int,
-    service: GenresService = Depends(get_movies_service),
+    service: GenresService = Depends(get_genres_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
 ):
     return await service.delete_genre(genre_id)
