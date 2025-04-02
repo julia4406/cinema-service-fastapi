@@ -8,8 +8,7 @@ class JWTTokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class RefreshTokenRequest(BaseModel):
