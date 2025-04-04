@@ -1,10 +1,11 @@
 from typing import Optional
 
-from fastapi import HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException, Depends
 
+from src.database.exceptions.movies import MovieNotFoundError, MovieAlreadyExistsError, MovieCreateError, \
+    MovieUpdateError, MovieDeleteError
 from src.database.models import UserModel
-from src.movies.repository.movies import MoviesRepository
+from src.movies.repository.movies import MoviesRepository, get_movies_repository
 from src.movies.schemas.movies import (
     MovieListResponseSchema,
     MovieListItemSchema,
@@ -19,18 +20,19 @@ from src.movies.schemas.movies import (
 
 
 class MoviesService:
-    def __init__(self, db: AsyncSession):
-        self.repository = MoviesRepository(db)
+    def __init__(self, repository: MoviesRepository):
+        self.repository = repository
 
     async def get_movies(
         self,
         filters: dict[str, str],
-        user: UserModel = None,
         sort_by: Optional[MovieSortEnum] = None,
         page: int = 1,
         per_page: int = 10,
     ):
-        filtered_movies = await self.repository.filter_movies(filters, sort_by, user)
+        filtered_movies = await self.repository.filter_movies(
+            filters=filters, sort_by=sort_by
+        )
 
         total_items = len(filtered_movies)
         total_pages = (total_items + per_page - 1) // per_page
@@ -41,7 +43,7 @@ class MoviesService:
         paginated_movies = filtered_movies[start:end]
 
         if not paginated_movies:
-            raise HTTPException(status_code=404, detail="No movies found.")
+            raise MovieNotFoundError("No movies found.")
 
         return MovieListResponseSchema(
             movies=[
@@ -59,7 +61,7 @@ class MoviesService:
         movie = await self.repository.get_movie_by_id(movie_id)
 
         if not movie:
-            raise HTTPException(status_code=404, detail="Movie not found")
+            raise MovieNotFoundError("Movie not found")
 
         return MovieDetailSchema.model_validate(movie)
 
@@ -67,9 +69,8 @@ class MoviesService:
         existing_movie = await self.repository.get_movie_by_name(movie_data)
 
         if existing_movie:
-            raise HTTPException(
-                status_code=409,
-                detail="Movie already exists.",
+            raise MovieAlreadyExistsError(
+                "Movie already exists."
             )
 
         try:
@@ -77,13 +78,13 @@ class MoviesService:
             return MovieDetailSchema.model_validate(movie)
         except HTTPException:
             await self.repository.db.rollback()
-            raise HTTPException(status_code=400, detail="Invalid input data.")
+            raise MovieCreateError("Invalid input data.")
 
     async def update_movie(self, movie_id: int, movie_data: MovieUpdateSchema):
         movie = await self.repository.get_movie_by_id(movie_id)
 
         if not movie:
-            raise HTTPException(status_code=404, detail="Movie not found")
+            raise MovieNotFoundError("Movie not found")
 
         for field, value in movie_data.model_dump(exclude_unset=True).items():
             if value is not None:
@@ -93,7 +94,7 @@ class MoviesService:
             await self.repository.commit_instance(movie)
         except HTTPException:
             await self.repository.db.rollback()
-            raise HTTPException(status_code=400, detail="Invalid input data.")
+            raise MovieUpdateError("Invalid input data.")
         else:
             return DetailMessageSchema(detail="Movie updated successfully.")
 
@@ -101,11 +102,11 @@ class MoviesService:
         movie = await self.repository.get_movie_by_id(movie_id)
 
         if not movie:
-            raise HTTPException(status_code=404, detail="Movie not found")
+            raise MovieNotFoundError("Movie not found")
 
         result = await self.repository.delete_instance(movie)
         if result:
-            raise HTTPException(status_code=404, detail="Movie was purchased.")
+            raise MovieDeleteError("Movie was purchased.")
         return
 
     async def like_or_dislike_movie(
@@ -113,9 +114,7 @@ class MoviesService:
     ) -> MovieLikeResponseSchema:
         movie = await self.repository.get_movie_by_id(movie_id)
         if not movie:
-            raise HTTPException(
-                status_code=404, detail="Movie with the given ID was not found."
-            )
+            raise MovieNotFoundError("Movie with the given ID was not found.")
 
         movie_like = await self.repository.toggle_movie_like(movie, user.id)
 
@@ -131,8 +130,8 @@ class MoviesService:
     ) -> MovieFavoriteResponseSchema:
         movie = await self.repository.get_movie_by_id(movie_id)
         if not movie:
-            raise HTTPException(
-                status_code=404, detail="Movie with the given ID was not found."
+            raise MovieNotFoundError(
+                "Movie with the given ID was not found."
             )
 
         movie_favorite = await self.repository.toggle_movie_favorite(movie, user.id)
@@ -143,3 +142,44 @@ class MoviesService:
             user=user.id,
             movie=movie.id,
         )
+
+    async def get_user_favorite_movies(
+            self,
+            filters: dict[str, str],
+            user: UserModel = None,
+            sort_by: Optional[MovieSortEnum] = None,
+            page: int = 1,
+            per_page: int = 10,
+    ):
+        filtered_movies = await self.repository.get_user_favorite_movies(
+            filters=filters, sort_by=sort_by, user=user
+        )
+
+        total_items = len(filtered_movies)
+        total_pages = (total_items + per_page - 1) // per_page
+
+        start = (page - 1) * per_page
+        end = start + per_page
+
+        paginated_movies = filtered_movies[start:end]
+
+        if not paginated_movies:
+            raise MovieNotFoundError("No movies found.")
+
+        return MovieListResponseSchema(
+            movies=[
+                MovieListItemSchema.model_validate(movie) for movie in paginated_movies
+            ],
+            prev_page=(f"/?page={page - 1}&per_page={per_page}" if page > 1 else None),
+            next_page=(
+                f"/?page={page + 1}&per_page={per_page}" if page < total_pages else None
+            ),
+            total_pages=total_pages,
+            total_items=total_items,
+        )
+
+
+def get_movies_service(
+        repository: MoviesRepository = Depends(get_movies_repository),
+) -> MoviesService:
+    return MoviesService(repository)

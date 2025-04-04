@@ -1,7 +1,8 @@
-from typing import Optional, Any
+from typing import Optional, Any, Sequence
 from uuid import uuid4
 
-from sqlalchemy import Result, or_
+from fastapi import Depends
+from sqlalchemy import Result, or_, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
@@ -21,6 +22,7 @@ from src.database.models.movies import (
     MoviesDirectorsModel,
 )
 from src.database.models.shopping_carts import PurchasedModel
+from src.database.session_postgresql import get_postgresql_db as get_db
 from src.movies.schemas.movies import MovieCreateSchema, MovieSortEnum
 
 
@@ -240,12 +242,12 @@ class MoviesRepository:
 
         return movie_fav
 
-    async def filter_movies(
-        self,
-        filters: dict[str, str],
-        sort_by: Optional[MovieSortEnum] = None,
-        user: UserModel = None,
-    ) -> list[MovieModel]:
+    @staticmethod
+    def get_filters_data(
+            filters: dict[str, str],
+            sort_by: Optional[MovieSortEnum] = None,
+            user: UserModel = None,
+    ) -> Select[tuple[MovieModel]]:
         if user:
             query = (
                 select(MovieModel)
@@ -302,20 +304,27 @@ class MoviesRepository:
             elif sort_by == MovieSortEnum.IMDb_DESC:
                 query = query.order_by(MovieModel.imdb.desc())
 
+        return query
+
+    async def filter_movies(
+        self,
+        filters: dict[str, str],
+        sort_by: Optional[MovieSortEnum] = None,
+    ) -> Sequence[MovieModel]:
+        query = self.get_filters_data(filters, sort_by)
         result = await self.db.execute(query)
         return result.scalars().all()
 
-    async def get_user_favorite_movies(self, user_id: int):
-        query = (
-            select(MovieModel)
-            .join(UserFavoriteModel)
-            .filter(
-                UserFavoriteModel.user_id == user_id,
-                UserFavoriteModel.is_favorite is True,
-            )
-        )
-
+    async def get_user_favorite_movies(
+        self,
+        filters: dict[str, str],
+        sort_by: Optional[MovieSortEnum] = None,
+        user: UserModel = None,
+    ):
+        query = self.get_filters_data(filters=filters, sort_by=sort_by, user=user)
         result = await self.db.execute(query)
-        favorite_movies = result.scalars().all()
+        return result.scalars().all()
 
-        return favorite_movies
+
+def get_movies_repository(db: AsyncSession = Depends(get_db)) -> MoviesRepository:
+    return MoviesRepository(db)

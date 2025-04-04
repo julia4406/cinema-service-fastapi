@@ -4,10 +4,12 @@ from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from movies.schemas.genres import GenreCreateSchema
+from movies.schemas.stars import StarCreateSchema
+
 
 class CertificationSchema(BaseModel):
     name: str
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -15,29 +17,8 @@ class CertificationResponseSchema(CertificationSchema):
     id: int
 
 
-class GenresSchema(BaseModel):
-    name: str
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class GenreResponseSchema(GenresSchema):
-    id: int
-
-
-class StarsSchema(BaseModel):
-    name: str
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class StarsResponseSchema(StarsSchema):
-    id: int
-
-
 class DirectorsSchema(BaseModel):
     name: str
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -99,8 +80,8 @@ class MovieDetailSchema(MovieBaseSchema):
     meta_score: Optional[float] = Field(None, ge=0, le=100)
     gross: Optional[float] = Field(None, ge=0)
     certifications: CertificationResponseSchema
-    genres: List[GenresSchema]
-    stars: List[StarsSchema]
+    genres: List[GenreCreateSchema]
+    stars: List[StarCreateSchema]
     directors: List[DirectorsSchema]
 
     model_config = ConfigDict(from_attributes=True)

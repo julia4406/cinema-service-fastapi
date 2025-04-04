@@ -1,7 +1,9 @@
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from src.database.models.movies import GenreModel
+from src.database.session_postgresql import get_postgresql_db as get_db
 from src.movies.schemas.genres import GenreCreateSchema
 
 
@@ -58,3 +60,7 @@ class GenresRepository:
             return True
 
         return False
+
+
+def get_genres_repository(db: AsyncSession = Depends(get_db)) -> GenresRepository:
+    return GenresRepository(db)

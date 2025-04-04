@@ -1,15 +1,15 @@
-from fastapi import HTTPException
+from fastapi import Depends
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.database.exceptions.stars import StarNotFoundError, StarCreateError, StarUpdateError
 from src.database.models.movies import StarModel
-from src.movies.repository.stars import StarsRepository
+from src.movies.repository.stars import StarsRepository, get_stars_repository
 from src.movies.schemas.stars import StarSchema, StarCreateSchema
 
 
 class StarsService:
-    def __init__(self, db: AsyncSession):
-        self.repository = StarsRepository(db)
+    def __init__(self, repository: StarsRepository):
+        self.repository = repository
 
     async def get_stars(self, page: int = 1, per_page: int = 10):
         offset = (page - 1) * per_page
@@ -18,7 +18,7 @@ class StarsService:
         total_items = len(stars) or 0
 
         if not stars and total_items == 0:
-            raise HTTPException(status_code=404, detail="No stars found.")
+            raise StarNotFoundError("No stars found.")
 
         total_pages = (total_items + per_page - 1) // per_page
 
@@ -44,7 +44,7 @@ class StarsService:
     async def get_one_star(self, star_id: int):
         star = await self.repository.get_star(star_id)
         if not star:
-            raise HTTPException(status_code=404, detail="No star found.")
+            raise StarNotFoundError("No star found.")
 
         return star
 
@@ -55,23 +55,22 @@ class StarsService:
         existing_star = await self.repository.add_star(new_star)
 
         if existing_star is False:
-            raise HTTPException(
-                status_code=409,
-                detail=(f"A star with the name '{star.name}' already exists."),
+            raise StarCreateError(
+                f"A star with the name '{star.name}' already exists."
             )
         try:
             return StarSchema.model_validate(existing_star)
 
         except IntegrityError:
-            raise HTTPException(status_code=400, detail="Invalid input data.")
+            raise StarCreateError("Invalid input data.")
 
     async def update_star(self, star_id: int, star: StarCreateSchema):
         result = await self.repository.update_star(star_id, star)
         if result:
             return {"detail": "Star updated successfully."}
         else:
-            raise HTTPException(
-                status_code=404, detail="Star with the given ID was not found."
+            raise StarUpdateError(
+                "Star with the given ID was not found."
             )
 
     async def delete_star(self, star_id: int):
@@ -80,7 +79,12 @@ class StarsService:
         if result:
             return
         else:
-            raise HTTPException(
-                status_code=404,
-                detail="Star with the given ID was not found.",
+            raise StarNotFoundError(
+                "Star with the given ID was not found."
             )
+
+
+def get_stars_service(
+    repository: StarsRepository = Depends(get_stars_repository)
+) -> StarsService:
+    return StarsService(repository)
