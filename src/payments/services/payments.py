@@ -22,7 +22,9 @@ from src.payments.repositories.payments import (
 )
 from src.config.logging_settings import logger
 
+
 settings = Settings()
+
 
 async def service_get_payment_history(
         db: AsyncSession, user_id: int
@@ -45,7 +47,10 @@ async def service_get_payment_history_admin(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None
 ) -> List[PaymentResponseSchema]:
-    logger.info(f"Fetching payment history for admin with filters - user_id: {user_id}, status: {status}, start_date: {start_date}, end_date: {end_date}")
+    logger.info(
+        f"Fetching payment history for admin with filters - user_id: {user_id}, "
+        f"status: {status}, start_date: {start_date}, end_date: {end_date}"
+    )
     payment_history = await repo_get_payment_history_admin(
         db=db,
         user_id=user_id,

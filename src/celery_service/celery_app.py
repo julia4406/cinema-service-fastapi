@@ -34,4 +34,3 @@ celery_app.conf.update(
     },
 )
 logger.info("Celery beat schedule updated with tasks for token expiry management.")
-

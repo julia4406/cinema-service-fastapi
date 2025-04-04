@@ -6,6 +6,7 @@ from src.database.models.movies import StarModel
 from src.database.session_postgresql import get_postgresql_db as get_db
 from src.movies.schemas.stars import StarCreateSchema
 
+
 class StarsRepository:
     def __init__(self, db: AsyncSession):
         self.db = db

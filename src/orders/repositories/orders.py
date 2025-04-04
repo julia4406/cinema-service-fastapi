@@ -192,7 +192,11 @@ class OrderRepository(OrderRepositoryInterface):
             offset: int = 0
     ) -> Tuple[List[Order], int]:
         try:
-            logger.info(f"Fetching all orders with filters: user_id={user_id}, date_from={date_from}, date_to={date_to}, status={status}, limit={limit}, offset={offset}")
+            logger.info(
+                f"Fetching all orders with filters: "
+                f"user_id={user_id}, date_from={date_from}, date_to={date_to}, "
+                f"status={status}, limit={limit}, offset={offset}"
+            )
             query = (
                 select(OrderModel)
                 .options(

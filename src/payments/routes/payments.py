@@ -33,6 +33,7 @@ from src.accounts.dependencies import role_required
 router = APIRouter()
 settings = Settings()
 
+
 @router.post("/webhook")
 async def stripe_webhook(
         request: Request,
@@ -118,7 +119,7 @@ async def get_payments_history(
 
 
 @router.get("/history/staff", response_model=PaymentResponseSchema)
-async def get_payments_history(
+async def get_payments_history_staff(
         current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
         db: AsyncSession = Depends(get_postgresql_db),
         user_id: Optional[int] = Query(

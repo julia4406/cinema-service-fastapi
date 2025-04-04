@@ -1,5 +1,6 @@
 from src.config.logging_settings import logger
 
+
 def validate_movie_not_already_purchased(purchase, movie_id: int) -> int:
     logger.info(f"Validating if movie with id {movie_id} is already purchased by user {purchase.user_id}.")
     if purchase.user:
@@ -11,4 +12,3 @@ def validate_movie_not_already_purchased(purchase, movie_id: int) -> int:
                 )
     logger.info(f"Movie with id {movie_id} has not been purchased by user {purchase.user_id}.")
     return movie_id
-

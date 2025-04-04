@@ -68,7 +68,9 @@ class BaseAppSettings(AppPathsSettings, JWTSettings):
     LOGIN_TIME_DAYS: int = 7
 
 
-class Settings(BaseAppSettings, PostgresSettings, RedisSettings, MailSettings, AWSSettings, StripeSettings, ServiceSettings):
+class Settings(
+    BaseAppSettings, PostgresSettings, RedisSettings, MailSettings, AWSSettings, StripeSettings, ServiceSettings
+):
     pass
 
 

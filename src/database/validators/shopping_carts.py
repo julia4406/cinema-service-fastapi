@@ -1,5 +1,6 @@
 from src.config.logging_settings import logger
 
+
 def validate_movie_not_in_purchases(cart_item, movie_id: int) -> int:
     logger.info(f"Validating if movie with id {movie_id} is already purchased.")
     if cart_item.cart and cart_item.cart.user:
@@ -24,4 +25,3 @@ def validate_movie_not_in_cart(cart_item, movie_id: int) -> int:
                 )
     logger.info(f"Movie with id {movie_id} is not in the cart.")
     return movie_id
-

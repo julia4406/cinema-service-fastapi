@@ -7,6 +7,7 @@ from sqlalchemy import select, delete
 from src.database.models.tokens import ActivationTokenModel, RefreshTokenModel, PasswordResetTokenModel
 from src.config.logging_settings import logger
 
+
 class ActivationTokensRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
