@@ -32,7 +32,7 @@ async def create_order(
     try:
         order = await order_service.create_order(user.id)
         return OrderResponseSchema(**order.__dict__)
-    except CreateOrderError as e:
+    except OrderUpdateError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -110,9 +110,7 @@ async def confirm_order(
 
 async def admin_get_all_orders(
         filters: OrderFilterSchema = Depends(),
-        order_service: OrderServiceInterface = Depends(
-            get_admin_order_service
-        ),
+        order_service: get_admin_order_service = Depends(get_order_service),
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN))
 ):
     """Retrieve a list of all orders with filters and pagination for admins.

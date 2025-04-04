@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException
 
+from src.shopping_carts.interfaces.services import AbstractCartService
 from src.database.models import UserGroupEnum
 from src.accounts.dependencies import get_current_user, role_required
 from src.database.exceptions.shopping_cart import (
@@ -10,9 +11,6 @@ from src.database.models import UserModel
 from src.shopping_carts.dependencies import (
     get_cart_service,
     get_admin_cart_service
-)
-from src.shopping_carts.interfaces.services import (
-    AbstractCartService
 )
 from src.shopping_carts.schemas.shopping_cart import (
     CartResponseSchema,
@@ -135,7 +133,7 @@ async def admin_add_movie_to_cart(
         ),
 ) -> CartResponseSchema:
     try:
-        cart = await cart_service.add_item_to_cart_admin(user_id, movie_id)
+        cart = await cart_service.add_item_to_cart(user_id, movie_id)
         return CartResponseSchema(**cart.__dict__)
     except CartItemError as e:
         raise HTTPException(status_code=400, detail=str(e))
