@@ -1,4 +1,5 @@
 from typing import List, Optional
+
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,10 +22,10 @@ from src.shopping_carts.dto.shopping_cart import (
     ShoppingCart,
     Purchase
 )
-from src.shopping_carts.interfaces.repositories import CartRepositoryInterface
+from src.shopping_carts.interfaces.repositories import AbstractCartRepository
 
 
-class CartRepository(CartRepositoryInterface):
+class CartRepository(AbstractCartRepository):
     def __init__(self, session: AsyncSession):
         self._session = session
 
@@ -41,8 +42,11 @@ class CartRepository(CartRepositoryInterface):
             return ShoppingCart(**cart_dict)
         except IntegrityError:
             await self._session.rollback()
-            logger.error(f"Cart creation failed: Cart already exists for user_id: {user_id}")
-            raise CreateCartError(f"Cart already exists for user with ID {user_id}")
+            logger.error(
+                f"Cart creation failed: Cart already exists for user_id: {user_id}")
+            raise CreateCartError(
+                f"Cart already exists for user with ID {user_id}"
+            )
         except SQLAlchemyError as e:
             await self._session.rollback()
             logger.error(f"Failed to create cart for user_id: {user_id}. Error: {str(e)}")
@@ -52,35 +56,38 @@ class CartRepository(CartRepositoryInterface):
             self,
             user_id: int
     ) -> Optional[ShoppingCart]:
-        logger.info(f"Fetching cart for user_id: {user_id}")
-        result = await self._session.execute(
-            select(ShoppingCartModel)
-            .filter_by(user_id=user_id)
-            .options(
-                joinedload(ShoppingCartModel.items)
-                .joinedload(CartItemModel.movie)
-                .joinedload(MovieModel.genres)
+        try:
+            logger.info(f"Fetching cart for user_id: {user_id}")
+            result = await self._session.execute(
+                select(ShoppingCartModel)
+                .filter_by(user_id=user_id)
+                .options(
+                    joinedload(ShoppingCartModel.items)
+                    .joinedload(CartItemModel.movie)
+                    .joinedload(MovieModel.genres)
+                )
             )
-        )
-        cart = result.scalars().first()
-        if not cart:
-            logger.warning(f"No cart found for user_id: {user_id}")
-            return None
-        cart_dict = object_as_dict(cart)
-        cart_dict["items"] = [
-            CartItem(
-                **{
-                    **object_as_dict(item),
-                    "name": item.movie.name,
-                    "price": item.movie.price,
-                    "genres": item.movie.genres,
-                    "year": item.movie.year,
-                }
-            )
-            for item in cart.items
-        ]
-        logger.info(f"Cart fetched successfully for user_id: {user_id}")
-        return ShoppingCart(**cart_dict)
+            cart = result.scalars().first()
+            if not cart:
+                logger.warning(f"No cart found for user_id: {user_id}")
+                return None
+            cart_dict = object_as_dict(cart)
+            cart_dict["items"] = [
+                CartItem(
+                    **{
+                        **object_as_dict(item),
+                        "name": item.movie.name,
+                        "price": item.movie.price,
+                        "genres": item.movie.genres,
+                        "year": item.movie.year,
+                    }
+                )
+                for item in cart.items
+            ]
+            logger.info(f"Cart fetched successfully for user_id: {user_id}")
+            return ShoppingCart(**cart_dict)
+        except SQLAlchemyError as e:
+            raise CartItemError(f"Failed to retrieve cart: {str(e)}")
 
     async def get_or_create_cart_by_user_id(
             self,
@@ -104,7 +111,9 @@ class CartRepository(CartRepositoryInterface):
             )
             if existing_item.scalars().first():
                 logger.warning(f"Movie with ID {movie_id} already exists in cart {cart_id}")
-                raise CartItemError(f"Movie with ID {movie_id} is already in cart with ID {cart_id}")
+                raise CartItemError(
+                    f"Movie with ID {movie_id} is already in cart with ID {cart_id}"
+                )
 
             cart_item = CartItemModel(cart_id=cart_id, movie_id=movie_id)
             self._session.add(cart_item)
@@ -114,14 +123,18 @@ class CartRepository(CartRepositoryInterface):
                 select(CartItemModel)
                 .filter_by(id=cart_item.id)
                 .options(
-                    joinedload(CartItemModel.movie).joinedload(MovieModel.genres)
+                    joinedload(CartItemModel.movie).joinedload(
+                        MovieModel.genres
+                    )
                 )
             )
             cart_item = result.scalars().first()
 
             if not cart_item:
                 logger.error("Failed to retrieve cart item after creation")
-                raise CartItemError("Failed to retrieve cart item after creation")
+                raise CartItemError(
+                    "Failed to retrieve cart item after creation"
+                )
 
             movie = cart_item.movie
             item_dict = object_as_dict(cart_item)
@@ -191,25 +204,35 @@ class CartRepository(CartRepositoryInterface):
             raise CreatePurchaseError(f"Failed to create purchase: {str(e)}")
 
     async def get_user_purchases(self, user_id: int) -> List[Purchase]:
-        logger.info(f"Fetching purchases for user_id: {user_id}")
-        result = await self._session.execute(
-            select(PurchasedModel).filter_by(user_id=user_id)
-        )
-        purchases = result.scalars().all()
-        logger.info(f"Found {len(purchases)} purchases for user_id: {user_id}")
-        return [Purchase(**object_as_dict(purchase)) for purchase in purchases]
+        try:
+            logger.info(f"Fetching purchases for user_id: {user_id}")
+            result = await self._session.execute(
+                select(PurchasedModel).filter_by(user_id=user_id)
+            )
+            purchases = result.scalars().all()
+            logger.info(
+                f"Found {len(purchases)} purchases for user_id: {user_id}")
+            return [Purchase(**object_as_dict(purchase)) for purchase in
+                    purchases]
+        except SQLAlchemyError as e:
+            raise CreatePurchaseError(
+                f"Failed to retrieve purchases: {str(e)}"
+            )
 
     async def get_purchase_by_id(self, purchase_id: int) -> Optional[Purchase]:
-        logger.info(f"Fetching purchase by purchase_id: {purchase_id}")
-        result = await self._session.execute(
-            select(PurchasedModel).filter_by(id=purchase_id)
-        )
-        purchase = result.scalars().first()
-        if not purchase:
-            logger.warning(f"Purchase not found for purchase_id: {purchase_id}")
-            return None
-        logger.info(f"Purchase found for purchase_id: {purchase_id}")
-        return Purchase(**object_as_dict(purchase))
+        try:
+            logger.info(f"Fetching purchase by purchase_id: {purchase_id}")
+            result = await self._session.execute(
+                select(PurchasedModel).filter_by(id=purchase_id)
+            )
+            purchase = result.scalars().first()
+            if not purchase:
+                logger.warning(f"Purchase not found for purchase_id: {purchase_id}")
+                return None
+            logger.info(f"Purchase found for purchase_id: {purchase_id}")
+            return Purchase(**object_as_dict(purchase))
+        except SQLAlchemyError as e:
+            raise CreatePurchaseError(f"Failed to retrieve purchase: {str(e)}")
 
     async def remove_purchase_by_id(self, purchase_id: int) -> None:
         try:

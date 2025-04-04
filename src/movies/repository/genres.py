@@ -1,6 +1,8 @@
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from src.database.models.movies import GenreModel
+from src.database.session_postgresql import get_postgresql_db as get_db
 from src.movies.schemas.genres import GenreCreateSchema
 from src.config.logging_settings import logger
 
@@ -80,3 +82,7 @@ class GenresRepository:
 
         logger.warning(f"Genre with id={genre_id} not found for deletion")
         return False
+
+
+def get_genres_repository(db: AsyncSession = Depends(get_db)) -> GenresRepository:
+    return GenresRepository(db)

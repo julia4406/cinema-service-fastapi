@@ -1,15 +1,16 @@
-from fastapi import HTTPException
+from fastapi import Depends
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.config.logging_settings import logger
+from src.database.exceptions.stars import StarNotFoundError, StarCreateError, StarUpdateError
 from src.database.models.movies import StarModel
-from src.movies.repository.stars import StarsRepository
+from src.movies.repository.stars import StarsRepository, get_stars_repository
 from src.movies.schemas.stars import StarSchema, StarCreateSchema
 
 
 class StarsService:
-    def __init__(self, db: AsyncSession):
-        self.repository = StarsRepository(db)
+    def __init__(self, repository: StarsRepository):
+        self.repository = repository
         logger.info("StarsService initialized")
 
     async def get_stars(self, page: int = 1, per_page: int = 10):
@@ -21,7 +22,7 @@ class StarsService:
 
         if not stars and total_items == 0:
             logger.warning("No stars found")
-            raise HTTPException(status_code=404, detail="No stars found.")
+            raise StarNotFoundError("No stars found.")
 
         total_pages = (total_items + per_page - 1) // per_page
 
@@ -50,7 +51,7 @@ class StarsService:
         star = await self.repository.get_star(star_id)
         if not star:
             logger.warning(f"Star with id={star_id} not found")
-            raise HTTPException(status_code=404, detail="No star found.")
+            raise StarNotFoundError("No star found.")
 
         logger.info(f"Star found: {star.name}")
         return star
@@ -64,17 +65,17 @@ class StarsService:
 
         if existing_star is False:
             logger.warning(f"A star with the name '{star.name}' already exists")
-            raise HTTPException(
-                status_code=409,
-                detail=(f"A star with the name '{star.name}' already exists."),
+            raise StarCreateError(
+                f"A star with the name '{star.name}' already exists."
             )
         try:
             logger.info(f"Star '{star.name}' created successfully")
             return StarSchema.model_validate(existing_star)
 
         except IntegrityError:
-            logger.error(f"Error occurred while creating star with name={star.name}")
-            raise HTTPException(status_code=400, detail="Invalid input data.")
+            logger.error(
+                f"Error occurred while creating star with name={star.name}")
+            raise StarCreateError("Invalid input data.")
 
     async def update_star(self, star_id: int, star: StarCreateSchema):
         logger.info(f"Updating star with id={star_id}")
@@ -84,8 +85,8 @@ class StarsService:
             return {"detail": "Star updated successfully."}
         else:
             logger.warning(f"Star with id={star_id} not found")
-            raise HTTPException(
-                status_code=404, detail="Star with the given ID was not found."
+            raise StarUpdateError(
+                "Star with the given ID was not found."
             )
 
     async def delete_star(self, star_id: int):
@@ -97,7 +98,12 @@ class StarsService:
             return
         else:
             logger.warning(f"Star with id={star_id} not found")
-            raise HTTPException(
-                status_code=404,
-                detail="Star with the given ID was not found.",
+            raise StarNotFoundError(
+                "Star with the given ID was not found."
             )
+
+
+def get_stars_service(
+    repository: StarsRepository = Depends(get_stars_repository)
+) -> StarsService:
+    return StarsService(repository)

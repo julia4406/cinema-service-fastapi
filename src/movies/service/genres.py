@@ -1,14 +1,16 @@
-from fastapi import HTTPException
+from fastapi import Depends
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.config.logging_settings import logger
+from src.database.exceptions.genres import CreateGenreError, GenreNotFoundError, UpdateGenreError
 from src.database.models.movies import GenreModel
-from src.movies.repository.genres import GenresRepository
+from src.movies.repository.genres import GenresRepository, get_genres_repository
 from src.movies.schemas.genres import GenreSchema, GenreCreateSchema
 
+
 class GenresService:
-    def __init__(self, db: AsyncSession):
-        self.repository = GenresRepository(db)
+    def __init__(self, repository: GenresRepository):
+        self.repository = repository
         logger.info("GenresService initialized")
 
     async def get_genres(self, page: int = 1, per_page: int = 10):
@@ -20,7 +22,7 @@ class GenresService:
 
         if not genres and total_items == 0:
             logger.warning("No genres found")
-            raise HTTPException(status_code=404, detail="No genres found.")
+            raise GenreNotFoundError("No genres found.")
 
         total_pages = (total_items + per_page - 1) // per_page
         logger.info(f"Total pages: {total_pages}, Total items: {total_items}")
@@ -50,7 +52,7 @@ class GenresService:
         genre = await self.repository.get_genre(genre_id)
         if not genre:
             logger.warning(f"Genre with id={genre_id} not found")
-            raise HTTPException(status_code=404, detail="No genre found.")
+            raise GenreNotFoundError("No genre found.")
         logger.info(f"Genre found: {genre.name}")
         return genre
 
@@ -64,17 +66,14 @@ class GenresService:
 
         if created_genre is False:
             logger.warning(f"Genre with name '{genre.name}' already exists")
-            raise HTTPException(
-                status_code=409,
-                detail=(f"A genre with the name '{genre.name}' already exists."),
-            )
+            raise CreateGenreError(f"A genre with the name '{genre.name}' already exists.")
         try:
             logger.info(f"Genre created successfully: {genre.name}")
             return GenreSchema.model_validate(created_genre)
 
         except IntegrityError:
             logger.error("IntegrityError occurred during genre creation")
-            raise HTTPException(status_code=400, detail="Invalid input data.")
+            raise CreateGenreError("Invalid input data.")
 
     async def update_genre(self, genre_id: int, genre: GenreCreateSchema):
         logger.info(f"Updating genre with id={genre_id}")
@@ -84,8 +83,8 @@ class GenresService:
             return {"detail": "Genre updated successfully."}
         else:
             logger.warning(f"Genre with id={genre_id} not found for update")
-            raise HTTPException(
-                status_code=404, detail="Genre with the given ID was not found."
+            raise UpdateGenreError(
+                "Genre with the given ID was not found."
             )
 
     async def delete_genre(self, genre_id: int):
@@ -97,7 +96,12 @@ class GenresService:
             return
         else:
             logger.warning(f"Genre with id={genre_id} not found for deletion")
-            raise HTTPException(
-                status_code=404,
-                detail="Genre with the given ID was not found.",
+            raise GenreNotFoundError(
+                "Genre with the given ID was not found.",
             )
+
+
+def get_genres_service(
+    repository: GenresRepository = Depends(get_genres_repository)
+) -> GenresService:
+    return GenresService(repository)
