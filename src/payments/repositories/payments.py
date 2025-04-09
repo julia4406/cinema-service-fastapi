@@ -15,7 +15,7 @@ class PaymentRepository:
         self.db = db
 
     async def get_payment_history_by_user_id(self, user_id: int) -> Sequence[PaymentModel]:
-        logger.info(f"Fetching payment history for user_id={user_id}")
+        logger.info(f"Get payment history from db")
         payment_history_res = await self.db.execute(
             select(PaymentModel).filter_by(user_id=user_id)
         )
@@ -33,8 +33,7 @@ class PaymentRepository:
             start_date: Optional[datetime] = None,
             end_date: Optional[datetime] = None
     ) -> Sequence[PaymentModel]:
-        logger.info(f"Fetching admin payment history with filters: "
-                    f"user_id={user_id}, status={status}, start_date={start_date}, end_date={end_date}")
+        logger.info("Get admin payment history from db")
 
         payment_history_query = select(PaymentModel)
 
@@ -75,7 +74,7 @@ class PaymentRepository:
         return new_payment
 
     async def get_order_by_id(self, order_id: int) -> Optional[OrderModel]:
-        logger.info(f"Fetching order by id={order_id}")
+        logger.info(f"Get order by id={order_id}")
         result = await self.db.execute(select(OrderModel).filter_by(id=order_id))
         order = result.scalars().first()
 
