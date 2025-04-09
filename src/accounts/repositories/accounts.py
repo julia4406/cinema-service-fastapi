@@ -205,7 +205,7 @@ class ProfileRepository:
             logger.error(f"Error deleting profile for user {profile.user_id}: {e}")
             raise
 
-    async def update_avatar(self, profile: ProfileModel, avatar_file: UploadFile, user_id: int) -> ProfileModel | None:
+    async def update_avatar(self, profile: ProfileModel, avatar_file: UploadFile) -> ProfileModel | None:
         try:
             allowed_types = {"image/jpeg", "image/png"}
             max_size_mb = 8
@@ -219,7 +219,8 @@ class ProfileRepository:
                 raise ValueError(f"Avatar size must not exceed {max_size_mb} MB")
 
             file_extension = avatar_file.filename.split(".")[-1]
-            file_key = f"avatars/{user_id}/{user_id}_avatar.{file_extension}"
+            file_key = (f"avatars/{profile.user_id}/{profile.user_id}_avatar"
+                        f".{file_extension}")
 
             avatar_url = await self._s3_service.upload_file(avatar_file, file_key)
 
@@ -228,5 +229,5 @@ class ProfileRepository:
             await self.db.refresh(profile)
             return profile
         except SQLAlchemyError as e:
-            logger.error(f"Error updating avatar for user {user_id}: {e}")
+            logger.error(f"Error updating avatar for user {profile.user_id}: {e}")
             raise
