@@ -4,6 +4,9 @@ from typing import Any, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+ENV_FILE = env_file=Path(__file__).parent.parent.parent / ".env"
+
+
 class AppPathsSettings(BaseSettings):
     ROOT_DIR: Path = Path(__file__).parent.parent.parent
     BASE_DIR: Path = Path(__file__).parent.parent
@@ -19,7 +22,7 @@ class JWTSettings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
     )
 
 
@@ -31,7 +34,7 @@ class PostgresSettings(BaseSettings):
     DB: str = "test_db"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_prefix="POSTGRES_",
     )
 
@@ -43,7 +46,7 @@ class RedisSettings(BaseSettings):
     BACKEND_DB: int
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_prefix="REDIS_",
     )
 
@@ -59,7 +62,7 @@ class MailSettings(BaseSettings):
     SSL_TLS: bool = True
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_prefix="MAIL_",
     )
 
@@ -71,7 +74,7 @@ class AWSSettings(BaseSettings):
     AWS_REGION: Optional[str] = "us-east-1"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
     )
 
 
@@ -80,7 +83,7 @@ class StripeSettings(BaseSettings):
     WEBHOOK_SECRET: str
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_prefix="STRIPE_",
     )
 
@@ -89,7 +92,7 @@ class ServiceSettings(BaseSettings):
     SERVICE_URL: str
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
     )
 
 
@@ -101,17 +104,3 @@ class Settings(
     BaseAppSettings, PostgresSettings, RedisSettings, MailSettings, AWSSettings, StripeSettings, ServiceSettings
 ):
     pass
-
-
-class TestingSettings(BaseAppSettings):
-    SECRET_KEY_ACCESS: str = "SECRET_KEY_ACCESS"
-    SECRET_KEY_REFRESH: str = "SECRET_KEY_REFRESH"
-    JWT_SIGNING_ALGORITHM: str = "HS256"
-
-    def model_post_init(self, __context: dict[str, Any] | None = None) -> None:
-        object.__setattr__(self, 'PATH_TO_DB', ":memory:")
-        object.__setattr__(
-            self,
-            'PATH_TO_MOVIES_CSV',
-            str(self.BASE_DIR / "database" / "seed_data" / "test_data.csv")
-        )
