@@ -14,7 +14,7 @@ from src.shopping_carts.interfaces.repositories import AbstractCartRepository
 
 
 class CartRepository(AbstractCartRepository):
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
     async def create_cart(self, user_id: int) -> ShoppingCart:

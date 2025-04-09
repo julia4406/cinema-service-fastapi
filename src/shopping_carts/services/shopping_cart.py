@@ -6,7 +6,7 @@ from src.shopping_carts.interfaces.services import AbstractCartService
 
 
 class CartService(AbstractCartService):
-    def __init__(self, cart_repository: AbstractCartRepository):
+    def __init__(self, cart_repository: AbstractCartRepository) -> None:
         self._cart_repository = cart_repository
 
     async def get_cart(self, user_id: int) -> ShoppingCart:
