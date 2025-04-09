@@ -4,6 +4,7 @@ from typing import List, Optional, Sequence
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from src.database.models.accounts import UserModel
 
 from src.config.logging_settings import logger
 from src.database.models.orders import OrderItemModel, OrderModel, StatusEnum
@@ -15,7 +16,7 @@ class PaymentRepository:
         self.db = db
 
     async def get_payment_history_by_user_id(self, user_id: int) -> Sequence[PaymentModel]:
-        logger.info(f"Get payment history from db")
+        logger.info("Get payment history from db")
         payment_history_res = await self.db.execute(
             select(PaymentModel).filter_by(user_id=user_id)
         )
@@ -83,6 +84,18 @@ class PaymentRepository:
 
         return order
 
+    async def get_user_for_current_order(
+            self, order_id: int
+    ) -> tuple[OrderModel, UserModel]:
+        logger.info(f"Get user from db by order_id={order_id}")
+        order = await self.get_order_by_id(order_id)
+        user = await self.db.execute(
+            select(UserModel).filter_by(id=order.user_id))
+        user = user.scalars().first()
+        if not user:
+            logger.warning(f"User not found (id={user.id})")
+        return order, user
+
     async def update_order_status(
             self, order: OrderModel, status: StatusEnum
     ) -> None:
@@ -126,3 +139,7 @@ class PaymentRepository:
             raise
 
         return payment_items
+
+
+def get_payment_repository(db: AsyncSession) -> PaymentRepository:
+    return PaymentRepository(db=db)

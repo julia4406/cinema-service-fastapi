@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Any
 
 import stripe
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
@@ -11,7 +11,6 @@ from src.accounts.dependencies import role_required
 from src.config.logging_settings import logger
 from src.config.settings import Settings
 from src.database.models.accounts import UserGroupEnum, UserModel
-from src.database.models.orders import OrderModel
 from src.database.models.payments import PaymentStatus
 from src.database.session_postgresql import get_postgresql_db
 from src.email.email_service import EmailService, get_email_service
@@ -19,12 +18,10 @@ from src.payments.schemas.payments import (
     PaymentHistorySchema,
     PaymentResponseSchema,
 )
-from src.payments.services.payments import (
-    service_create_stripe_payment_session,
-    service_get_payment_history,
-    service_get_payment_history_admin,
-    service_handle_stripe_webhook,
-)
+from src.payments.services.payments import PaymentService
+from src.payments.repositories.payments import PaymentRepository, get_payment_repository
+from src.payments.services.payments import get_payment_service
+
 
 router = APIRouter()
 settings = Settings()
@@ -35,8 +32,8 @@ async def stripe_webhook(
         request: Request,
         background_tasks: BackgroundTasks,
         email_service: EmailService = Depends(get_email_service),
-        db: AsyncSession = Depends(get_postgresql_db)
-):
+        ps: PaymentService = Depends(get_payment_service)
+) -> tuple | Any:
     logger.info("Received Stripe webhook request.")
     stripe_signature = request.headers.get("stripe-signature")
     if not stripe_signature:
@@ -59,8 +56,8 @@ async def stripe_webhook(
         logger.error("Invalid Stripe signature.")
         return {"status": "error", "message": "Invalid signature"}, 400
 
-    return await service_handle_stripe_webhook(
-        event, db, email_service, background_tasks
+    return await ps.handle_stripe_webhook(
+        event, email_service, background_tasks
     )
 
 
@@ -69,20 +66,13 @@ async def create_payment(
         order_id: int,
         request: Request,
         current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
-        db: AsyncSession = Depends(get_postgresql_db),
-):
+        ps: PaymentService = Depends(get_payment_service),
+) -> dict:
     logger.info(f"User {current_user.id} is creating a payment for order {order_id}.")
-    order = await db.execute(select(OrderModel).filter_by(id=order_id))
-    current_order = order.scalars().first()
 
-    if not current_order:
-        logger.warning(f"Order {order_id} not found.")
-        raise HTTPException(status_code=400, detail="Order not found")
+    current_order, user = await ps.get_order_and_user_data(order_id)
 
-    user = await db.execute(select(UserModel).filter_by(id=current_order.user_id))
-    user = user.scalars().first()
-
-    payment_url = await service_create_stripe_payment_session(
+    payment_url = await ps.create_stripe_payment_session(
         current_order, user, request
     )
     logger.info(f"Payment session created for order {order_id}.")
@@ -108,16 +98,16 @@ async def cancel_payment() -> JSONResponse:
 @router.get("/history", response_model=PaymentHistorySchema)
 async def get_payments_history(
         current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
-        db: AsyncSession = Depends(get_postgresql_db),
+        ps: PaymentService = Depends(get_payment_service)
 ) -> List[PaymentHistorySchema]:
     logger.info(f"Fetching payment history for user {current_user.id}.")
-    return await service_get_payment_history(db, current_user.id)
+    return await ps.get_user_payment_history(current_user.id)
 
 
 @router.get("/history/staff", response_model=PaymentResponseSchema)
 async def get_payments_history_staff(
         current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
-        db: AsyncSession = Depends(get_postgresql_db),
+        ps: PaymentService = Depends(get_payment_service),
         user_id: Optional[int] = Query(
             None, description="user ID for filtering."
         ),
@@ -132,8 +122,7 @@ async def get_payments_history_staff(
         )
 ) -> List[PaymentResponseSchema]:
     logger.info("Fetching payment history for staff.")
-    return await service_get_payment_history_admin(
-        db=db,
+    return await ps.get_admin_payment_history(
         user_id=user_id,
         status=status,
         start_date=start_date,

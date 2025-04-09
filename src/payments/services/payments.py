@@ -3,10 +3,11 @@ from decimal import Decimal
 from typing import Dict, List, Optional
 
 import stripe
-from fastapi import BackgroundTasks, HTTPException, Request
+from fastapi import BackgroundTasks, HTTPException, Request, Depends
 from stripe import Event
 
 from config.settings import StripeSettings as stp
+from payments.repositories.payments import get_payment_repository
 from src.config.logging_settings import logger
 from src.database.models.accounts import UserModel
 from src.database.models.orders import OrderModel, StatusEnum
@@ -17,7 +18,10 @@ from src.payments.schemas.payments import CreatePaymentSchema, PaymentHistorySch
 
 
 class PaymentService:
-    def __init__(self, payment_repo: PaymentRepository):
+    def __init__(
+            self,
+            payment_repo: PaymentRepository = Depends(get_payment_repository)
+    ) -> None:
         self.payment_repo = payment_repo
         self.db = payment_repo.db
 
@@ -33,7 +37,6 @@ class PaymentService:
                 status=item.status
             ) for item in payments
         ]
-
 
     async def get_admin_payment_history(
         self,
@@ -64,7 +67,6 @@ class PaymentService:
                 external_payment_id=item.external_payment_id
             ) for item in payment_history
         ]
-
 
     async def handle_stripe_webhook(
             self,
@@ -122,8 +124,20 @@ class PaymentService:
 
             return {"status": "cancel", "message": "Payment cancelled"}
 
+    async def get_order_and_user_data(
+            self, order_id: int
+    ) -> tuple[OrderModel, UserModel]:
+        current_order, user = await self.payment_repo.get_user_for_current_order(order_id)
+        if not current_order:
+            logger.warning(f"Order {order_id} not found.")
+            raise HTTPException(status_code=400, detail="Order not found")
+        elif not user:
+            logger.warning(f"User {user.id} not found.")
+            raise HTTPException(status_code=400, detail="User not found")
 
-    async def service_create_stripe_payment_session(
+        return current_order, user
+
+    async def create_stripe_payment_session(
             self,
             order: OrderModel,
             user: UserModel,
@@ -170,3 +184,7 @@ class PaymentService:
         except stripe.error.StripeError as e:
             logger.error(f"Stripe payment session creation failed for order_id: {order.id}. Error: {str(e)}")
             raise HTTPException(status_code=400, detail=str(e))
+
+
+def get_payment_service() -> PaymentService:
+    return PaymentService(payment_repo=PaymentRepository())
