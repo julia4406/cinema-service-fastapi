@@ -19,7 +19,7 @@ settings = Settings()
 
 
 class UserRepository:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.model = UserModel
 
@@ -125,7 +125,7 @@ class UserRepository:
             logger.error(f"Error creating user by admin {user.email}: {e}")
             raise
 
-    async def update_user(self, user_id: int, user_data: UserAdminUpdateRequest):
+    async def update_user(self, user_id: int, user_data: UserAdminUpdateRequest) -> UserModel:
         try:
             user = await self.get_by_id(user_id)
             if not user:
@@ -146,7 +146,7 @@ class UserRepository:
             logger.error(f"Error updating user {user_id}: {e}")
             raise
 
-    async def delete_user(self, user_id: int):
+    async def delete_user(self, user_id: int) -> None:
         try:
             user = await self.get_by_id(user_id)
             if not user:
@@ -159,7 +159,7 @@ class UserRepository:
 
 
 class ProfileRepository:
-    def __init__(self, db: AsyncSession, s3_service: S3Service):
+    def __init__(self, db: AsyncSession, s3_service: S3Service) -> None:
         self.db = db
         self._s3_service = s3_service
 
