@@ -2,10 +2,10 @@ from fastapi import Depends
 from sqlalchemy.exc import IntegrityError
 
 from src.config.logging_settings import logger
-from src.database.exceptions.stars import StarNotFoundError, StarCreateError, StarUpdateError
+from src.database.exceptions.stars import StarCreateError, StarNotFoundError, StarUpdateError
 from src.database.models.movies import StarModel
 from src.movies.repository.stars import StarsRepository, get_stars_repository
-from src.movies.schemas.stars import StarSchema, StarCreateSchema
+from src.movies.schemas.stars import StarCreateSchema, StarSchema
 
 
 class StarsService:

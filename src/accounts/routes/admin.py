@@ -2,19 +2,18 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import EmailStr
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
-from src.database.models.accounts import ProfileModel
 
-from src.database.models import UserModel
+from src.accounts.dependencies import get_accounts_service, get_profile_service, role_required
 from src.accounts.schemas.accounts import (
-    UserAdminCreateRequest,
-    UserAdminUpdateRequest,
     ProfileUpdateRequest,
-    UserAdminResponse
+    UserAdminCreateRequest,
+    UserAdminResponse,
+    UserAdminUpdateRequest,
 )
 from src.accounts.services.accounts import AccountsService, ProfileService
-from src.accounts.dependencies import role_required, get_accounts_service, get_profile_service
-from src.database.models import UserGroupEnum
 from src.config.logging_settings import logger
+from src.database.models import UserGroupEnum, UserModel
+from src.database.models.accounts import ProfileModel
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 

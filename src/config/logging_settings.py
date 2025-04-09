@@ -1,6 +1,5 @@
 import logging
 
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 log_format = "%(asctime)s - %(levelname)s - %(message)s"

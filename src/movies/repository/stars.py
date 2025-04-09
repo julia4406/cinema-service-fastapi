@@ -1,6 +1,7 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
 from src.config.logging_settings import logger
 from src.database.models.movies import StarModel
 from src.database.session_postgresql import get_postgresql_db as get_db

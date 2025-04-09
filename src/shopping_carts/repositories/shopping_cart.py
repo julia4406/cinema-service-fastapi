@@ -1,27 +1,16 @@
 from typing import List, Optional
+
 from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from src.shopping_carts.interfaces.repositories import AbstractCartRepository
 from src.config.logging_settings import logger
-from src.database.exceptions.shopping_cart import (
-    CreateCartError,
-    CartItemError,
-    CreatePurchaseError
-)
-from src.database.models import (
-    ShoppingCartModel,
-    CartItemModel,
-    PurchasedModel, MovieModel
-)
+from src.database.exceptions.shopping_cart import CartItemError, CreateCartError, CreatePurchaseError
+from src.database.models import CartItemModel, MovieModel, PurchasedModel, ShoppingCartModel
 from src.database.utils import object_as_dict
-from src.shopping_carts.dto.shopping_cart import (
-    CartItem,
-    ShoppingCart,
-    Purchase
-)
+from src.shopping_carts.dto.shopping_cart import CartItem, Purchase, ShoppingCart
+from src.shopping_carts.interfaces.repositories import AbstractCartRepository
 
 
 class CartRepository(AbstractCartRepository):

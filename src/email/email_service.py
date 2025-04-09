@@ -1,15 +1,19 @@
 from fastapi_mail import FastMail, MessageSchema, MessageType
 from pydantic import EmailStr
-from src.config.logging_settings import logger
 
+from src.config.logging_settings import logger
+from src.config.settings import Settings
 from src.email.config import get_fastmail
 from src.email.constants import (
-    ACTIVATION_EMAIL_SUBJECT, ACTIVATION_EMAIL_BODY,
-    RESET_PASSWORD_SUBJECT, RESET_PASSWORD_BODY,
-    PAYMENT_CONFIRMATION_SUBJECT, PAYMENT_CONFIRMATION_BODY,
-    PAYMENT_CANCELLATION_SUBJECT, PAYMENT_CANCELLATION_BODY
+    ACTIVATION_EMAIL_BODY,
+    ACTIVATION_EMAIL_SUBJECT,
+    PAYMENT_CANCELLATION_BODY,
+    PAYMENT_CANCELLATION_SUBJECT,
+    PAYMENT_CONFIRMATION_BODY,
+    PAYMENT_CONFIRMATION_SUBJECT,
+    RESET_PASSWORD_BODY,
+    RESET_PASSWORD_SUBJECT,
 )
-from src.config.settings import Settings
 
 settings = Settings()
 

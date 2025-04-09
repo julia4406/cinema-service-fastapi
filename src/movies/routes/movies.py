@@ -3,17 +3,17 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 
 from src.accounts.dependencies import get_current_user, role_required
-from src.database.models.accounts import UserModel, UserGroupEnum
+from src.database.models.accounts import UserGroupEnum, UserModel
 from src.movies.schemas.movies import (
-    MovieListResponseSchema,
-    MovieDetailSchema,
-    MovieCreateSchema,
-    MovieUpdateSchema,
     DetailMessageSchema,
-    MovieLikeResponseSchema,
-    MovieFavoriteResponseSchema,
-    MovieSortEnum,
     FavoriteMoviesSchema,
+    MovieCreateSchema,
+    MovieDetailSchema,
+    MovieFavoriteResponseSchema,
+    MovieLikeResponseSchema,
+    MovieListResponseSchema,
+    MovieSortEnum,
+    MovieUpdateSchema,
 )
 from src.movies.service.movies import MoviesService, get_movies_service
 

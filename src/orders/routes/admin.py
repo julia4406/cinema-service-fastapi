@@ -1,9 +1,6 @@
 from fastapi import APIRouter, status
 
-from src.orders.controllers import (
-    admin_get_all_orders,
-    admin_update_order_status
-)
+from src.orders.controllers import admin_get_all_orders, admin_update_order_status
 
 router = APIRouter()
 

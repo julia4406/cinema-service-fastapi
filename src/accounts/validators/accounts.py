@@ -1,5 +1,5 @@
-from datetime import date
 import re
+from datetime import date
 
 from src.database.models import GenderEnum
 

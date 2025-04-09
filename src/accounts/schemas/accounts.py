@@ -1,18 +1,18 @@
-from datetime import datetime, date
+from datetime import date, datetime
 from typing import Optional
 
+from email_validator import EmailNotValidError, validate_email
 from pydantic import BaseModel, EmailStr, field_validator
-from email_validator import validate_email, EmailNotValidError
 
-from src.database.models import GenderEnum, UserGroupEnum
 from src.accounts.validators import (
-    validate_password_strength,
-    validate_info,
-    validate_gender,
-    validate_last_name,
-    validate_first_name,
     validate_date_of_birth,
+    validate_first_name,
+    validate_gender,
+    validate_info,
+    validate_last_name,
+    validate_password_strength,
 )
+from src.database.models import GenderEnum, UserGroupEnum
 
 
 class BaseUserRequest(BaseModel):

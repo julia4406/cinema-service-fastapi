@@ -1,12 +1,13 @@
-import pytest
-from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock
 
-from src.main import app
+import pytest
+from fastapi.testclient import TestClient
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.database.session_postgresql import get_postgresql_db
 from src.email.email_service import get_email_service
+from src.main import app
 
 
 @pytest.fixture

@@ -1,19 +1,16 @@
-from pydantic import EmailStr
 from fastapi import UploadFile
+from pydantic import EmailStr
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
-from src.accounts.schemas.accounts import (
-    UserAdminUpdateRequest, UserAdminCreateRequest
-)
-from src.database.models import UserModel, ProfileModel, UserGroupModel
-from src.database.models.accounts import UserGroupEnum
 from src.accounts.s3_service import S3Service
 from src.accounts.schemas import UserCreateRequest
-from src.config.settings import Settings
+from src.accounts.schemas.accounts import UserAdminCreateRequest, UserAdminUpdateRequest
 from src.config.logging_settings import logger
-
+from src.config.settings import Settings
+from src.database.models import ProfileModel, UserGroupModel, UserModel
+from src.database.models.accounts import UserGroupEnum
 
 settings = Settings()
 

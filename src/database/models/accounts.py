@@ -1,14 +1,12 @@
 import enum
-from typing import List
-from datetime import datetime, date
+from datetime import date, datetime
+from typing import List, Optional
 
-from sqlalchemy import Enum, func, ForeignKey
+from sqlalchemy import Enum, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.accounts.utils import hash_password, check_password
-
+from src.accounts.utils import check_password, hash_password
 from src.database.models import Base
-from typing import Optional
 
 
 class GenderEnum(enum.Enum):

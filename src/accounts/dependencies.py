@@ -1,24 +1,23 @@
-from typing import Coroutine, Any
+from typing import Any, Coroutine
 
 from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from src.accounts.s3_service import S3Service, get_s3_service
-from src.email.email_service import get_email_service, EmailService
-from src.accounts.repositories.accounts import UserRepository, ProfileRepository
-from src.accounts.services.accounts import AccountsService, ProfileService
+from src.accounts.repositories.accounts import ProfileRepository, UserRepository
 from src.accounts.repositories.tokens import (
     ActivationTokensRepository,
+    PasswordResetTokenRepository,
     RefreshTokensRepository,
-    PasswordResetTokenRepository
 )
-from src.accounts.security.jwt import get_jwt_service, JWTAuthManager
-from src.database.models import UserModel, UserGroupEnum
+from src.accounts.s3_service import S3Service, get_s3_service
+from src.accounts.security.jwt import JWTAuthManager, get_jwt_service
+from src.accounts.services.accounts import AccountsService, ProfileService
+from src.database.models import UserGroupEnum, UserModel
 from src.database.session_postgresql import get_postgresql_db
-
+from src.email.email_service import EmailService, get_email_service
 
 bearer_scheme = HTTPBearer()
 

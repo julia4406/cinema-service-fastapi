@@ -5,7 +5,7 @@ from src.config.logging_settings import logger
 from src.database.exceptions.genres import CreateGenreError, GenreNotFoundError, UpdateGenreError
 from src.database.models.movies import GenreModel
 from src.movies.repository.genres import GenresRepository, get_genres_repository
-from src.movies.schemas.genres import GenreSchema, GenreCreateSchema
+from src.movies.schemas.genres import GenreCreateSchema, GenreSchema
 
 
 class GenresService:

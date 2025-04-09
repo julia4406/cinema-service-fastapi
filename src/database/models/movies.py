@@ -3,8 +3,8 @@ import enum
 from typing import List
 from uuid import UUID as UUIDType
 
-from sqlalchemy import String, Text, DECIMAL, UniqueConstraint, ForeignKey, DateTime, func, Boolean
-from sqlalchemy.orm import mapped_column, Mapped, relationship
+from sqlalchemy import DECIMAL, Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database.models import Base
 

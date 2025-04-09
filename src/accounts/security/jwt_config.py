@@ -1,7 +1,8 @@
-from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
-from src.config.settings import Settings
+from cryptography.hazmat.primitives import serialization
+
 from src.config.logging_settings import logger
+from src.config.settings import Settings
 
 settings = Settings()
 

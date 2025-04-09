@@ -1,34 +1,30 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
 
 import stripe
-from fastapi import (
-    APIRouter, HTTPException, Depends, Request, BackgroundTasks, Query
-)
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.accounts.dependencies import role_required
 from src.config.logging_settings import logger
 from src.config.settings import Settings
-from src.payments.services.payments import (
-    service_get_payment_history,
-    service_get_payment_history_admin,
-    service_create_stripe_payment_session,
-    service_handle_stripe_webhook
-)
+from src.database.models.accounts import UserGroupEnum, UserModel
+from src.database.models.orders import OrderModel
+from src.database.models.payments import PaymentStatus
+from src.database.session_postgresql import get_postgresql_db
+from src.email.email_service import EmailService, get_email_service
 from src.payments.schemas.payments import (
     PaymentHistorySchema,
     PaymentResponseSchema,
 )
-from src.database.models.accounts import UserModel, UserGroupEnum
-from src.database.models.payments import PaymentStatus
-from src.database.models.orders import OrderModel
-from src.database.session_postgresql import get_postgresql_db
-from src.email.email_service import EmailService, get_email_service
-from src.accounts.dependencies import role_required
-
+from src.payments.services.payments import (
+    service_create_stripe_payment_session,
+    service_get_payment_history,
+    service_get_payment_history_admin,
+    service_handle_stripe_webhook,
+)
 
 router = APIRouter()
 settings = Settings()

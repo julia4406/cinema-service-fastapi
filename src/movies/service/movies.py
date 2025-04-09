@@ -1,22 +1,27 @@
 from typing import Optional
 
-from fastapi import HTTPException, Depends
+from fastapi import Depends, HTTPException
 
 from src.config.logging_settings import logger
-from src.database.exceptions.movies import MovieNotFoundError, MovieAlreadyExistsError, MovieCreateError, \
-    MovieUpdateError, MovieDeleteError
+from src.database.exceptions.movies import (
+    MovieAlreadyExistsError,
+    MovieCreateError,
+    MovieDeleteError,
+    MovieNotFoundError,
+    MovieUpdateError,
+)
 from src.database.models import UserModel
 from src.movies.repository.movies import MoviesRepository, get_movies_repository
 from src.movies.schemas.movies import (
-    MovieListResponseSchema,
-    MovieListItemSchema,
-    MovieDetailSchema,
-    MovieCreateSchema,
-    MovieUpdateSchema,
     DetailMessageSchema,
-    MovieLikeResponseSchema,
+    MovieCreateSchema,
+    MovieDetailSchema,
     MovieFavoriteResponseSchema,
+    MovieLikeResponseSchema,
+    MovieListItemSchema,
+    MovieListResponseSchema,
     MovieSortEnum,
+    MovieUpdateSchema,
 )
 
 

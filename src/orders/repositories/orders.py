@@ -1,17 +1,19 @@
 from datetime import datetime
 from typing import List, Optional, Tuple
-from sqlalchemy import select, func
+
+from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
+
+from src.config.logging_settings import logger
 from src.database.exceptions.orders import CreateOrderError, OrderUpdateError
-from src.database.models.orders import OrderModel, OrderItemModel, StatusEnum
 from src.database.models.movies import MovieModel
+from src.database.models.orders import OrderItemModel, OrderModel, StatusEnum
 from src.database.utils import object_as_dict
 from src.orders.dto.orders import Order, OrderItem
 from src.orders.interfaces.repositories import OrderRepositoryInterface
 from src.shopping_carts.dto.shopping_cart import CartItem
-from src.config.logging_settings import logger
 
 
 class OrderRepository(OrderRepositoryInterface):

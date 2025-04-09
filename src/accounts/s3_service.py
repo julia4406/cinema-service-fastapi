@@ -1,5 +1,6 @@
 import boto3
 from fastapi import UploadFile
+
 from src.config.settings import Settings
 
 settings = Settings()

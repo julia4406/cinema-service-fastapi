@@ -1,21 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import EmailStr
-from src.accounts.schemas.tokens import JWTTokenResponse
 
-from src.config.logging_settings import logger
+from src.accounts.dependencies import get_accounts_service, get_current_user
 from src.accounts.schemas import (
+    ChangePasswordRequest,
+    ForgotPasswordRequest,
+    RefreshTokenRequest,
+    ResetPasswordRequest,
     UserCreateRequest,
     UserCreateResponse,
     UserLoginRequest,
-    RefreshTokenRequest,
-    ChangePasswordRequest,
-    ForgotPasswordRequest,
-    ResetPasswordRequest,
 )
-from src.database.models import UserModel
-from src.accounts.dependencies import get_current_user, get_accounts_service
+from src.accounts.schemas.tokens import JWTTokenResponse
 from src.accounts.services.accounts import AccountsService
-
+from src.config.logging_settings import logger
+from src.database.models import UserModel
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

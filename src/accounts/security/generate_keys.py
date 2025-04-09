@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 
-from src.config.settings import Settings
 from src.config.logging_settings import logger
+from src.config.settings import Settings
 
 settings = Settings()
 

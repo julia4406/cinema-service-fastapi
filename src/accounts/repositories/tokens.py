@@ -1,11 +1,11 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
 
-from src.database.models.tokens import ActivationTokenModel, RefreshTokenModel, PasswordResetTokenModel
 from src.config.logging_settings import logger
+from src.database.models.tokens import ActivationTokenModel, PasswordResetTokenModel, RefreshTokenModel
 
 
 class ActivationTokensRepository:

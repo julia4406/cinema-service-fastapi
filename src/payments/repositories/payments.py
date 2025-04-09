@@ -1,14 +1,12 @@
 from datetime import datetime
+from typing import List, Optional, Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from typing import List, Optional, Sequence
 
 from src.config.logging_settings import logger
-from src.database.models.orders import OrderModel, StatusEnum, OrderItemModel
-from src.database.models.payments import (
-    PaymentModel, PaymentStatus, PaymentItemModel
-)
+from src.database.models.orders import OrderItemModel, OrderModel, StatusEnum
+from src.database.models.payments import PaymentItemModel, PaymentModel, PaymentStatus
 
 
 async def repo_get_payment_history(

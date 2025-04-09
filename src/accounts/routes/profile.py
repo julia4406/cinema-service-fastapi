@@ -1,13 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from src.database.models.accounts import ProfileModel
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
-from src.config.logging_settings import logger
-
+from src.accounts.dependencies import get_current_user, get_profile_service
 from src.accounts.schemas import ProfileResponse, ProfileUpdateRequest
 from src.accounts.services.accounts import ProfileService
-from src.accounts.dependencies import get_current_user, get_profile_service
+from src.config.logging_settings import logger
 from src.database.models import UserModel
-
+from src.database.models.accounts import ProfileModel
 
 router = APIRouter(tags=["profile"])
 

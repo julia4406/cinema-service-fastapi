@@ -1,23 +1,21 @@
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
-from datetime import datetime, timedelta, timezone
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.settings import Settings
-from src.database.models import UserModel, RefreshTokenModel
 from src.accounts.repositories.accounts import UserRepository
 from src.accounts.repositories.tokens import RefreshTokensRepository
 from src.accounts.security.jwt_config import (
+    ACCESS_EXPIRE_MINUTES,
+    JWT_ALGORITHM,
+    REFRESH_EXPIRE_DAYS,
     private_key,
     public_key,
-    JWT_ALGORITHM,
-    ACCESS_EXPIRE_MINUTES,
-    REFRESH_EXPIRE_DAYS
 )
 from src.config.logging_settings import logger
-
+from src.config.settings import Settings
+from src.database.models import RefreshTokenModel, UserModel
 
 settings = Settings()
 

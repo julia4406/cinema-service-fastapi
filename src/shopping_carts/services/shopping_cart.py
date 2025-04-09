@@ -1,9 +1,8 @@
+from src.config.logging_settings import logger
 from src.database.exceptions.shopping_cart import CartItemError
+from src.shopping_carts.dto.shopping_cart import CartItem, ShoppingCart
 from src.shopping_carts.interfaces.repositories import AbstractCartRepository
 from src.shopping_carts.interfaces.services import AbstractCartService
-from src.shopping_carts.dto.shopping_cart import ShoppingCart, CartItem
-
-from src.config.logging_settings import logger
 
 
 class CartService(AbstractCartService):

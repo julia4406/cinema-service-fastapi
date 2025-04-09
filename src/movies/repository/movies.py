@@ -1,8 +1,8 @@
-from typing import Optional, Any, Sequence
+from typing import Any, Optional, Sequence
 from uuid import uuid4
 
 from fastapi import Depends
-from sqlalchemy import Result, or_, Select
+from sqlalchemy import Result, Select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
@@ -16,11 +16,11 @@ from src.database.models.movies import (
     DirectorModel,
     GenreModel,
     MovieModel,
-    StarModel,
-    UserReactionModel,
-    UserFavoriteModel,
-    MoviesStarsModel,
     MoviesDirectorsModel,
+    MoviesStarsModel,
+    StarModel,
+    UserFavoriteModel,
+    UserReactionModel,
 )
 from src.database.models.shopping_carts import PurchasedModel
 from src.database.session_postgresql import get_postgresql_db as get_db

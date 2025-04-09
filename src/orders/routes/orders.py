@@ -1,12 +1,6 @@
 from fastapi import APIRouter, status
 
-from src.orders.controllers import (
-    create_order,
-    get_user_orders,
-    get_order,
-    cancel_pending_order,
-    confirm_order
-)
+from src.orders.controllers import cancel_pending_order, confirm_order, create_order, get_order, get_user_orders
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 

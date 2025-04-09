@@ -1,11 +1,12 @@
+from datetime import datetime, timezone
+
 from celery import shared_task
 from sqlalchemy import delete
 
-from src.database.models import RefreshTokenModel, PasswordResetTokenModel
-from src.database.session_postgresql import get_postgresql_db
-from src.database.models.tokens import ActivationTokenModel
-from datetime import datetime, timezone
 from src.config.logging_settings import logger
+from src.database.models import PasswordResetTokenModel, RefreshTokenModel
+from src.database.models.tokens import ActivationTokenModel
+from src.database.session_postgresql import get_postgresql_db
 
 
 @shared_task

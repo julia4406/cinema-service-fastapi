@@ -5,26 +5,30 @@ from pydantic import EmailStr
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from src.accounts.repositories.accounts import UserRepository, ProfileRepository
+from src.accounts.repositories.accounts import ProfileRepository, UserRepository
 from src.accounts.repositories.tokens import (
     ActivationTokensRepository,
+    PasswordResetTokenRepository,
     RefreshTokensRepository,
-    PasswordResetTokenRepository
 )
-from src.accounts.schemas.accounts import UserAdminCreateRequest, \
-    UserAdminResponse, UserAdminUpdateRequest, ProfileUpdateRequest
-from src.email.email_service import EmailService
-from src.accounts.security.jwt import JWTAuthManager
-from src.database.models import UserModel, ProfileModel
-from src.accounts.validators.accounts import validate_password_strength
 from src.accounts.schemas import (
-    UserCreateResponse,
-    UserCreateRequest,
     JWTTokenResponse,
+    RefreshTokenRequest,
+    UserCreateRequest,
+    UserCreateResponse,
     UserLoginRequest,
-    RefreshTokenRequest
 )
+from src.accounts.schemas.accounts import (
+    ProfileUpdateRequest,
+    UserAdminCreateRequest,
+    UserAdminResponse,
+    UserAdminUpdateRequest,
+)
+from src.accounts.security.jwt import JWTAuthManager
+from src.accounts.validators.accounts import validate_password_strength
 from src.config.logging_settings import logger
+from src.database.models import ProfileModel, UserModel
+from src.email.email_service import EmailService
 
 
 class AccountsService:

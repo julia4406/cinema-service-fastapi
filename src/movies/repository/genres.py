@@ -1,10 +1,11 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
+from src.config.logging_settings import logger
 from src.database.models.movies import GenreModel
 from src.database.session_postgresql import get_postgresql_db as get_db
 from src.movies.schemas.genres import GenreCreateSchema
-from src.config.logging_settings import logger
 
 
 class GenresRepository:

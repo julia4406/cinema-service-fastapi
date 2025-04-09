@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 
 from src.accounts.dependencies import role_required
-from src.database.models import UserGroupEnum
-from src.database.models import UserModel
-from src.movies.schemas.stars import StarsResponseSchema, StarSchema, StarCreateSchema
+from src.database.models import UserGroupEnum, UserModel
+from src.movies.schemas.stars import StarCreateSchema, StarSchema, StarsResponseSchema
 from src.movies.service.stars import StarsService, get_stars_service
 
 router = APIRouter()

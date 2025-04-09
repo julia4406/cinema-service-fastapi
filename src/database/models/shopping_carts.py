@@ -1,21 +1,12 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import (
-    ForeignKey,
-    UniqueConstraint,
-    DateTime,
-    func, Table, Column
-)
+from sqlalchemy import Column, DateTime, ForeignKey, Table, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from src.database.models import Base
-
 from src.database.validators.purchased import validate_movie_not_already_purchased
-from src.database.validators.shopping_carts import (
-    validate_movie_not_in_cart,
-    validate_movie_not_in_purchases
-)
+from src.database.validators.shopping_carts import validate_movie_not_in_cart, validate_movie_not_in_purchases
 
 UserCartsModel = Table(
     "user_carts",

@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, Query
 
 from src.accounts.dependencies import role_required
-from src.database.models import UserGroupEnum
-from src.database.models import UserModel
+from src.database.models import UserGroupEnum, UserModel
 from src.movies.schemas.genres import (
+    GenreCreateSchema,
     GenreSchema,
     GenresResponseSchema,
-    GenreCreateSchema,
 )
 from src.movies.service.genres import GenresService, get_genres_service
 

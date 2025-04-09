@@ -1,20 +1,15 @@
 from fastapi import Depends, HTTPException, status
 
-from src.database.models import UserGroupEnum
-from src.database.models import UserModel
 from src.accounts.dependencies import get_current_user, role_required
-
 from src.database.exceptions.orders import CreateOrderError, OrderUpdateError
-from src.orders.dependencies import get_order_service, get_admin_order_service
-from src.orders.interfaces.services import (
-    OrderServiceInterface,
-    AdminOrderServiceInterface
-)
+from src.database.models import UserGroupEnum, UserModel
+from src.orders.dependencies import get_admin_order_service, get_order_service
+from src.orders.interfaces.services import AdminOrderServiceInterface, OrderServiceInterface
 from src.orders.schemas.orders import (
-    OrderResponseSchema,
-    OrderListResponseSchema,
     OrderFilterSchema,
-    OrderStatusUpdateSchema
+    OrderListResponseSchema,
+    OrderResponseSchema,
+    OrderStatusUpdateSchema,
 )
 from src.shopping_carts.schemas.shopping_cart import MessageResponseSchema
 
