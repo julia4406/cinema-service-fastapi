@@ -161,7 +161,7 @@ class UserRepository:
 class ProfileRepository:
     def __init__(self, db: AsyncSession, s3_service: S3Service):
         self.db = db
-        self.s3_service = s3_service
+        self._s3_service = s3_service
 
     async def get_by_user_id(self, user_id: int) -> ProfileModel | None:
         try:
@@ -221,7 +221,7 @@ class ProfileRepository:
             file_extension = avatar_file.filename.split(".")[-1]
             file_key = f"avatars/{user_id}/{user_id}_avatar.{file_extension}"
 
-            avatar_url = await self.s3_service.upload_file(avatar_file, file_key)
+            avatar_url = await self._s3_service.upload_file(avatar_file, file_key)
 
             profile.avatar = avatar_url
             await self.db.commit()
