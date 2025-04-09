@@ -1,11 +1,7 @@
-import os
 from pathlib import Path
 from typing import Any, Optional
 
-from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
-
-load_dotenv()
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class AppPathsSettings(BaseSettings):
@@ -16,53 +12,85 @@ class AppPathsSettings(BaseSettings):
 
 
 class JWTSettings(BaseSettings):
-    PRIVATE_KEY_PATH: Path = os.getenv("PRIVATE_KEY_PATH", (Path(__file__).parent.parent.parent / "private_key.pem"))
-    PUBLIC_KEY_PATH: Path = os.getenv("PUBLIC_KEY_PATH", (Path(__file__).parent.parent.parent / "public_key.pem"))
+    PRIVATE_KEY_PATH: Path = Path(__file__).parent.parent.parent / "private_key.pem"
+    PUBLIC_KEY_PATH: Path = Path(__file__).parent.parent.parent / "public_key.pem"
     JWT_ALGORITHM: str = "RS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    model_config = SettingsConfigDict(
+        env_file=".env",
+    )
+
 
 class PostgresSettings(BaseSettings):
-    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "test_user")
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "test_password")
-    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "test_host")
-    POSTGRES_DB_PORT: int = int(os.getenv("POSTGRES_DB_PORT", 5432))
-    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "test_db")
+    USER: str = "test_user"
+    PASSWORD: str = "test_password"
+    HOST: str = "test_host"
+    DB_PORT: int = 5432
+    DB: str = "test_db"
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="POSTGRES_",
+    )
 
 
 class RedisSettings(BaseSettings):
-    REDIS_HOST: str = os.getenv("REDIS_HOST")
-    REDIS_PORT: int = os.getenv("REDIS_PORT")
-    REDIS_BROKER_DB: int = os.getenv("REDIS_BROKER_DB")
-    REDIS_BACKEND_DB: int = os.getenv("REDIS_BACKEND_DB")
+    HOST: str
+    PORT: int
+    BROKER_DB: int
+    BACKEND_DB: int
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="REDIS_",
+    )
 
 
 class MailSettings(BaseSettings):
-    MAIL_USERNAME: str = os.getenv("MAIL_USERNAME")
-    MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD")
-    MAIL_FROM: str = os.getenv("MAIL_FROM")
-    MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME")
-    MAIL_PORT: int = int(os.getenv("MAIL_PORT", "587"))
-    MAIL_SERVER: str = os.getenv("MAIL_SERVER")
-    MAIL_STARTTLS: bool = os.getenv("MAIL_STARTTLS", "True") == "True"
-    MAIL_SSL_TLS: bool = os.getenv("MAIL_SSL_TLS", "False") == "True"
+    USERNAME: str
+    PASSWORD: str
+    FROM: str
+    FROM_NAME: str
+    PORT: int = 587
+    SERVER: str
+    STARTTLS: bool = True
+    SSL_TLS: bool = True
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="MAIL_",
+    )
 
 
 class AWSSettings(BaseSettings):
-    AWS_ACCESS_KEY: str = os.getenv("AWS_ACCESS_KEY")
-    AWS_SECRET_KEY: str = os.getenv("AWS_SECRET_KEY")
-    S3_BUCKET: str = os.getenv("S3_BUCKET")
-    AWS_REGION: Optional[str] = os.getenv("AWS_REGION", "us-east-1")
+    AWS_ACCESS_KEY: str
+    AWS_SECRET_KEY: str
+    S3_BUCKET: str
+    AWS_REGION: Optional[str] = "us-east-1"
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+    )
 
 
 class StripeSettings(BaseSettings):
-    STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY")
-    STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET")
+    SECRET_KEY: str
+    WEBHOOK_SECRET: str
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="STRIPE_",
+    )
 
 
 class ServiceSettings(BaseSettings):
-    SERVICE_URL: str = os.getenv("SERVICE_URL")
+    SERVICE_URL: str
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+    )
 
 
 class BaseAppSettings(AppPathsSettings, JWTSettings):
