@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-ENV_FILE = env_file=Path(__file__).parent.parent.parent / ".env"
+ENV_FILE = Path(__file__).parent.parent.parent / ".env"
 
 
 class AppPathsSettings(BaseSettings):
