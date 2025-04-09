@@ -26,7 +26,7 @@ from src.movies.schemas.movies import (
 
 
 class MoviesService:
-    def __init__(self, repository: MoviesRepository):
+    def __init__(self, repository: MoviesRepository) -> None:
         self.repository = repository
         logger.info("MoviesService initialized")
 
@@ -36,7 +36,7 @@ class MoviesService:
         sort_by: Optional[MovieSortEnum] = None,
         page: int = 1,
         per_page: int = 10,
-    ):
+    ) -> MovieListResponseSchema:
         logger.info(f"Fetching movies with filters={filters}, sort_by={sort_by}, "
                     f"page={page}, per_page={per_page}")
         filtered_movies = await self.repository.filter_movies(
@@ -68,7 +68,7 @@ class MoviesService:
             total_items=total_items,
         )
 
-    async def get_movie_by_id(self, movie_id):
+    async def get_movie_by_id(self, movie_id: int) -> MovieDetailSchema:
         logger.info(f"Fetching movie with id={movie_id}")
         movie = await self.repository.get_movie_by_id(movie_id)
 
@@ -79,7 +79,7 @@ class MoviesService:
         logger.info(f"Movie found: {movie.name}")
         return MovieDetailSchema.model_validate(movie)
 
-    async def create_movie(self, movie_data: MovieCreateSchema):
+    async def create_movie(self, movie_data: MovieCreateSchema) -> MovieDetailSchema:
         logger.info(f"Creating movie: {movie_data.name}")
         existing_movie = await self.repository.get_movie_by_name(movie_data)
 
@@ -98,7 +98,9 @@ class MoviesService:
             await self.repository.db.rollback()
             raise MovieCreateError("Invalid input data.")
 
-    async def update_movie(self, movie_id: int, movie_data: MovieUpdateSchema):
+    async def update_movie(
+            self, movie_id: int, movie_data: MovieUpdateSchema
+    ) -> DetailMessageSchema:
         logger.info(f"Updating movie with id={movie_id}")
         movie = await self.repository.get_movie_by_id(movie_id)
 
@@ -120,7 +122,7 @@ class MoviesService:
         else:
             return DetailMessageSchema(detail="Movie updated successfully.")
 
-    async def delete_movie(self, movie_id: int):
+    async def delete_movie(self, movie_id: int) -> None:
         logger.info(f"Deleting movie with id={movie_id}")
         movie = await self.repository.get_movie_by_id(movie_id)
 
@@ -183,7 +185,7 @@ class MoviesService:
             sort_by: Optional[MovieSortEnum] = None,
             page: int = 1,
             per_page: int = 10,
-    ):
+    ) -> MovieListResponseSchema:
         logger.info(f"Fetch user {user.id} favorite movies by filters: {filters}")
         filtered_movies = await self.repository.get_user_favorite_movies(
             filters=filters, sort_by=sort_by, user=user

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 
 from src.accounts.dependencies import role_required
 from src.database.models import UserGroupEnum, UserModel
+from src.database.models.movies import GenreModel
 from src.movies.schemas.genres import (
     GenreCreateSchema,
     GenreSchema,
@@ -21,7 +22,7 @@ async def get_genres_list(
     per_page: int = Query(10, ge=1, le=100),
     service: GenresService = Depends(get_genres_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
-):
+) -> dict:
     return await service.get_genres(page, per_page)
 
 
@@ -33,7 +34,7 @@ async def get_genre(
     genre_id: int,
     service: GenresService = Depends(get_genres_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
-):
+) -> GenreModel:
     return await service.get_one_genre(genre_id)
 
 
@@ -46,7 +47,7 @@ async def create_genre(
     genre_data: GenreCreateSchema,
     service: GenresService = Depends(get_genres_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
-):
+) -> GenreSchema:
     return await service.create_genre(genre_data)
 
 
@@ -59,7 +60,7 @@ async def update_genre(
     new_genre: GenreCreateSchema,
     service: GenresService = Depends(get_genres_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
-):
+) -> dict:
     return await service.update_genre(genre_id, new_genre)
 
 
@@ -68,5 +69,5 @@ async def delete_genre(
     genre_id: int,
     service: GenresService = Depends(get_genres_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
-):
+) -> None:
     return await service.delete_genre(genre_id)

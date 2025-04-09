@@ -9,11 +9,11 @@ from src.movies.schemas.stars import StarCreateSchema, StarSchema
 
 
 class StarsService:
-    def __init__(self, repository: StarsRepository):
+    def __init__(self, repository: StarsRepository) -> None:
         self.repository = repository
         logger.info("StarsService initialized")
 
-    async def get_stars(self, page: int = 1, per_page: int = 10):
+    async def get_stars(self, page: int = 1, per_page: int = 10) -> dict:
         logger.info(f"Fetching stars with page={page}, per_page={per_page}")
         offset = (page - 1) * per_page
         stars = await self.repository.get_stars(limit=per_page, offset=offset)
@@ -46,7 +46,7 @@ class StarsService:
         }
         return response_data
 
-    async def get_one_star(self, star_id: int):
+    async def get_one_star(self, star_id: int) -> StarModel:
         logger.info(f"Fetching star with id={star_id}")
         star = await self.repository.get_star(star_id)
         if not star:
@@ -56,7 +56,7 @@ class StarsService:
         logger.info(f"Star found: {star.name}")
         return star
 
-    async def create_star(self, star: StarCreateSchema):
+    async def create_star(self, star: StarCreateSchema) -> StarSchema:
         logger.info(f"Creating star with name={star.name}")
         new_star = StarModel(
             name=star.name,
@@ -77,7 +77,7 @@ class StarsService:
                 f"Error occurred while creating star with name={star.name}")
             raise StarCreateError("Invalid input data.")
 
-    async def update_star(self, star_id: int, star: StarCreateSchema):
+    async def update_star(self, star_id: int, star: StarCreateSchema) -> dict:
         logger.info(f"Updating star with id={star_id}")
         result = await self.repository.update_star(star_id, star)
         if result:
@@ -89,7 +89,7 @@ class StarsService:
                 "Star with the given ID was not found."
             )
 
-    async def delete_star(self, star_id: int):
+    async def delete_star(self, star_id: int) -> None:
         logger.info(f"Deleting star with id={star_id}")
         result = await self.repository.delete_star(star_id)
 

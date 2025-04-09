@@ -44,7 +44,7 @@ async def get_movies(
     sort_by: Optional[MovieSortEnum] = Query(
         None, description="Sort movies by criteria"
     ),
-):
+) -> MovieListResponseSchema:
     filters = {
         "name": search_title,
         "search_person": search_person,
@@ -68,7 +68,7 @@ async def get_movie(
     movie_id: int,
     service: MoviesService = Depends(get_movies_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.USER)),
-):
+) -> MovieDetailSchema:
     return await service.get_movie_by_id(movie_id)
 
 
@@ -82,7 +82,7 @@ async def create_movie(
     movie_data: MovieCreateSchema,
     service: MoviesService = Depends(get_movies_service),
     current_user: UserModel = Depends(role_required(UserGroupEnum.MODERATOR)),
-):
+) -> MovieDetailSchema:
     return await service.create_movie(movie_data)
 
 

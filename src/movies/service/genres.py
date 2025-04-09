@@ -9,11 +9,11 @@ from src.movies.schemas.genres import GenreCreateSchema, GenreSchema
 
 
 class GenresService:
-    def __init__(self, repository: GenresRepository):
+    def __init__(self, repository: GenresRepository) -> None:
         self.repository = repository
         logger.info("GenresService initialized")
 
-    async def get_genres(self, page: int = 1, per_page: int = 10):
+    async def get_genres(self, page: int = 1, per_page: int = 10) -> dict:
         offset = (page - 1) * per_page
         logger.info(f"Fetching genres with page={page}, per_page={per_page}")
         genres = await self.repository.get_genres(limit=per_page, offset=offset)
@@ -47,7 +47,7 @@ class GenresService:
         logger.info("Genres fetched successfully")
         return response_data
 
-    async def get_one_genre(self, genre_id: int):
+    async def get_one_genre(self, genre_id: int) -> GenreModel:
         logger.info(f"Fetching genre with id={genre_id}")
         genre = await self.repository.get_genre(genre_id)
         if not genre:
@@ -56,7 +56,7 @@ class GenresService:
         logger.info(f"Genre found: {genre.name}")
         return genre
 
-    async def create_genre(self, genre: GenreCreateSchema):
+    async def create_genre(self, genre: GenreCreateSchema) -> GenreSchema:
         logger.info(f"Creating genre: {genre.name}")
         new_genre = GenreModel(
             name=genre.name,
@@ -75,7 +75,7 @@ class GenresService:
             logger.error("IntegrityError occurred during genre creation")
             raise CreateGenreError("Invalid input data.")
 
-    async def update_genre(self, genre_id: int, genre: GenreCreateSchema):
+    async def update_genre(self, genre_id: int, genre: GenreCreateSchema) -> dict:
         logger.info(f"Updating genre with id={genre_id}")
         result = await self.repository.update_genre(genre_id, genre)
         if result:
@@ -87,7 +87,7 @@ class GenresService:
                 "Genre with the given ID was not found."
             )
 
-    async def delete_genre(self, genre_id: int):
+    async def delete_genre(self, genre_id: int) -> None:
         logger.info(f"Deleting genre with id={genre_id}")
         result = await self.repository.delete_genre(genre_id)
 

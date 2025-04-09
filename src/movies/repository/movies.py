@@ -28,7 +28,7 @@ from src.movies.schemas.movies import MovieCreateSchema, MovieSortEnum
 
 
 class MoviesRepository:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
         logger.info("MoviesRepository initialized")
 
@@ -112,7 +112,9 @@ class MoviesRepository:
 
         return certification
 
-    async def get_or_create_entities(self, model, names: list[str]) -> list[Any]:
+    async def get_or_create_entities(
+            self, model: Any, names: list[str]
+    ) -> list[Any]:
         logger.info(f"Fetching or creating entities: {model}, {names}")
         objects = []
         for name in names:
@@ -354,8 +356,8 @@ class MoviesRepository:
         filters: dict[str, str],
         sort_by: Optional[MovieSortEnum] = None,
         user: UserModel = None,
-    ):
-        logger.info(f"Fetching favorite movies for user_id: {user_id}")
+    ) -> Sequence[MovieModel]:
+        logger.info(f"Fetching favorite movies for user_id: {user.id}")
         query = self.get_filters_data(filters=filters, sort_by=sort_by, user=user)
         result = await self.db.execute(query)
         favorite_movies = result.scalars().all()
