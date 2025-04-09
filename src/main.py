@@ -1,15 +1,15 @@
 import uvicorn
 from fastapi import FastAPI
 
-from src.payments.routes.payments import router as payment_router
-from src.shopping_carts.routes.shopping_cart import router as shopping_cart_router
-from src.shopping_carts.routes.admin import router as admin_shopping_cart_router
-from src.orders.routes.orders import router as orders_router
-from src.orders.routes.admin import router as admin_orders_router
+from src.accounts.routes.admin import router as admin_router
 from src.accounts.routes.auth import router as auth_router
 from src.accounts.routes.profile import router as profile_router
-from src.accounts.routes.admin import router as admin_router
 from src.movies.routes import router as movies_router
+from src.orders.routes.admin import router as admin_orders_router
+from src.orders.routes.orders import router as orders_router
+from src.payments.routes.payments import router as payment_router
+from src.shopping_carts.routes.admin import router as admin_shopping_cart_router
+from src.shopping_carts.routes.shopping_cart import router as shopping_cart_router
 
 app = FastAPI(
     title="Online Cinema Service"

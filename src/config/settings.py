@@ -1,66 +1,106 @@
-import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
-from pydantic_settings import BaseSettings
-
-from dotenv import load_dotenv
-load_dotenv()
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class BaseAppSettings(BaseSettings):
+ENV_FILE = Path(__file__).parent.parent.parent / ".env"
+
+
+class AppPathsSettings(BaseSettings):
     ROOT_DIR: Path = Path(__file__).parent.parent.parent
     BASE_DIR: Path = Path(__file__).parent.parent
     PATH_TO_DB: str = str(BASE_DIR / "database" / "source" / "theater.db")
     PATH_TO_MOVIES_CSV: str = str(BASE_DIR / "database" / "seed_data" / "imdb_movies.csv")
-    LOGIN_TIME_DAYS: int = 7
 
-    PRIVATE_KEY_PATH: Path = os.getenv("PRIVATE_KEY_PATH", (ROOT_DIR / "private_key.pem"))
-    PUBLIC_KEY_PATH: Path = os.getenv("PUBLIC_KEY_PATH", (ROOT_DIR / "public_key.pem"))
+
+class JWTSettings(BaseSettings):
+    PRIVATE_KEY_PATH: Path = Path(__file__).parent.parent.parent / "private_key.pem"
+    PUBLIC_KEY_PATH: Path = Path(__file__).parent.parent.parent / "public_key.pem"
     JWT_ALGORITHM: str = "RS256"
-
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-
-class Settings(BaseAppSettings):
-    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "test_user")
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "test_password")
-    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "test_host")
-    POSTGRES_DB_PORT: int = int(os.getenv("POSTGRES_DB_PORT", 5432))
-    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "test_db")
-
-    REDIS_HOST: str = os.getenv("REDIS_HOST")
-    REDIS_PORT: int = os.getenv("REDIS_PORT")
-    REDIS_BROKER_DB: int = os.getenv("REDIS_BROKER_DB")
-    REDIS_BACKEND_DB: int = os.getenv("REDIS_BACKEND_DB")
-
-    MAIL_USERNAME: str = os.getenv("MAIL_USERNAME")
-    MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD")
-    MAIL_FROM: str = os.getenv("MAIL_FROM")
-    MAIL_FROM_NAME: str = os.getenv("MAIL_FROM_NAME")
-    MAIL_PORT: int = int(os.getenv("MAIL_PORT", "587"))
-    MAIL_SERVER: str = os.getenv("MAIL_SERVER")
-    MAIL_STARTTLS: bool = os.getenv("MAIL_STARTTLS", "True") == "True"
-    MAIL_SSL_TLS: bool = os.getenv("MAIL_SSL_TLS", "False") == "True"
-
-    AWS_ACCESS_KEY: str = os.getenv("AWS_ACCESS_KEY")
-    AWS_SECRET_KEY: str = os.getenv("AWS_SECRET_KEY")
-    S3_BUCKET: str = os.getenv("S3_BUCKET")
-    AWS_REGION: Optional[str] = os.getenv("AWS_REGION", "us-east-1")
-
-    SERVICE_URL: str = os.getenv("SERVICE_URL")
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE,
+    )
 
 
-class TestingSettings(BaseAppSettings):
-    SECRET_KEY_ACCESS: str = "SECRET_KEY_ACCESS"
-    SECRET_KEY_REFRESH: str = "SECRET_KEY_REFRESH"
-    JWT_SIGNING_ALGORITHM: str = "HS256"
+class PostgresSettings(BaseSettings):
+    USER: str = "test_user"
+    PASSWORD: str = "test_password"
+    HOST: str = "test_host"
+    DB_PORT: int = 5432
+    DB: str = "test_db"
 
-    def model_post_init(self, __context: dict[str, Any] | None = None) -> None:
-        object.__setattr__(self, 'PATH_TO_DB', ":memory:")
-        object.__setattr__(
-            self,
-            'PATH_TO_MOVIES_CSV',
-            str(self.BASE_DIR / "database" / "seed_data" / "test_data.csv")
-        )
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE,
+        env_prefix="POSTGRES_",
+    )
+
+
+class RedisSettings(BaseSettings):
+    HOST: str
+    PORT: int
+    BROKER_DB: int
+    BACKEND_DB: int
+
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE,
+        env_prefix="REDIS_",
+    )
+
+
+class MailSettings(BaseSettings):
+    USERNAME: str
+    PASSWORD: str
+    FROM: str
+    FROM_NAME: str
+    PORT: int = 587
+    SERVER: str
+    STARTTLS: bool = True
+    SSL_TLS: bool = True
+
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE,
+        env_prefix="MAIL_",
+    )
+
+
+class AWSSettings(BaseSettings):
+    AWS_ACCESS_KEY: str
+    AWS_SECRET_KEY: str
+    S3_BUCKET: str
+    AWS_REGION: Optional[str] = "us-east-1"
+
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE,
+    )
+
+
+class StripeSettings(BaseSettings):
+    SECRET_KEY: str
+    WEBHOOK_SECRET: str
+
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE,
+        env_prefix="STRIPE_",
+    )
+
+
+class ServiceSettings(BaseSettings):
+    SERVICE_URL: str
+
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE,
+    )
+
+
+class BaseAppSettings(AppPathsSettings, JWTSettings):
+    LOGIN_TIME_DAYS: int = 7
+
+
+class Settings(
+    BaseAppSettings, PostgresSettings, RedisSettings, MailSettings, AWSSettings, StripeSettings, ServiceSettings
+):
+    pass

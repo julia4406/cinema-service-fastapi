@@ -1,20 +1,15 @@
 from fastapi import Depends, HTTPException, status
 
-from src.database.models import UserGroupEnum
-from src.database.models import UserModel
 from src.accounts.dependencies import get_current_user, role_required
-
 from src.database.exceptions.orders import CreateOrderError, OrderUpdateError
-from src.orders.dependencies import get_order_service, get_admin_order_service
-from src.orders.interfaces.services import (
-    OrderServiceInterface,
-    AdminOrderServiceInterface
-)
+from src.database.models import UserGroupEnum, UserModel
+from src.orders.dependencies import get_admin_order_service, get_order_service
+from src.orders.interfaces.services import AdminOrderServiceInterface, OrderServiceInterface
 from src.orders.schemas.orders import (
-    OrderResponseSchema,
-    OrderListResponseSchema,
     OrderFilterSchema,
-    OrderStatusUpdateSchema
+    OrderListResponseSchema,
+    OrderResponseSchema,
+    OrderStatusUpdateSchema,
 )
 from src.shopping_carts.schemas.shopping_cart import MessageResponseSchema
 
@@ -23,16 +18,17 @@ async def create_order(
         user: UserModel = Depends(get_current_user),
         order_service: OrderServiceInterface = Depends(get_order_service),
 ) -> OrderResponseSchema:
-    # Create an order from the user's cart.
-    # Args:
-    #     user (UserModel): Current authenticated user.
-    #     order_service (OrderServiceInterface): Order service instance.
-    # Returns:
-    #     OrderResponseSchema: The created order.
+    """Create an order from the user's cart.
+    Args:
+        user (UserModel): Current authenticated user.
+        order_service (OrderServiceInterface): Order service instance.
+    Returns:
+        OrderResponseSchema: The created order.
+        """
     try:
         order = await order_service.create_order(user.id)
         return OrderResponseSchema(**order.__dict__)
-    except CreateOrderError as e:
+    except OrderUpdateError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -40,12 +36,13 @@ async def get_user_orders(
         user: UserModel = Depends(get_current_user),
         order_service: OrderServiceInterface = Depends(get_order_service),
 ) -> OrderListResponseSchema:
-    # Retrieve a list of all orders for the user.
-    # Args:
-    #     user (UserModel): Current authenticated user.
-    #     order_service (OrderServiceInterface): Order service instance.
-    # Returns:
-    #     OrderListResponseSchema: List of user's orders.
+    """Retrieve a list of all orders for the user.
+    Args:
+        user (UserModel): Current authenticated user.
+        order_service (OrderServiceInterface): Order service instance.
+    Returns:
+        OrderListResponseSchema: List of user's orders.
+        """
     orders = await order_service.get_user_orders(user.id)
     total = len(orders)
     return OrderListResponseSchema(orders=orders, total=total)
@@ -56,13 +53,14 @@ async def get_order(
         user: UserModel = Depends(get_current_user),
         order_service: OrderServiceInterface = Depends(get_order_service),
 ) -> OrderResponseSchema:
-    # Retrieve details of a specific order.
-    # Args:
-    #     order_id (int): ID of the order to retrieve.
-    #     user (UserModel): Current authenticated user.
-    #     order_service (OrderServiceInterface): Order service instance.
-    # Returns:
-    #     OrderResponseSchema: Order details.
+    """Retrieve details of a specific order.
+    Args:
+        order_id (int): ID of the order to retrieve.
+        user (UserModel): Current authenticated user.
+        order_service (OrderServiceInterface): Order service instance.
+    Returns:
+        OrderResponseSchema: Order details.
+        """
     try:
         order = await order_service.get_order(user.id, order_id)
         return OrderResponseSchema(**order.__dict__)
@@ -75,13 +73,14 @@ async def cancel_pending_order(
         user: UserModel = Depends(get_current_user),
         order_service: OrderServiceInterface = Depends(get_order_service),
 ) -> MessageResponseSchema:
-    # Cancel a pending order (changes status from pending to cancelled).
-    # Args:
-    #     order_id (int): ID of the order to cancel.
-    #     user (UserModel): Current authenticated user.
-    #     order_service (OrderServiceInterface): Order service instance.
-    # Returns:
-    #     MessageResponseSchema: Success message.
+    """Cancel a pending order (changes status from pending to cancelled).
+    Args:
+        order_id (int): ID of the order to cancel.
+        user (UserModel): Current authenticated user.
+        order_service (OrderServiceInterface): Order service instance.
+    Returns:
+        MessageResponseSchema: Success message.
+        """
     try:
         await order_service.cancel_pending_order(user.id, order_id)
         return MessageResponseSchema(message="Order cancelled successfully")
@@ -94,13 +93,14 @@ async def confirm_order(
         user: UserModel = Depends(get_current_user),
         order_service: OrderServiceInterface = Depends(get_order_service),
 ) -> OrderResponseSchema:
-    # Confirm an order (changes status from pending to paid).
-    # Args:
-    #     order_id (int): ID of the order to confirm.
-    #     user (UserModel): Current authenticated user.
-    #     order_service (OrderServiceInterface): Order service instance.
-    # Returns:
-    #     OrderResponseSchema: Updated order details.
+    """Confirm an order (changes status from pending to paid).
+        Args:
+            order_id (int): ID of the order to confirm.
+            user (UserModel): Current authenticated user.
+            order_service (OrderServiceInterface): Order service instance.
+        Returns:
+            OrderResponseSchema: Updated order details.
+        """
     try:
         order = await order_service.confirm_order(user.id, order_id)
         return OrderResponseSchema(**order.__dict__)
@@ -110,11 +110,9 @@ async def confirm_order(
 
 async def admin_get_all_orders(
         filters: OrderFilterSchema = Depends(),
-        order_service: OrderServiceInterface = Depends(
-            get_admin_order_service
-        ),
+        order_service: get_admin_order_service = Depends(get_order_service),
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN))
-):
+) -> OrderListResponseSchema:
     """Retrieve a list of all orders with filters and pagination for admins.
         Args:
             filters (OrderFilterSchema): Filtering options including user_id, date range, status, limit, and offset.
@@ -144,7 +142,7 @@ async def admin_update_order_status(
             get_admin_order_service
         ),
         admin: UserModel = Depends(role_required(UserGroupEnum.ADMIN))
-):
+) -> None:
     """Update the status of a specific order manually by an admin.
         Args:
             order_id (int): ID of the order to update.

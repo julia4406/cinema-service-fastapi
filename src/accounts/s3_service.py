@@ -1,12 +1,13 @@
 import boto3
 from fastapi import UploadFile
+
 from src.config.settings import Settings
 
 settings = Settings()
 
 
 class S3Service:
-    def __init__(self):
+    def __init__(self) -> None:
         self.s3_client = boto3.client(
             "s3",
             aws_access_key_id=settings.AWS_ACCESS_KEY,

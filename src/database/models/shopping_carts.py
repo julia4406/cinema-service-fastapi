@@ -1,21 +1,12 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import (
-    ForeignKey,
-    UniqueConstraint,
-    DateTime,
-    func, Table, Column
-)
+from sqlalchemy import Column, DateTime, ForeignKey, Table, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from src.database.models import Base
-
 from src.database.validators.purchased import validate_movie_not_already_purchased
-from src.database.validators.shopping_carts import (
-    validate_movie_not_in_cart,
-    validate_movie_not_in_purchases
-)
+from src.database.validators.shopping_carts import validate_movie_not_in_cart, validate_movie_not_in_purchases
 
 UserCartsModel = Table(
     "user_carts",
@@ -84,7 +75,7 @@ class ShoppingCartModel(Base):
         cascade="all, delete-orphan",
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<ShoppingCartModel(id={self.id}, user_id={self.user_id})>"
 
 
@@ -123,13 +114,13 @@ class CartItemModel(Base):
         ),
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (f"<CartItemModel(id={self.id},"
                 f" cart_id={self.cart_id},"
                 f" movie_id={self.movie_id})>")
 
     @validates("movie_id")
-    def validate_movie(self, key, movie_id):
+    def validate_movie(self, movie_id: int) -> int:
         validate_movie_not_in_purchases(self, movie_id)
         validate_movie_not_in_cart(self, movie_id)
         return movie_id
@@ -171,8 +162,8 @@ class PurchasedModel(Base):
     )
 
     @validates("movie_id")
-    def validate_movie_not_already_purchased(self, key, movie_id):
+    def validate_movie_not_already_purchased(self, movie_id: int) -> int:
         return validate_movie_not_already_purchased(self, movie_id)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<PurchasedModel(id={self.id}, user_id={self.user_id}, movie_id={self.movie_id})>"

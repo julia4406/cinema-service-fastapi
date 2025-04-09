@@ -1,24 +1,11 @@
 from fastapi import Depends, HTTPException
 
-from src.database.models import UserGroupEnum
 from src.accounts.dependencies import get_current_user, role_required
-from src.database.exceptions.shopping_cart import (
-    CreateCartError,
-    CartItemError
-)
-from src.database.models import UserModel
-from src.shopping_carts.dependencies import (
-    get_cart_service,
-    get_admin_cart_service
-)
-from src.shopping_carts.interfaces.services import (
-    AbstractCartService
-)
-from src.shopping_carts.schemas.shopping_cart import (
-    CartResponseSchema,
-    CartItemResponseSchema,
-    MessageResponseSchema
-)
+from src.database.exceptions.shopping_cart import CartItemError, CreateCartError
+from src.database.models import UserGroupEnum, UserModel
+from src.shopping_carts.dependencies import get_admin_cart_service, get_cart_service
+from src.shopping_carts.interfaces.services import AbstractCartService
+from src.shopping_carts.schemas.shopping_cart import CartItemResponseSchema, CartResponseSchema, MessageResponseSchema
 
 
 async def get_cart(
@@ -135,7 +122,7 @@ async def admin_add_movie_to_cart(
         ),
 ) -> CartResponseSchema:
     try:
-        cart = await cart_service.add_item_to_cart_admin(user_id, movie_id)
+        cart = await cart_service.add_item_to_cart(user_id, movie_id)
         return CartResponseSchema(**cart.__dict__)
     except CartItemError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -3,16 +3,17 @@ from pydantic import EmailStr
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from src.database.models import UserModel
+from src.accounts.dependencies import get_accounts_service, get_profile_service, role_required
 from src.accounts.schemas.accounts import (
-    UserAdminCreateRequest,
-    UserAdminUpdateRequest,
     ProfileUpdateRequest,
-    UserAdminResponse
+    UserAdminCreateRequest,
+    UserAdminResponse,
+    UserAdminUpdateRequest,
 )
 from src.accounts.services.accounts import AccountsService, ProfileService
-from src.accounts.dependencies import role_required, get_accounts_service, get_profile_service
-from src.database.models import UserGroupEnum
+from src.config.logging_settings import logger
+from src.database.models import UserGroupEnum, UserModel
+from src.database.models.accounts import ProfileModel
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -22,8 +23,9 @@ async def get_user_by_email(
     user_email: EmailStr,
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
     service: AccountsService = Depends(get_accounts_service)
-):
+) -> UserAdminResponse:
     try:
+        logger.info(f"Fetching user by email: {user_email}")
         user = await service.get_by_email(user_email)
         result = await service.db.execute(
             select(UserModel)
@@ -52,6 +54,7 @@ async def get_user_by_email(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid data")
     except Exception:
+        logger.error(f"Error fetching user by email: {user_email}")
         raise HTTPException(status_code=500, detail="Something went wrong")
 
 
@@ -60,12 +63,14 @@ async def register_user(
     user_data: UserAdminCreateRequest,
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
     service: AccountsService = Depends(get_accounts_service)
-):
+) -> UserAdminResponse:
     try:
+        logger.info("Registering new user")
         return await service.register_user_by_admin(user_data)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid data")
     except Exception:
+        logger.error("Error registering user")
         raise HTTPException(status_code=500, detail="Something went wrong")
 
 
@@ -75,12 +80,14 @@ async def update_user(
     user_data: UserAdminUpdateRequest,
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
     service: AccountsService = Depends(get_accounts_service)
-):
+) -> UserAdminResponse:
     try:
+        logger.info(f"Updating user with ID: {user_id}")
         return await service.update_user(user_id, user_data)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid data")
     except Exception:
+        logger.error(f"Error updating user with ID: {user_id}")
         raise HTTPException(status_code=500, detail="Something went wrong")
 
 
@@ -91,8 +98,9 @@ async def update_profile(
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
     account_service: AccountsService = Depends(get_accounts_service),
     profile_service: ProfileService = Depends(get_profile_service)
-):
+) -> UserAdminResponse:
     try:
+        logger.info(f"Updating profile for user with ID: {user_id}")
         user = await account_service.user_repo.get_by_id(user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
@@ -126,6 +134,7 @@ async def update_profile(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid data")
     except Exception:
+        logger.error(f"Error updating profile for user with ID: {user_id}")
         raise HTTPException(status_code=500, detail="Something went wrong")
 
 
@@ -134,11 +143,13 @@ async def delete_user(
     user_id: int,
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
     service: AccountsService = Depends(get_accounts_service)
-):
+) -> None:
     try:
+        logger.info(f"Deleting user with ID: {user_id}")
         await service.delete_user(user_id, current_user)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid data")
     except Exception:
+        logger.error(f"Error deleting user with ID: {user_id}")
         raise HTTPException(status_code=500, detail="Something went wrong")
     return None

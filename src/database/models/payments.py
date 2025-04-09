@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
+from enum import Enum
 from typing import Optional
 
-from sqlalchemy import ForeignKey, DateTime, DECIMAL, String, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import DECIMAL, DateTime
 from sqlalchemy import Enum as SQLAlchemyEnum
-from enum import Enum
+from sqlalchemy import ForeignKey, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database.models import Base
 

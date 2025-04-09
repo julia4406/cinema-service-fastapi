@@ -2,15 +2,6 @@ from logging.config import fileConfig
 
 from alembic import context
 
-# from database.models import (
-#     movies,
-#     accounts,
-#     orders,
-#     payments,
-#     shopping_carts,
-#     tokens
-# )   # noqa: F401
-
 from src.database.models.movies import Base as MoviesBase
 from src.database.models.accounts import Base as AccountsBase
 from src.database.models.orders import Base as OrdersBase

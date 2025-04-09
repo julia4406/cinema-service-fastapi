@@ -1,75 +1,145 @@
-# from fastapi import Depends, HTTPException
-# from sqlalchemy.ext.asyncio import AsyncSession
-# from sqlalchemy import select
-#
-# from src.database.models.orders import OrderModel, StatusEnum
-# from src.database.models import PaymentModel, PaymentStatus
-# from src.config.settings import Settings
-#
-#
-# settings = Settings()
-#
-#
-# class PaymentRepository:
-#     def __init__(self, db: AsyncSession):
-#         self.db = db
-#
-#     async def canceled_payment_model(
-#             self, payment_id: int, order_id:int
-#     ) -> None:
-#         payment_res = await self.db.execute(
-#             select(PaymentModel).filter_by(id=payment_id))
-#         payment = payment_res.scalars().first()
-#
-#         if not payment:
-#             raise HTTPException(
-#                 status_code=400,
-#                 detail="Payment not found."
-#             )
-#
-#         payment.status = PaymentStatus.CANCELED
-#         await self.db.flush()
-#
-#         order_res = await self.db.execute(select(OrderModel).filter_by(
-#             id=order_id
-#         ))
-#         order = order_res.scalars().first()
-#
-#         if not order:
-#             raise HTTPException(
-#                 status_code=400,
-#                 detail="Order not found."
-#             )
-#         order.status = StatusEnum.CANCELLED
-#         await self.db.commit()
-#
-#     async def successful_payment_model(
-#             self, payment_id: int, order_id:int
-#     ) -> None:
-#         payment_res = await self.db.execute(
-#             select(PaymentModel).filter_by(id=payment_id))
-#         payment = payment_res.scalars().first()
-#
-#         if not payment:
-#             raise HTTPException(
-#                 status_code=400,
-#                 detail="Payment not found."
-#             )
-#
-#         payment.status = PaymentStatus.SUCCESSFUL
-#         await self.db.flush()
-#
-#         order_res = await self.db.execute(select(OrderModel).filter_by(
-#             id=order_id
-#         ))
-#         order = order_res.scalars().first()
-#
-#         if not order:
-#             raise HTTPException(
-#                 status_code=400,
-#                 detail="Order not found."
-#             )
-#         order.status = StatusEnum.PAID
-#         await self.db.commit()
-#
-#
+from datetime import datetime
+from typing import List, Optional, Sequence
+
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from src.database.models.accounts import UserModel
+
+from src.config.logging_settings import logger
+from src.database.models.orders import OrderItemModel, OrderModel, StatusEnum
+from src.database.models.payments import PaymentItemModel, PaymentModel, PaymentStatus
+
+
+class PaymentRepository:
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
+
+    async def get_payment_history_by_user_id(self, user_id: int) -> Sequence[PaymentModel]:
+        logger.info("Get payment history from db")
+        payment_history_res = await self.db.execute(
+            select(PaymentModel).filter_by(user_id=user_id)
+        )
+        payments = payment_history_res.scalars().all()
+
+        if not payments:
+            logger.warning(f"No payment history found for user_id={user_id}")
+
+        return payments
+
+    async def get_payment_history_as_admin(
+            self,
+            user_id: Optional[int] = None,
+            status: Optional[PaymentStatus] = None,
+            start_date: Optional[datetime] = None,
+            end_date: Optional[datetime] = None
+    ) -> Sequence[PaymentModel]:
+        logger.info("Get admin payment history from db")
+
+        payment_history_query = select(PaymentModel)
+
+        if user_id:
+            payment_history_query = payment_history_query.filter_by(user_id=user_id)
+
+        if status:
+            payment_history_query = payment_history_query.filter_by(status=status)
+
+        if start_date:
+            payment_history_query = payment_history_query.filter(
+                PaymentModel.created_at >= start_date)
+
+        if end_date:
+            payment_history_query = payment_history_query.filter(
+                PaymentModel.created_at <= end_date)
+
+        result = await self.db.execute(payment_history_query)
+        payments = result.scalars().all()
+
+        if not payments:
+            logger.warning("No payment records found with the given filters.")
+
+        return payments
+
+    async def create_payment_record(self, payment_data: dict) -> PaymentModel:
+        logger.info("Creating a new payment record.")
+        new_payment = PaymentModel(**payment_data)
+        self.db.add(new_payment)
+
+        try:
+            await self.db.flush()
+            logger.info(f"Payment record created successfully (id={new_payment.id}).")
+        except SQLAlchemyError as e:
+            logger.error(f"Failed to create payment record: {e}")
+            raise
+
+        return new_payment
+
+    async def get_order_by_id(self, order_id: int) -> Optional[OrderModel]:
+        logger.info(f"Get order by id={order_id}")
+        result = await self.db.execute(select(OrderModel).filter_by(id=order_id))
+        order = result.scalars().first()
+
+        if not order:
+            logger.warning(f"Order not found (id={order_id})")
+
+        return order
+
+    async def get_user_for_current_order(
+            self, order_id: int
+    ) -> tuple[OrderModel, UserModel]:
+        logger.info(f"Get user from db by order_id={order_id}")
+        order = await self.get_order_by_id(order_id)
+        user = await self.db.execute(
+            select(UserModel).filter_by(id=order.user_id))
+        user = user.scalars().first()
+        if not user:
+            logger.warning(f"User not found (id={user.id})")
+        return order, user
+
+    async def update_order_status(
+            self, order: OrderModel, status: StatusEnum
+    ) -> None:
+        logger.info(f"Updating order status (id={order.id}) to {status}")
+        order.status = status
+
+        try:
+            await self.db.commit()
+            await self.db.refresh(order)
+            logger.info(
+                f"Order status updated successfully (id={order.id}, new_status={status})"
+            )
+        except SQLAlchemyError as e:
+            logger.error(f"Failed to update order status (id={order.id}): {e}")
+            raise
+
+    async def create_payment_items(
+            self, order_items: list[OrderItemModel], payment_id: int
+    ) -> List[PaymentItemModel]:
+        logger.info(f"Creating payment items for payment_id={payment_id}")
+        payment_items = []
+
+        try:
+            for item in order_items:
+                new_payment_item = PaymentItemModel(
+                    payment_id=payment_id,
+                    order_item_id=item.id,
+                    price_at_payment=item.price_at_order
+                )
+                payment_items.append(new_payment_item)
+                self.db.add(new_payment_item)
+                await self.db.flush()
+
+            logger.info(
+                f"Created {len(payment_items)} payment items for payment_id={payment_id}"
+            )
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Failed to create payment items for payment_id={payment_id}: {e}"
+            )
+            raise
+
+        return payment_items
+
+
+def get_payment_repository(db: AsyncSession) -> PaymentRepository:
+    return PaymentRepository(db=db)

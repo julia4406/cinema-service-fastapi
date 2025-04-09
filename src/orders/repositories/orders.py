@@ -1,14 +1,15 @@
 from datetime import datetime
 from typing import List, Optional, Tuple
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from src.config.logging_settings import logger
 from src.database.exceptions.orders import CreateOrderError, OrderUpdateError
-from src.database.models.orders import OrderModel, OrderItemModel, StatusEnum
 from src.database.models.movies import MovieModel
+from src.database.models.orders import OrderItemModel, OrderModel, StatusEnum
 from src.database.utils import object_as_dict
 from src.orders.dto.orders import Order, OrderItem
 from src.orders.interfaces.repositories import OrderRepositoryInterface
@@ -16,7 +17,7 @@ from src.shopping_carts.dto.shopping_cart import CartItem
 
 
 class OrderRepository(OrderRepositoryInterface):
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
     async def create_order(
@@ -25,6 +26,8 @@ class OrderRepository(OrderRepositoryInterface):
             cart_items: List[CartItem]
     ) -> Order:
         try:
+            logger.info(f"Creating order for user_id: {user_id}")
+
             existing_pending = await self._session.execute(
                 select(OrderModel)
                 .filter_by(user_id=user_id, status=StatusEnum.PENDING)
@@ -37,6 +40,7 @@ class OrderRepository(OrderRepositoryInterface):
             }
             new_movie_ids = {item.movie_id for item in cart_items}
             if pending_movie_ids & new_movie_ids:
+                logger.warning(f"Some movies are already in a pending order for user_id {user_id}")
                 raise ValueError("Some movies are already in a pending order")
 
             total_amount = sum(item.price for item in cart_items)
@@ -83,13 +87,16 @@ class OrderRepository(OrderRepositoryInterface):
                 )
                 for item in order.items
             ]
+            logger.info(f"Order created successfully for user_id: {user_id}")
             return Order(**order_dict)
         except (ValueError, SQLAlchemyError) as e:
+            logger.error(f"Error creating order for user_id {user_id}: {str(e)}")
             if isinstance(e, ValueError):
                 raise CreateOrderError(f"Cannot create order: {str(e)}")
             raise CreateOrderError(f"Failed to create order: {str(e)}")
 
     async def get_orders_by_user_id(self, user_id: int) -> List[Order]:
+        logger.info(f"Fetching orders for user_id: {user_id}")
         result = await self._session.execute(
             select(OrderModel)
             .filter_by(user_id=user_id)
@@ -100,6 +107,7 @@ class OrderRepository(OrderRepositoryInterface):
             )
         )
         orders = result.unique().scalars().all()
+        logger.info(f"Found {len(orders)} orders for user_id: {user_id}")
         return [
             Order(
                 **{
@@ -123,6 +131,7 @@ class OrderRepository(OrderRepositoryInterface):
         ]
 
     async def get_order_by_id(self, order_id: int) -> Optional[Order]:
+        logger.info(f"Fetching order with order_id: {order_id}")
         result = await self._session.execute(
             select(OrderModel)
             .filter_by(id=order_id)
@@ -134,7 +143,9 @@ class OrderRepository(OrderRepositoryInterface):
         )
         order = result.scalars().first()
         if not order:
+            logger.warning(f"Order with order_id {order_id} not found")
             return None
+        logger.info(f"Order with order_id {order_id} found")
         order_dict = object_as_dict(order)
         order_dict["items"] = [
             OrderItem(
@@ -156,15 +167,19 @@ class OrderRepository(OrderRepositoryInterface):
             status: StatusEnum
     ) -> None:
         try:
+            logger.info(f"Updating order status for order_id: {order_id} to {status}")
             result = await self._session.execute(
                 select(OrderModel).filter_by(id=order_id)
             )
             order = result.scalars().first()
             if not order:
+                logger.warning(f"Order with order_id {order_id} not found")
                 raise ValueError("Order not found")
             order.status = status
             await self._session.flush()
+            logger.info(f"Order status for order_id {order_id} updated to {status}")
         except (ValueError, SQLAlchemyError) as e:
+            logger.error(f"Error updating order status for order_id {order_id}: {str(e)}")
             if isinstance(e, ValueError):
                 raise OrderUpdateError(f"Cannot update order status: {str(e)}")
             raise OrderUpdateError(f"Failed to update order status: {str(e)}")
@@ -179,6 +194,11 @@ class OrderRepository(OrderRepositoryInterface):
             offset: int = 0
     ) -> Tuple[List[Order], int]:
         try:
+            logger.info(
+                f"Fetching all orders with filters: "
+                f"user_id={user_id}, date_from={date_from}, date_to={date_to}, "
+                f"status={status}, limit={limit}, offset={offset}"
+            )
             query = (
                 select(OrderModel)
                 .options(
@@ -205,6 +225,7 @@ class OrderRepository(OrderRepositoryInterface):
             result = await self._session.execute(query)
             orders = result.unique().scalars().all()
 
+            logger.info(f"Fetched {len(orders)} orders, total count: {total}")
             return [
                 Order(
                     **{
@@ -230,4 +251,5 @@ class OrderRepository(OrderRepositoryInterface):
                 for order in orders
             ], total
         except SQLAlchemyError as e:
+            logger.error(f"Error fetching orders: {str(e)}")
             raise OrderUpdateError(f"Failed to fetch orders: {str(e)}")
