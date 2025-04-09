@@ -1,5 +1,6 @@
 from pydantic import EmailStr
 from fastapi import UploadFile
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -20,49 +21,50 @@ settings = Settings()
 class UserRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
+        self.model = UserModel
 
     async def get_by_email(self, email: EmailStr) -> UserModel | None:
         try:
-            result = await self.db.execute(select(UserModel).filter_by(email=email))
+            result = await self.db.execute(select(self.model).filter_by(email=email))
             return result.scalar_one_or_none()
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error fetching user by email {email}: {e}")
             raise
 
     async def get_by_id(self, user_id: int) -> UserModel | None:
         try:
-            result = await self.db.execute(select(UserModel).filter_by(id=user_id))
+            result = await self.db.execute(select(self.model).filter_by(id=user_id))
             return result.scalar_one_or_none()
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error fetching user by id {user_id}: {e}")
             raise
 
     async def is_email_exists(self, email: EmailStr) -> bool:
         try:
-            result = await self.db.execute(select(UserModel).filter_by(email=email))
+            result = await self.db.execute(select(self.model).filter_by(email=email))
             return result.scalar_one_or_none() is not None
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error checking if email {email} exists: {e}")
             raise
 
     async def is_user_active(self, user_id: int) -> bool:
         try:
-            result = await self.db.execute(select(UserModel.is_active).filter_by(id=user_id))
+            result = await self.db.execute(select(self.model.is_active).filter_by(id=user_id))
             is_active_status = result.scalar_one_or_none()
             return is_active_status
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error checking if user {user_id} is active: {e}")
             raise
 
     async def set_user_active(self, user_id: int) -> None:
         try:
-            result = await self.db.execute(select(UserModel).filter_by(id=user_id))
+            result = await self.db.execute(select(self.model).filter_by(id=user_id))
             user = result.scalar_one_or_none()
             if user:
                 user.is_active = True
                 await self.db.commit()
                 await self.db.refresh(user)
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error activating user {user_id}: {e}")
             raise
 
@@ -77,14 +79,14 @@ class UserRepository:
                 self.db.add(group)
                 await self.db.flush()
             return group
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error fetching or creating group {group_name}: {e}")
             raise
 
     async def create_user(self, user: UserCreateRequest) -> UserModel:
         try:
             group = await self.get_or_create_group(UserGroupEnum.USER)
-            db_user = UserModel(**user.model_dump(), group_id=group.id)
+            db_user = self.model(**user.model_dump(), group_id=group.id)
             self.db.add(db_user)
             await self.db.flush()
 
@@ -95,7 +97,7 @@ class UserRepository:
             await self.db.refresh(db_user)
             await self.db.refresh(db_profile)
             return db_user
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error creating user {user.email}: {e}")
             raise
 
@@ -103,7 +105,7 @@ class UserRepository:
         try:
             group = await self.get_or_create_group(user.group)
 
-            db_user = UserModel(
+            db_user = self.model(
                 email=user.email,
                 is_active=user.is_active,
                 group_id=group.id,
@@ -119,7 +121,7 @@ class UserRepository:
             await self.db.refresh(db_user)
             await self.db.refresh(db_profile)
             return db_user
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error creating user by admin {user.email}: {e}")
             raise
 
@@ -140,7 +142,7 @@ class UserRepository:
             await self.db.commit()
             await self.db.refresh(user)
             return user
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error updating user {user_id}: {e}")
             raise
 
@@ -151,7 +153,7 @@ class UserRepository:
                 raise ValueError("User not found")
             await self.db.delete(user)
             await self.db.commit()
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error deleting user {user_id}: {e}")
             raise
 
@@ -165,7 +167,7 @@ class ProfileRepository:
         try:
             result = await self.db.execute(select(ProfileModel).filter_by(user_id=user_id))
             return result.scalar_one_or_none()
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error fetching profile for user {user_id}: {e}")
             raise
 
@@ -176,7 +178,7 @@ class ProfileRepository:
             await self.db.commit()
             await self.db.refresh(profile)
             return profile
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error creating profile for user {user_id}: {e}")
             raise
 
@@ -191,7 +193,7 @@ class ProfileRepository:
             await self.db.commit()
             await self.db.refresh(profile)
             return profile
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error updating profile {profile.user_id}: {e}")
             raise
 
@@ -199,7 +201,7 @@ class ProfileRepository:
         try:
             await self.db.delete(profile)
             await self.db.commit()
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error deleting profile for user {profile.user_id}: {e}")
             raise
 
@@ -225,6 +227,6 @@ class ProfileRepository:
             await self.db.commit()
             await self.db.refresh(profile)
             return profile
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Error updating avatar for user {user_id}: {e}")
             raise
