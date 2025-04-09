@@ -14,12 +14,12 @@ from src.database.models.orders import OrderModel, StatusEnum
 from src.database.models.payments import PaymentStatus
 from src.email.email_service import EmailService
 from src.payments.repositories.payments import (
-    repo_create_payment_items,
-    repo_create_payment_record,
-    repo_get_order_by_id,
-    repo_get_payment_history,
-    repo_get_payment_history_admin,
-    repo_update_order_status,
+    create_payment_items,
+    create_payment_record,
+    get_order_by_id,
+    get_payment_history_by_user_id,
+    get_payment_history_as_admin,
+    update_order_status,
 )
 from src.payments.schemas.payments import CreatePaymentSchema, PaymentHistorySchema, PaymentResponseSchema
 
@@ -30,7 +30,7 @@ async def service_get_payment_history(
         db: AsyncSession, user_id: int
 ) -> List[PaymentHistorySchema]:
     logger.info(f"Fetching payment history for user_id: {user_id}")
-    payments = await repo_get_payment_history(db, user_id)
+    payments = await get_payment_history_by_user_id(db, user_id)
     return [
         PaymentHistorySchema(
             created_at=item.created_at,
@@ -51,7 +51,7 @@ async def service_get_payment_history_admin(
         f"Fetching payment history for admin with filters - user_id: {user_id}, "
         f"status: {status}, start_date: {start_date}, end_date: {end_date}"
     )
-    payment_history = await repo_get_payment_history_admin(
+    payment_history = await get_payment_history_as_admin(
         db=db,
         user_id=user_id,
         status=status,
@@ -89,17 +89,17 @@ async def service_handle_stripe_webhook(
             external_payment_id=session["payment_intent"]
         )
 
-        new_payment = await repo_create_payment_record(
+        new_payment = await create_payment_record(
             db, payment_data.model_dump()
         )
         logger.info(f"Payment created successfully for order_id: {session['metadata']['order_id']}")
 
-        order = await repo_get_order_by_id(
+        order = await get_order_by_id(
             db, int(session["metadata"]["order_id"])
         )
         if order:
-            await repo_update_order_status(db, order, StatusEnum.PAID)
-            await repo_create_payment_items(db, order.items, new_payment.id)
+            await update_order_status(db, order, StatusEnum.PAID)
+            await create_payment_items(db, order.items, new_payment.id)
 
         user_email = session["metadata"]["user_email"]
         background_tasks.add_task(
@@ -120,7 +120,7 @@ async def service_handle_stripe_webhook(
             external_payment_id=session["payment_intent"]
         )
 
-        new_payment = await repo_create_payment_record(
+        new_payment = await create_payment_record(
             db, payment_data.model_dump()
         )
         logger.info(f"Payment failed for order_id: {session['metadata']['order_id']}")

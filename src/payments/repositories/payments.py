@@ -9,7 +9,7 @@ from src.database.models.orders import OrderItemModel, OrderModel, StatusEnum
 from src.database.models.payments import PaymentItemModel, PaymentModel, PaymentStatus
 
 
-async def repo_get_payment_history(
+async def get_payment_history_by_user_id(
         db: AsyncSession, user_id: int
 ) -> Sequence[PaymentModel]:
     logger.info(f"Fetching payment history for user_id={user_id}")
@@ -23,7 +23,7 @@ async def repo_get_payment_history(
     return payments
 
 
-async def repo_get_payment_history_admin(
+async def get_payment_history_as_admin(
         db: AsyncSession,
         user_id: Optional[int] = None,
         status: Optional[PaymentStatus] = None,
@@ -58,7 +58,7 @@ async def repo_get_payment_history_admin(
     return payments
 
 
-async def repo_create_payment_record(
+async def create_payment_record(
         db: AsyncSession, payment_data: dict
 ) -> PaymentModel:
     logger.info("Creating a new payment record.")
@@ -75,7 +75,7 @@ async def repo_create_payment_record(
     return new_payment
 
 
-async def repo_get_order_by_id(
+async def get_order_by_id(
         db: AsyncSession, order_id: int
 ) -> Optional[OrderModel]:
     logger.info(f"Fetching order by id={order_id}")
@@ -88,7 +88,7 @@ async def repo_get_order_by_id(
     return order
 
 
-async def repo_update_order_status(
+async def update_order_status(
         db: AsyncSession, order: OrderModel, status: StatusEnum
 ) -> None:
     logger.info(f"Updating order status (id={order.id}) to {status}")
@@ -105,7 +105,7 @@ async def repo_update_order_status(
         raise
 
 
-async def repo_create_payment_items(
+async def create_payment_items(
         db: AsyncSession, order_items: list[OrderItemModel], payment_id: int
 ) -> List[PaymentItemModel]:
     logger.info(f"Creating payment items for payment_id={payment_id}")
