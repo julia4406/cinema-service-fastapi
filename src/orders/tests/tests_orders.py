@@ -9,7 +9,7 @@ client = TestClient(app)
 
 @patch('src.orders.controllers.create_order',
        lambda user_id: {"order_id": 1, "status": "PENDING"})
-def test_create_order():
+def test_create_order() -> None:
     response = client.post("/orders/", json={"user_id": 1})
     assert response.status_code == 201
     assert response.json()["status"] == "PENDING"
@@ -17,7 +17,7 @@ def test_create_order():
 
 @patch('src.orders.controllers.get_user_orders',
        lambda user_id: [{"order_id": 1, "status": "PENDING"}])
-def test_get_user_orders():
+def test_get_user_orders() -> None:
     response = client.get("/orders/")
     assert response.status_code == 200
     assert len(response.json()) == 1
@@ -26,7 +26,7 @@ def test_get_user_orders():
 
 @patch('src.orders.controllers.get_order',
        lambda user_id, order_id: {"order_id": 1, "status": "PENDING"})
-def test_get_order():
+def test_get_order() -> None:
     response = client.get("/orders/1")
     assert response.status_code == 200
     assert response.json()["order_id"] == 1
@@ -34,7 +34,7 @@ def test_get_order():
 
 @patch('src.orders.controllers.cancel_pending_order',
        lambda user_id, order_id: {"order_id": 1, "status": "CANCELLED"})
-def test_cancel_pending_order():
+def test_cancel_pending_order() -> None:
     response = client.patch("/orders/1/cancel")
     assert response.status_code == 200
     assert response.json()["status"] == "CANCELLED"
@@ -42,7 +42,7 @@ def test_cancel_pending_order():
 
 @patch('src.orders.controllers.confirm_order',
        lambda user_id, order_id: {"order_id": 1, "status": "PAID"})
-def test_confirm_order():
+def test_confirm_order() -> None:
     response = client.post("/orders/1/confirm")
     assert response.status_code == 200
     assert response.json()["status"] == "PAID"

@@ -17,7 +17,7 @@ from src.shopping_carts.dto.shopping_cart import CartItem
 
 
 class OrderRepository(OrderRepositoryInterface):
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
     async def create_order(

@@ -7,18 +7,18 @@ from src.main import app
 client = TestClient(app)
 
 
-def mock_get_all_orders():
+def mock_get_all_orders() -> list:
     return [{"order_id": 1, "user_id": 1, "status": "PENDING", "total_amount": 100}]
 
 
-def mock_update_order_status(order_id: int, status: str):
+def mock_update_order_status(order_id: int, status: str) -> dict | None:
     if order_id == 1:
         return {"order_id": 1, "status": status}
     return None
 
 
 @patch('src.orders.controllers.admin_get_all_orders', mock_get_all_orders)
-def test_admin_get_all_orders():
+def test_admin_get_all_orders() -> None:
     response = client.get("/admin/orders/")
     assert response.status_code == 200
     assert len(response.json()) > 0
@@ -26,7 +26,7 @@ def test_admin_get_all_orders():
 
 
 @patch('src.orders.controllers.admin_update_order_status', mock_update_order_status)
-def test_admin_update_order_status():
+def test_admin_update_order_status() -> None:
     response = client.patch("/admin/orders/1/status", json={"status": "SHIPPED"})
     assert response.status_code == 200
     assert response.json()["status"] == "SHIPPED"

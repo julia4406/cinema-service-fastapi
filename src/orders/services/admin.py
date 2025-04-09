@@ -17,7 +17,7 @@ class AdminOrderService(AdminOrderServiceInterface):
             order_repository: OrderRepositoryInterface,
             cart_repository: AbstractCartRepository,
             session: AsyncSession
-    ):
+    ) -> None:
         self._order_repository = order_repository
         self._cart_repository = cart_repository
         self._session = session
