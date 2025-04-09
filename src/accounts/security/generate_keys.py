@@ -9,7 +9,7 @@ from src.config.logging_settings import logger
 settings = Settings()
 
 
-def generate_rsa_keys(private_key_path: Path, public_key_path: Path):
+def generate_rsa_keys(private_key_path: Path, public_key_path: Path) -> None:
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048

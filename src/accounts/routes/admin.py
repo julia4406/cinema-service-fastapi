@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import EmailStr
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
+from src.database.models.accounts import ProfileModel
 
 from src.database.models import UserModel
 from src.accounts.schemas.accounts import (
@@ -23,7 +24,7 @@ async def get_user_by_email(
     user_email: EmailStr,
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
     service: AccountsService = Depends(get_accounts_service)
-):
+) -> UserAdminResponse:
     try:
         logger.info(f"Fetching user by email: {user_email}")
         user = await service.get_by_email(user_email)
@@ -63,7 +64,7 @@ async def register_user(
     user_data: UserAdminCreateRequest,
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
     service: AccountsService = Depends(get_accounts_service)
-):
+) -> UserAdminResponse:
     try:
         logger.info("Registering new user")
         return await service.register_user_by_admin(user_data)
@@ -80,7 +81,7 @@ async def update_user(
     user_data: UserAdminUpdateRequest,
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
     service: AccountsService = Depends(get_accounts_service)
-):
+) -> UserAdminResponse:
     try:
         logger.info(f"Updating user with ID: {user_id}")
         return await service.update_user(user_id, user_data)
@@ -98,7 +99,7 @@ async def update_profile(
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
     account_service: AccountsService = Depends(get_accounts_service),
     profile_service: ProfileService = Depends(get_profile_service)
-):
+) -> UserAdminResponse:
     try:
         logger.info(f"Updating profile for user with ID: {user_id}")
         user = await account_service.user_repo.get_by_id(user_id)
@@ -143,7 +144,7 @@ async def delete_user(
     user_id: int,
     current_user: UserModel = Depends(role_required(UserGroupEnum.ADMIN)),
     service: AccountsService = Depends(get_accounts_service)
-):
+) -> None:
     try:
         logger.info(f"Deleting user with ID: {user_id}")
         await service.delete_user(user_id, current_user)

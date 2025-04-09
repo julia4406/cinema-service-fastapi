@@ -1,3 +1,5 @@
+from typing import Any
+
 import jwt
 from datetime import datetime, timedelta, timezone
 
@@ -21,14 +23,14 @@ settings = Settings()
 
 
 class JWTAuthManager:
-    def __init__(self):
+    def __init__(self) -> None:
         self.private_key = private_key
         self.public_key = public_key
         self.algorithm = JWT_ALGORITHM
         self.access_expire_minutes = ACCESS_EXPIRE_MINUTES
         self.refresh_expire_days = REFRESH_EXPIRE_DAYS
 
-    def create_access_token(self, user: UserModel):
+    def create_access_token(self, user: UserModel) -> str:
         payload = {
             "sub": user.email,
             "type": "access",
@@ -39,7 +41,7 @@ class JWTAuthManager:
         logger.info(f"Access token created for user {user.email} with expiration time {payload['exp']}")
         return token
 
-    async def create_refresh_token(self, user: UserModel, db: AsyncSession):
+    async def create_refresh_token(self, user: UserModel, db: AsyncSession) -> str:
 
         expires_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=self.refresh_expire_days)
 
@@ -64,7 +66,7 @@ class JWTAuthManager:
         logger.info(f"Refresh token created for user {user.email} with expiration time {expires_at}")
         return token
 
-    def decode_token(self, token: str):
+    def decode_token(self, token: str) -> Any:
         try:
             payload = jwt.decode(token, self.public_key, algorithms=[self.algorithm])
             logger.info(f"Decoded token with payload: {payload}")
@@ -76,7 +78,7 @@ class JWTAuthManager:
             logger.error("Invalid token")
             raise ValueError("Invalid token")
 
-    async def verify_access_token(self, token: str, db: AsyncSession):
+    async def verify_access_token(self, token: str, db: AsyncSession) -> UserModel:
         payload = self.decode_token(token)
         if payload.get("type") != "access":
             logger.error("Token is not valid")
@@ -88,7 +90,7 @@ class JWTAuthManager:
             raise ValueError("User not found")
         return user
 
-    async def verify_refresh_token(self, token: str, db: AsyncSession):
+    async def verify_refresh_token(self, token: str, db: AsyncSession) -> UserModel:
         payload = self.decode_token(token)
         if payload.get("type") != "refresh":
             logger.error("Token is not valid")
@@ -106,5 +108,5 @@ class JWTAuthManager:
         return user
 
 
-def get_jwt_service():
+def get_jwt_service() -> JWTAuthManager:
     return JWTAuthManager()

@@ -9,7 +9,7 @@ from src.config.logging_settings import logger
 
 
 class ActivationTokensRepository:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
     async def create_activation_token(self, user_id: int) -> ActivationTokenModel:
@@ -68,7 +68,7 @@ class ActivationTokensRepository:
 
 
 class RefreshTokensRepository:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
     async def get_refresh_token(self, token: str, user_id: int) -> RefreshTokenModel | None:
@@ -89,7 +89,7 @@ class RefreshTokensRepository:
 
 
 class PasswordResetTokenRepository:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
     async def create_reset_token(self, user_id: int) -> PasswordResetTokenModel:

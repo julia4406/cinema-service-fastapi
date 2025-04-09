@@ -1,3 +1,5 @@
+from typing import Coroutine, Any
+
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -44,7 +46,7 @@ async def get_current_user(
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
-def role_required(required_role: UserGroupEnum):
+def role_required(required_role: UserGroupEnum) -> Depends:
     async def role_checker(
         current_user: UserModel = Depends(get_current_user),
         db: AsyncSession = Depends(get_postgresql_db)
@@ -97,26 +99,32 @@ def role_required(required_role: UserGroupEnum):
     return role_checker
 
 
-async def get_user_repository(db: AsyncSession = Depends(get_postgresql_db)):
+async def get_user_repository(db: AsyncSession = Depends(get_postgresql_db)) -> UserRepository:
     return UserRepository(db)
 
 
 async def get_profile_repository(
         db: AsyncSession = Depends(get_postgresql_db),
         s3_service: S3Service = Depends(get_s3_service)
-):
+) -> ProfileRepository:
     return ProfileRepository(db, s3_service)
 
 
-async def get_activation_token_repository(db: AsyncSession = Depends(get_postgresql_db)):
+async def get_activation_token_repository(
+        db: AsyncSession = Depends(get_postgresql_db)
+) -> ActivationTokensRepository:
     return ActivationTokensRepository(db)
 
 
-async def get_password_reset_token_repository(db: AsyncSession = Depends(get_postgresql_db)):
+async def get_password_reset_token_repository(
+        db: AsyncSession = Depends(get_postgresql_db)
+) -> PasswordResetTokenRepository:
     return PasswordResetTokenRepository(db)
 
 
-async def get_refresh_token_repository(db: AsyncSession = Depends(get_postgresql_db)):
+async def get_refresh_token_repository(
+        db: AsyncSession = Depends(get_postgresql_db)
+) -> RefreshTokensRepository:
     return RefreshTokensRepository(db)
 
 
@@ -126,11 +134,11 @@ async def get_accounts_service(
     email_service: EmailService = Depends(get_email_service),
     jwt_service: JWTAuthManager = Depends(get_jwt_service),
     reset_token_repo: PasswordResetTokenRepository = Depends(get_password_reset_token_repository)
-):
+) -> AccountsService:
     return AccountsService(user_repo, activation_token_repo, email_service, jwt_service, reset_token_repo)
 
 
 async def get_profile_service(
     profile_repo: ProfileRepository = Depends(get_profile_repository)
-):
+) -> ProfileService:
     return ProfileService(profile_repo)

@@ -28,7 +28,7 @@ class BaseUserRequest(BaseModel):
         return email
 
     @field_validator("password")
-    def check_password(cls, password: str):
+    def check_password(cls, password: str) -> str:
         validate_password_strength(password)
         return password
 
@@ -104,31 +104,31 @@ class ProfileUpdateRequest(BaseModel):
     info: Optional[str] = None
 
     @field_validator("first_name")
-    def check_first_name(cls, value: Optional[str]):
+    def check_first_name(cls, value: Optional[str]) -> str | None:
         if value is not None:
             return validate_first_name(value)
         return value
 
     @field_validator("last_name")
-    def check_last_name(cls, value: Optional[str]):
+    def check_last_name(cls, value: Optional[str]) -> str | None:
         if value is not None:
             return validate_last_name(value)
         return value
 
     @field_validator("gender")
-    def check_gender(cls, value: Optional[GenderEnum]):
+    def check_gender(cls, value: Optional[GenderEnum]) -> GenderEnum | None:
         if value is not None:
             return validate_gender(value.value)
         return value
 
     @field_validator("date_of_birth")
-    def check_date_of_birth(cls, value: Optional[date]):
+    def check_date_of_birth(cls, value: Optional[date]) -> date | None:
         if value is not None:
             return validate_date_of_birth(value)
         return value
 
     @field_validator("info")
-    def check_info(cls, value: Optional[str]):
+    def check_info(cls, value: Optional[str]) -> str | None:
         if value is not None:
             return validate_info(value)
         return value

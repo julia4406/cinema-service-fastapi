@@ -20,7 +20,7 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
     @field_validator("new_password")
-    def check_password(cls, password: str):
+    def check_password(cls, password: str) -> str:
         validate_password_strength(password)
         return password
 
@@ -33,6 +33,6 @@ class ResetPasswordRequest(BaseModel):
     new_password: str
 
     @field_validator("new_password")
-    def check_password_strength(cls, password: str):
+    def check_password_strength(cls, password: str) -> str:
         validate_password_strength(password)
         return password

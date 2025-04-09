@@ -11,7 +11,8 @@ from src.accounts.repositories.tokens import (
     RefreshTokensRepository,
     PasswordResetTokenRepository
 )
-from src.accounts.schemas.accounts import UserAdminCreateRequest, UserAdminResponse, UserAdminUpdateRequest
+from src.accounts.schemas.accounts import UserAdminCreateRequest, \
+    UserAdminResponse, UserAdminUpdateRequest, ProfileUpdateRequest
 from src.email.email_service import EmailService
 from src.accounts.security.jwt import JWTAuthManager
 from src.database.models import UserModel, ProfileModel
@@ -34,7 +35,7 @@ class AccountsService:
             email_service: EmailService,
             jwt_service: JWTAuthManager,
             reset_token_repo: PasswordResetTokenRepository,
-    ):
+    ) -> None:
         self.db = user_repo.db
         self.user_repo = user_repo
         self.activation_token_repo = activation_token_repo
@@ -197,7 +198,7 @@ class AccountsService:
             refresh_token=refresh_token
         )
 
-    async def logout_user(self, user: UserModel):
+    async def logout_user(self, user: UserModel) -> None:
         await RefreshTokensRepository(self.db).delete_all_by_user_id(user.id)
         logger.info(f"User {user.email} logged out successfully.")
 
@@ -259,7 +260,7 @@ class AccountsService:
 
 
 class ProfileService:
-    def __init__(self, profile_repo: ProfileRepository):
+    def __init__(self, profile_repo: ProfileRepository) -> None:
         self.db = profile_repo.db
         self.profile_repo = profile_repo
 
@@ -271,7 +272,9 @@ class ProfileService:
             raise ValueError("Profile is not found")
         return profile
 
-    async def update_profile(self, current_user: UserModel, profile_data) -> ProfileModel:
+    async def update_profile(
+            self, current_user: UserModel, profile_data: ProfileUpdateRequest
+    ) -> ProfileModel:
         logger.info(f"Updating profile for user: {current_user.email}")
         profile = await self.get_profile(current_user)
         updated_profile = await self.profile_repo.update(profile, profile_data.model_dump(exclude_unset=True))

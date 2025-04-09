@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from src.database.models.accounts import ProfileModel
+
 from src.config.logging_settings import logger
 
 from src.accounts.schemas import ProfileResponse, ProfileUpdateRequest
@@ -14,7 +16,7 @@ router = APIRouter(tags=["profile"])
 async def get_profile(
     current_user: UserModel = Depends(get_current_user),
     service: ProfileService = Depends(get_profile_service)
-):
+) -> ProfileModel:
     try:
         profile = await service.get_profile(current_user)
         return profile
@@ -31,7 +33,7 @@ async def update_profile(
     profile_data: ProfileUpdateRequest = Depends(),
     current_user: UserModel = Depends(get_current_user),
     service: ProfileService = Depends(get_profile_service)
-):
+) -> ProfileModel:
     try:
         updated_profile = await service.update_profile(current_user, profile_data)
         return updated_profile
@@ -48,7 +50,7 @@ async def upload_avatar(
     avatar_file: UploadFile = File(...),
     current_user: UserModel = Depends(get_current_user),
     service: ProfileService = Depends(get_profile_service)
-):
+) -> ProfileModel:
     try:
         updated_profile = await service.upload_avatar(current_user, avatar_file)
         return updated_profile
