@@ -264,6 +264,7 @@ class ProfileService:
         self.profile_repo = profile_repo
 
     async def get_profile(self, current_user: UserModel) -> ProfileModel:
+        logger.info(f"Fetching profile for user: {current_user.email}")
         profile = await self.profile_repo.get_by_user_id(current_user.id)
         if not profile:
             logger.warning(f"Profile for user {current_user.email} not found.")
@@ -271,12 +272,14 @@ class ProfileService:
         return profile
 
     async def update_profile(self, current_user: UserModel, profile_data) -> ProfileModel:
+        logger.info(f"Updating profile for user: {current_user.email}")
         profile = await self.get_profile(current_user)
         updated_profile = await self.profile_repo.update(profile, profile_data.model_dump(exclude_unset=True))
         logger.info(f"Profile updated for user {current_user.email}.")
         return updated_profile
 
     async def upload_avatar(self, current_user: UserModel, avatar_file: UploadFile) -> ProfileModel:
+        logger.info(f"Uploading avatar for user: {current_user.email}")
         profile = await self.get_profile(current_user)
         updated_profile = await self.profile_repo.update_avatar(profile, avatar_file, current_user.id)
         logger.info(f"Avatar uploaded for user {current_user.email}.")

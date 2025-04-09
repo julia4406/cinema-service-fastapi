@@ -16,7 +16,6 @@ async def get_profile(
     service: ProfileService = Depends(get_profile_service)
 ):
     try:
-        logger.info(f"Fetching profile for user: {current_user.email}")
         profile = await service.get_profile(current_user)
         return profile
     except ValueError:
@@ -34,7 +33,6 @@ async def update_profile(
     service: ProfileService = Depends(get_profile_service)
 ):
     try:
-        logger.info(f"Updating profile for user: {current_user.email}")
         updated_profile = await service.update_profile(current_user, profile_data)
         return updated_profile
     except ValueError:
@@ -52,7 +50,6 @@ async def upload_avatar(
     service: ProfileService = Depends(get_profile_service)
 ):
     try:
-        logger.info(f"Uploading avatar for user: {current_user.email}")
         updated_profile = await service.upload_avatar(current_user, avatar_file)
         return updated_profile
     except ValueError:
