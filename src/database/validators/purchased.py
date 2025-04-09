@@ -1,7 +1,8 @@
 from src.config.logging_settings import logger
+from src.database.models.shopping_carts import PurchasedModel
 
 
-def validate_movie_not_already_purchased(purchase, movie_id: int) -> int:
+def validate_movie_not_already_purchased(purchase: PurchasedModel, movie_id: int) -> int:
     logger.info(f"Validating if movie with id {movie_id} is already purchased by user {purchase.user_id}.")
     if purchase.user:
         for existing_purchase in purchase.user.purchases:

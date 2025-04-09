@@ -56,11 +56,11 @@ class UserModel(Base):
     )
 
     @property
-    def password(self):
+    def password(self) -> None:
         raise AttributeError("Password is not a readable attribute")
 
     @password.setter
-    def password(self, password: str):
+    def password(self, password: str) -> None:
         self._hashed_password = hash_password(password)
 
     def verify_password(self, password: str) -> bool:

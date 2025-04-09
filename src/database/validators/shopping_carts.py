@@ -1,7 +1,8 @@
 from src.config.logging_settings import logger
+from src.database.models.shopping_carts import CartItemModel
 
 
-def validate_movie_not_in_purchases(cart_item, movie_id: int) -> int:
+def validate_movie_not_in_purchases(cart_item: CartItemModel, movie_id: int) -> int:
     logger.info(f"Validating if movie with id {movie_id} is already purchased.")
     if cart_item.cart and cart_item.cart.user:
         for purchase in cart_item.cart.user.purchases:
@@ -14,7 +15,7 @@ def validate_movie_not_in_purchases(cart_item, movie_id: int) -> int:
     return movie_id
 
 
-def validate_movie_not_in_cart(cart_item, movie_id: int) -> int:
+def validate_movie_not_in_cart(cart_item: CartItemModel, movie_id: int) -> int:
     logger.info(f"Validating if movie with id {movie_id} is already in the cart.")
     if cart_item.cart:
         for item in cart_item.cart.items:
