@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, Sequence
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -68,7 +69,7 @@ async def create_payment_record(
     try:
         await db.flush()
         logger.info(f"Payment record created successfully (id={new_payment.id}).")
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(f"Failed to create payment record: {e}")
         raise
 
@@ -100,7 +101,7 @@ async def update_order_status(
         logger.info(
             f"Order status updated successfully (id={order.id}, new_status={status})"
         )
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(f"Failed to update order status (id={order.id}): {e}")
         raise
 
@@ -125,7 +126,7 @@ async def create_payment_items(
         logger.info(
             f"Created {len(payment_items)} payment items for payment_id={payment_id}"
         )
-    except Exception as e:
+    except SQLAlchemyError as e:
         logger.error(
             f"Failed to create payment items for payment_id={payment_id}: {e}"
         )
