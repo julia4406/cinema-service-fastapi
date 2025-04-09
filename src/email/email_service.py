@@ -19,7 +19,7 @@ settings = Settings()
 
 
 class EmailService:
-    def __init__(self, mail: FastMail = get_fastmail()):
+    def __init__(self, mail: FastMail = get_fastmail()) -> None:
         self.mail = mail
 
     async def send_email(self, recipient_email: EmailStr, subject: str, body: str) -> None:
